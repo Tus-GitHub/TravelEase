@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #1e3a8a;
+    --color-accent: #f59e0b;
+  }
+
+  * {
+    @apply box-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white font-sans text-slate-800 antialiased;
+  }
+}
+
+@layer components {
+  /* Shared layout container used by every Section */
+  .section-container {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Hide scrollbar utility for any future horizontal carousels */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ─── Travel Animation Band ───────────────────────────────── */
+
+/* Wheel spin: transform-box makes origin relative to element bbox */
+.svg-wheel {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: svgSpinWheel 0.55s linear infinite;
+}
+
+@keyframes svgSpinWheel {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Star twinkle — three offset variants */
+@keyframes svgTwinkle {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.1; }
+}
+.sv-t1 { animation: svgTwinkle 2.4s ease-in-out infinite; }
+.sv-t2 { animation: svgTwinkle 3.1s ease-in-out infinite 0.9s; }
+.sv-t3 { animation: svgTwinkle 3.8s ease-in-out infinite 1.7s; }
+.sv-t4 { animation: svgTwinkle 2.8s ease-in-out infinite 0.4s; }
+
+/* ─── Hero floating badges ────────────────────────────────── */
+@keyframes floatBadge {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+.animate-float-a { animation: floatBadge 3.6s ease-in-out infinite; }
+.animate-float-b { animation: floatBadge 2.9s ease-in-out infinite 0.8s; }
+.animate-float-c { animation: floatBadge 3.3s ease-in-out infinite 1.5s; }
+
+/* ─── Confetti celebration (PackageBuilder step 4) ─────────── */
+@keyframes confettiFall {
+  0%   { transform: translateY(-10px) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(160px) rotate(540deg); opacity: 0; }
+}
+.confetti-1  { animation: confettiFall 1.2s ease-in both 0.0s; }
+.confetti-2  { animation: confettiFall 1.3s ease-in both 0.1s; }
+.confetti-3  { animation: confettiFall 1.1s ease-in both 0.2s; }
+.confetti-4  { animation: confettiFall 1.4s ease-in both 0.05s; }
+.confetti-5  { animation: confettiFall 1.2s ease-in both 0.15s; }
+.confetti-6  { animation: confettiFall 1.3s ease-in both 0.25s; }
+.confetti-7  { animation: confettiFall 1.1s ease-in both 0.3s; }
+.confetti-8  { animation: confettiFall 1.5s ease-in both 0.08s; }
