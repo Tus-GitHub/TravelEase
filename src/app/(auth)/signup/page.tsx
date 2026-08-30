@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/components/common/Button";
 import FormField, { fieldBase } from "@/components/forms/FormField";
+import PasswordField from "@/components/forms/PasswordField";
 import { useAuth } from "@/context/AuthContext";
 import { isValidEmail, isValidPhone, PASSWORD_MIN_LENGTH } from "@/lib/validation";
 
@@ -106,31 +107,25 @@ export default function SignupPage() {
           />
         </FormField>
 
-        <FormField label="Password" icon="lock">
-          <input
-            type="password"
-            required
-            minLength={PASSWORD_MIN_LENGTH}
-            autoComplete="new-password"
-            placeholder="At least 8 characters"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={fieldBase}
-          />
-        </FormField>
+        <PasswordField
+          label="Password"
+          required
+          minLength={PASSWORD_MIN_LENGTH}
+          autoComplete="new-password"
+          placeholder="At least 8 characters"
+          value={password}
+          onChange={setPassword}
+        />
 
-        <FormField label="Confirm Password" icon="lock">
-          <input
-            type="password"
-            required
-            minLength={PASSWORD_MIN_LENGTH}
-            autoComplete="new-password"
-            placeholder="Re-enter your password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className={fieldBase}
-          />
-        </FormField>
+        <PasswordField
+          label="Confirm Password"
+          required
+          minLength={PASSWORD_MIN_LENGTH}
+          autoComplete="new-password"
+          placeholder="Re-enter your password"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+        />
 
         <Button
           type="submit"

@@ -31,39 +31,63 @@ async function applyMigration(client, filename, sqlText) {
   }
 }
 
-async function main() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is not set (expected in .env.local)");
-  }
-
+// Apply every pending migration against one database. Reusable so both the CLI
+// below and the Vercel predeploy step (db/predeploy.js) share identical logic.
+async function runMigrations({ connectionString, label }) {
+  console.log(`Target: ${label}`);
   const client = new Client({ connectionString, ssl: { rejectUnauthorized: false } });
   await client.connect();
+  try {
+    await ensureMigrationsTable(client);
+    const applied = await getAppliedMigrations(client);
 
-  await ensureMigrationsTable(client);
-  const applied = await getAppliedMigrations(client);
+    const files = fs
+      .readdirSync(MIGRATIONS_DIR)
+      .filter((f) => f.endsWith(".sql"))
+      .sort();
 
-  const files = fs
-    .readdirSync(MIGRATIONS_DIR)
-    .filter((f) => f.endsWith(".sql"))
-    .sort();
-
-  let appliedCount = 0;
-  for (const file of files) {
-    if (applied.has(file)) {
-      console.log(`Skipping (already applied): ${file}`);
-      continue;
+    let appliedCount = 0;
+    for (const file of files) {
+      if (applied.has(file)) {
+        console.log(`Skipping (already applied): ${file}`);
+        continue;
+      }
+      const sqlText = fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf8");
+      await applyMigration(client, file, sqlText);
+      appliedCount++;
     }
-    const sqlText = fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf8");
-    await applyMigration(client, file, sqlText);
-    appliedCount++;
-  }
 
-  console.log(`Done. ${appliedCount} migration(s) applied, ${files.length - appliedCount} already up to date.`);
-  await client.end();
+    console.log(
+      `Done. ${appliedCount} migration(s) applied, ${files.length - appliedCount} already up to date.`,
+    );
+    return { appliedCount, total: files.length };
+  } finally {
+    await client.end();
+  }
 }
 
-main().catch((err) => {
-  console.error(err.message);
-  process.exit(1);
-});
+async function main() {
+  // `--production` targets the production Neon branch (DATABASE_URL_PRODUCTION);
+  // default is the development branch (DATABASE_URL). Both live in .env.local.
+  const useProd = process.argv.includes("--production");
+  const envVar = useProd ? "DATABASE_URL_PRODUCTION" : "DATABASE_URL";
+  const connectionString = process.env[envVar];
+  if (!connectionString) {
+    throw new Error(`${envVar} is not set (expected in .env.local)`);
+  }
+  await runMigrations({
+    connectionString,
+    label: useProd ? "PRODUCTION branch" : "development branch",
+  });
+}
+
+module.exports = { runMigrations, MIGRATIONS_DIR };
+
+// Run as a CLI only when invoked directly (`node db/migrate-pg.js`), not when
+// require()d by db/predeploy.js.
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err.message);
+    process.exit(1);
+  });
+}

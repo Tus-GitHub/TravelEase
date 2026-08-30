@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/components/common/Button";
 import FormField, { fieldBase } from "@/components/forms/FormField";
+import PasswordField from "@/components/forms/PasswordField";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
@@ -58,17 +59,14 @@ export default function LoginPage() {
           />
         </FormField>
 
-        <FormField label="Password" icon="lock">
-          <input
-            type="password"
-            required
-            autoComplete="current-password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={fieldBase}
-          />
-        </FormField>
+        <PasswordField
+          label="Password"
+          required
+          autoComplete="current-password"
+          placeholder="••••••••"
+          value={password}
+          onChange={setPassword}
+        />
 
         <label className="flex items-center gap-2 text-sm text-slate-600">
           <input

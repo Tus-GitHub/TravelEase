@@ -33,7 +33,11 @@ export default function Navbar() {
     setIsOpen(false);
   }, [pathname]);
 
-  const solid = isScrolled || isOpen;
+  // Only the homepage and /booking put a dark hero behind a transparent navbar.
+  // Everywhere else the background is light, so the navbar must stay solid or
+  // its white logo/links are invisible.
+  const overDarkHero = pathname === "/" || pathname === "/booking";
+  const solid = isScrolled || isOpen || !overDarkHero;
 
   return (
     <header

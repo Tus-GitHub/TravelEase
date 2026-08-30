@@ -39,7 +39,9 @@ export type IconName =
   | "lock"
   | "chevron-down"
   | "logout"
-  | "grid";
+  | "grid"
+  | "eye"
+  | "eye-off";
 
 export interface NavLink {
   label: string;

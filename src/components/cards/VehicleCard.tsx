@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import Card from "@/components/common/Card";
 import Badge from "@/components/common/Badge";
 import Button from "@/components/common/Button";
@@ -14,7 +15,7 @@ export interface VehicleCardProps {
 export default function VehicleCard({ vehicle }: VehicleCardProps) {
   return (
     <Card className="flex flex-col">
-      <div className="relative h-48 w-full overflow-hidden">
+      <Link href={`/vehicles/${vehicle.id}`} className="relative block h-48 w-full overflow-hidden">
         <Image
           src={vehicle.imageUrl}
           alt={vehicle.name}
@@ -30,12 +31,14 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
             {vehicle.isAvailable ? "Available" : "Booked"}
           </Badge>
         </span>
-      </div>
+      </Link>
 
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-display text-lg font-semibold text-slate-900">
-            {vehicle.name}
+            <Link href={`/vehicles/${vehicle.id}`} className="hover:text-primary-700">
+              {vehicle.name}
+            </Link>
           </h3>
           <StarRating rating={vehicle.rating} showValue />
         </div>

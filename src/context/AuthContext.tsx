@@ -26,6 +26,8 @@ interface AuthContextValue {
   login: (email: string, password: string, rememberMe?: boolean) => Promise<AuthResult>;
   signup: (name: string, email: string, phone: string, password: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
+  /** Re-fetch the current user (e.g. after a profile edit) so shared UI like the navbar stays in sync. */
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -93,9 +95,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      setUser(data.user ?? null);
+    } catch {
+      // Keep the existing user on a transient failure rather than logging them out.
+    }
+  }, []);
+
   const value = useMemo(
-    () => ({ user, isLoading, login, signup, logout }),
-    [user, isLoading, login, signup, logout],
+    () => ({ user, isLoading, login, signup, logout, refreshUser }),
+    [user, isLoading, login, signup, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
