@@ -1,134 +1,177 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useRef } from "react";
+import Button from "@/components/common/Button";
 import SearchForm from "@/components/forms/SearchForm";
-import Icon from "@/components/common/Icon";
+import HeroBackdrop from "@/components/sections/hero/HeroBackdrop";
+import HeroVehicle from "@/components/sections/hero/HeroVehicle";
+import ScrollCue from "@/components/sections/hero/ScrollCue";
+import { gsap, prefersReducedMotion } from "@/lib/motion";
 
 const stats = [
   { value: "500+", label: "Vehicles" },
-  { value: "50K+", label: "Happy Riders" },
+  { value: "50K+", label: "Journeys" },
   { value: "120+", label: "Cities" },
-  { value: "4.9",  label: "Avg. Rating" },
+  { value: "4.9", label: "Avg. rating" },
 ];
 
-/** Floating info badge — pure CSS animation, no JS required. */
-function FloatingBadge({
-  className,
-  floatClass,
-  children,
-}: {
-  className?: string;
-  floatClass: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={`absolute hidden lg:flex ${floatClass} ${className ?? ""}`}>
-      {children}
-    </div>
-  );
-}
-
 export default function HeroSection() {
+  const root = useRef<HTMLElement>(null);
+  /** 0→1 hero scroll progress, read by the 3D rig without re-rendering React. */
+  const progressRef = useRef(0);
+
+  useEffect(() => {
+    if (prefersReducedMotion() || !root.current) return;
+    const el = root.current;
+
+    const ctx = gsap.context(() => {
+      const q = gsap.utils.selector(el);
+      const rise = { opacity: 0, y: 24 };
+      const risen = { opacity: 1, y: 0 };
+
+      // ── entrance timeline ──────────────────────────────────────────────
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+      tl.from(q("[data-hero-layer]"), {
+        opacity: 0,
+        scale: 1.15,
+        duration: 1.4,
+        stagger: 0.12,
+        ease: "power2.out",
+      })
+        .fromTo(q('[data-hero="brand"]'), rise, { ...risen, duration: 0.6 }, 0.35)
+        .fromTo(
+          q('[data-hero="title-line"]'),
+          { opacity: 0, yPercent: 120 },
+          { opacity: 1, yPercent: 0, duration: 0.9, stagger: 0.12 },
+          0.5,
+        )
+        .fromTo(q('[data-hero="sub"]'), rise, { ...risen, duration: 0.7 }, "-=0.4")
+        .fromTo(q('[data-hero="cta"]'), rise, { ...risen, duration: 0.6 }, "-=0.35")
+        .fromTo(
+          q('[data-hero="vehicle"]'),
+          { opacity: 0, x: 60, scale: 0.96 },
+          { opacity: 1, x: 0, scale: 1, duration: 1.1, ease: "power2.out" },
+          "-=0.9",
+        )
+        .fromTo(q('[data-hero="search"]'), rise, { ...risen, duration: 0.6 }, "-=0.5")
+        .fromTo(q('[data-hero="stats"]'), rise, { ...risen, duration: 0.6 }, "-=0.4")
+        .fromTo(q('[data-hero="scroll"]'), { opacity: 0 }, { opacity: 1, duration: 0.5 }, "-=0.2");
+
+      // ── ambient vehicle float ─────────────────────────────────────────
+      gsap.to(q('[data-hero="vehicle"]'), {
+        y: -14,
+        duration: 4,
+        ease: "sine.inOut",
+        repeat: -1,
+        yoyo: true,
+        delay: 1.6,
+      });
+
+      // ── scroll: parallax layers + hero dissolves into the page ────────
+      gsap.to(q('[data-hero-layer="1"]'), {
+        yPercent: 30,
+        ease: "none",
+        scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
+      });
+      gsap.to(q('[data-hero-layer="2"]'), {
+        yPercent: -20,
+        ease: "none",
+        scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
+      });
+      gsap.to(q('[data-hero="content"]'), {
+        yPercent: -12,
+        opacity: 0.15,
+        ease: "none",
+        scrollTrigger: {
+          trigger: el,
+          start: "top top",
+          end: "bottom 40%",
+          scrub: true,
+          onUpdate: (self) => {
+            progressRef.current = self.progress;
+          },
+        },
+      });
+    }, el);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section className="relative flex min-h-screen items-center pt-24 pb-16 overflow-hidden">
-      {/* Background image + overlay */}
-      <div className="absolute inset-0 -z-10">
-        <Image
-          src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&q=80"
-          alt="Scenic open road winding through mountains"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-950/90 via-primary-900/80 to-primary-800/70" />
-      </div>
+    <section
+      ref={root}
+      className="relative flex min-h-[100svh] items-center overflow-hidden pb-16 pt-28 text-white lg:pt-32"
+    >
+      <HeroBackdrop />
 
-      {/* ── Floating badges (desktop only) ────────────── */}
-
-      {/* Top-right: trending destination */}
-      <FloatingBadge
-        floatClass="animate-float-a"
-        className="right-8 xl:right-20 top-32 flex-col"
+      <div
+        data-hero="content"
+        className="section-container relative z-10 grid w-full items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]"
       >
-        <div className="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white shadow-lg backdrop-blur-md">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-500/90 shadow">
-            <Icon name="map-pin" className="h-5 w-5 text-white" />
-          </span>
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-wider text-white/60">
-              Trending now
-            </p>
-            <p className="font-display text-sm font-bold">Manali, HP</p>
-          </div>
-        </div>
-      </FloatingBadge>
-
-      {/* Middle-right: rating */}
-      <FloatingBadge
-        floatClass="animate-float-b"
-        className="right-16 xl:right-36 top-1/2 -translate-y-16"
-      >
-        <div className="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white shadow-lg backdrop-blur-md">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-700/90 shadow">
-            <Icon name="star" className="h-5 w-5 text-accent-400" />
-          </span>
-          <div>
-            <p className="font-display text-sm font-bold">4.9 / 5.0</p>
-            <p className="text-[11px] text-white/60">50K+ verified rides</p>
-          </div>
-        </div>
-      </FloatingBadge>
-
-      {/* Bottom-right: group trip badge */}
-      <FloatingBadge
-        floatClass="animate-float-c"
-        className="right-8 xl:right-24 bottom-40"
-      >
-        <div className="flex items-center gap-3 rounded-2xl border border-white/20 bg-accent-500/85 px-4 py-3 text-white shadow-lg backdrop-blur-md">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 shadow">
-            <Icon name="users" className="h-5 w-5 text-white" />
-          </span>
-          <div>
-            <p className="font-display text-sm font-bold">Group Trips</p>
-            <p className="text-[11px] text-white/80">Up to 26 seats</p>
-          </div>
-        </div>
-      </FloatingBadge>
-
-      {/* ── Main content ─────────────────────────────── */}
-      <div className="section-container w-full">
-        <div className="max-w-3xl animate-fade-up">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-white backdrop-blur">
-            <Icon name="shield-check" className="h-4 w-4 text-accent-400" />
-            Trusted by 50,000+ travellers
-          </span>
-          <h1 className="mt-5 font-display text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
-            Book Your Perfect Ride{" "}
-            <span className="text-accent-400">For Every Journey</span>
-          </h1>
-          <p className="mt-5 max-w-xl text-lg text-primary-100">
-            From tempo travellers to luxury cars and airport transfers — compare,
-            book and ride with verified drivers across the country in just a few
-            clicks.
+        {/* ── copy ── */}
+        <div>
+          <p
+            data-hero="brand"
+            className="text-xs font-semibold uppercase tracking-[0.4em] text-white/45"
+          >
+            TravelEase
           </p>
+
+          <h1 className="mt-5 font-display text-[13vw] font-extrabold leading-[0.92] sm:text-6xl lg:text-7xl xl:text-[5.4rem]">
+            <span className="block overflow-hidden">
+              <span data-hero="title-line" className="block">
+                Your journey.
+              </span>
+            </span>
+            <span className="block overflow-hidden">
+              <span
+                data-hero="title-line"
+                className="block bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent"
+              >
+                Elevated.
+              </span>
+            </span>
+          </h1>
+
+          <p data-hero="sub" className="mt-6 max-w-md text-lg text-white/70">
+            Chauffeur-driven journeys across India, engineered around you —
+            verified drivers, transparent fares, one seamless booking.
+          </p>
+
+          <div data-hero="cta" className="mt-8 flex flex-wrap gap-3">
+            <Button href="/vehicles" variant="accent" size="lg" iconRight="arrow-right">
+              Explore the fleet
+            </Button>
+            <Button href="/booking" variant="glass" size="lg">
+              Build a trip
+            </Button>
+          </div>
+
+          <dl
+            data-hero="stats"
+            className="mt-12 grid max-w-lg grid-cols-4 gap-4 border-t border-white/10 pt-6"
+          >
+            {stats.map((s) => (
+              <div key={s.label}>
+                <dt className="font-display text-2xl font-bold sm:text-3xl">{s.value}</dt>
+                <dd className="text-xs text-white/50">{s.label}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
 
-        {/* Booking form */}
-        <div className="mt-10 animate-fade-up [animation-delay:120ms]">
+        {/* ── vehicle ── */}
+        <div className="relative">
+          <HeroVehicle progressRef={progressRef} />
+        </div>
+
+        {/* ── search (spans) ── */}
+        <div data-hero="search" className="lg:col-span-2">
           <SearchForm />
         </div>
-
-        {/* Stats */}
-        <dl className="mt-12 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4 animate-fade-up [animation-delay:240ms]">
-          {stats.map((stat) => (
-            <div key={stat.label}>
-              <dt className="font-display text-2xl font-bold text-white sm:text-3xl">
-                {stat.value}
-              </dt>
-              <dd className="text-sm text-primary-200">{stat.label}</dd>
-            </div>
-          ))}
-        </dl>
       </div>
+
+      <ScrollCue />
     </section>
   );
 }

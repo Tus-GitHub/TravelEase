@@ -1,4 +1,5 @@
 import SectionHeading from "./SectionHeading";
+import AnimateInView from "./AnimateInView";
 
 type Bg = "white" | "gray" | "primary";
 
@@ -40,14 +41,14 @@ export default function Section({
     <section id={id} className={`py-16 md:py-24 ${backgrounds[bg]} ${className}`}>
       <div className="section-container">
         {title && (
-          <div className="mb-12 md:mb-16">
+          <AnimateInView className="mb-12 md:mb-16">
             <SectionHeading
               eyebrow={eyebrow}
               title={title}
               subtitle={subtitle}
               inverted={inverted}
             />
-          </div>
+          </AnimateInView>
         )}
         {children}
       </div>

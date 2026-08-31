@@ -66,6 +66,27 @@
   }
 }
 
+/* ─── Hero ────────────────────────────────────────────────── */
+@keyframes scrollcue {
+  0% { transform: translateY(0); opacity: 0; }
+  30% { opacity: 1; }
+  60% { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(10px); opacity: 0; }
+}
+@keyframes sweep {
+  0%, 100% { transform: translateX(0) rotate(12deg); opacity: 0; }
+  45% { opacity: 1; }
+  70% { transform: translateX(560%) rotate(12deg); opacity: 0; }
+}
+
+/* GSAP sets the start state; this keeps content hidden pre-hydration only when
+   the timeline will actually run (JS on, motion allowed). */
+.js-hero [data-hero] { will-change: transform, opacity; }
+
+@media (prefers-reduced-motion: reduce) {
+  .js-hero [data-hero] { opacity: 1 !important; transform: none !important; }
+}
+
 /* ─── Travel Animation Band ───────────────────────────────── */
 
 /* Wheel spin: transform-box makes origin relative to element bbox */

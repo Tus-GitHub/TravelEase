@@ -2,11 +2,11 @@ import Link from "next/link";
 import Icon from "./Icon";
 import type { IconName } from "@/types";
 
-type Variant = "primary" | "accent" | "outline" | "ghost" | "white";
+type Variant = "primary" | "accent" | "outline" | "ghost" | "white" | "glass";
 type Size = "sm" | "md" | "lg";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-[transform,box-shadow,background-color,border-color,color] duration-200 will-change-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0";
 
 const variants: Record<Variant, string> = {
   primary:
@@ -18,6 +18,8 @@ const variants: Record<Variant, string> = {
   ghost:
     "text-primary-900 hover:bg-primary-50 dark:text-primary-200 dark:hover:bg-primary-950",
   white: "bg-white text-primary-900 hover:bg-primary-50 shadow-sm",
+  glass:
+    "border border-white/20 bg-white/5 text-white backdrop-blur hover:bg-white/10 hover:border-white/30",
 };
 
 const sizes: Record<Size, string> = {

@@ -57,7 +57,7 @@ export default function Navbar() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-accent-500 ${
+                className={`relative text-sm font-medium transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-accent-500 after:transition-transform after:duration-300 hover:text-accent-500 hover:after:scale-x-100 ${
                   solid ? "text-fg" : "text-white/90"
                 }`}
               >
