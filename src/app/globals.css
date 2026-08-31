@@ -262,6 +262,20 @@
   box-shadow: 0 0 0 3px rgb(245 158 11 / 0.14), 0 0 22px -6px rgb(245 158 11 / 0.35);
 }
 
+/* Hide the document scrollbar on the auth pages only — the page still scrolls
+   (wheel / touch / keyboard) for the taller sign-up form and when a mobile
+   keyboard is open; it just isn't drawn. Scoped via :has() so the rest of the
+   site keeps its scrollbar; degrades gracefully where :has() is unsupported. */
+html:has(.auth-scope) {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html:has(.auth-scope)::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 /* ─── Hero ────────────────────────────────────────────────── */
 @keyframes scrollcue {
   0% { transform: translateY(0); opacity: 0; }
