@@ -2,6 +2,7 @@ import Section from "@/components/common/Section";
 import Grid from "@/components/common/Grid";
 import AnimateInView from "@/components/common/AnimateInView";
 import Button from "@/components/common/Button";
+import TiltCard from "@/components/motion/TiltCard";
 import VehicleCard from "@/components/cards/VehicleCard";
 import { vehicles } from "@/data/vehicles";
 
@@ -12,14 +13,16 @@ export default function FeaturedVehicles() {
     <Section
       id="featured"
       bg="white"
-      eyebrow="Our Fleet"
-      title="Featured Vehicles"
-      subtitle="Hand-picked, well-maintained vehicles with transparent daily pricing."
+      eyebrow="Choose your ride"
+      title="Designed for the journey"
+      subtitle="Chauffeur-driven, immaculately kept, priced up front — pick the one that fits the trip."
     >
       <Grid cols={{ base: 1, sm: 2, lg: 4 }}>
         {featured.map((vehicle, i) => (
-          <AnimateInView key={vehicle.id} delay={i * 0.1}>
-            <VehicleCard vehicle={vehicle} />
+          <AnimateInView key={vehicle.id} delay={i * 0.08}>
+            <TiltCard className="h-full">
+              <VehicleCard vehicle={vehicle} />
+            </TiltCard>
           </AnimateInView>
         ))}
       </Grid>

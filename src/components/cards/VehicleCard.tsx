@@ -14,15 +14,16 @@ export interface VehicleCardProps {
 /** Sample fleet card with image, specs, price and a Book Now CTA. */
 export default function VehicleCard({ vehicle }: VehicleCardProps) {
   return (
-    <Card className="flex flex-col">
+    <Card className="flex h-full flex-col transition-shadow duration-300 group-hover:shadow-[0_20px_50px_-12px_rgba(37,99,235,0.35)] group-hover:ring-1 group-hover:ring-primary-400/40">
       <Link href={`/vehicles/${vehicle.id}`} className="relative block h-48 w-full overflow-hidden">
         <Image
           src={vehicle.imageUrl}
           alt={vehicle.name}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-cover transition-transform duration-[600ms] ease-out group-hover:scale-110"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <span className="absolute left-3 top-3">
           <Badge tone="primary">{vehicle.type}</Badge>
         </span>
