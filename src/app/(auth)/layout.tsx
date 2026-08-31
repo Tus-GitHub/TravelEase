@@ -1,41 +1,42 @@
-import Image from "next/image";
+import Link from "next/link";
 import Logo from "@/components/common/Logo";
-import ThemeToggle from "@/components/common/ThemeToggle";
+import Icon from "@/components/common/Icon";
+import AuthBackdrop from "@/components/auth/AuthBackdrop";
+import AuthShowcase from "@/components/auth/AuthShowcase";
+import AuthCard from "@/components/auth/AuthCard";
 
 /**
- * Full-screen shell for auth pages: form on the left, brand image on the
- * right. Deliberately excludes the Navbar/Footer used by `(site)` pages.
+ * Full-screen shell for the auth pages — a cinematic, always-dark environment
+ * that matches the homepage hero. Asymmetric two-panel on desktop (editorial
+ * visual left, form card right); a single centred card on smaller screens.
+ * Deliberately excludes the site Navbar/Footer. The `dark` class + dark
+ * `color-scheme` scope the design-system tokens so the shared form components
+ * render correctly regardless of the visitor's chosen theme.
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid min-h-screen grid-cols-1 bg-canvas lg:grid-cols-2">
-      <div className="relative flex items-center justify-center px-6 py-12 sm:px-12 lg:px-20">
-        <div className="absolute right-4 top-4">
-          <ThemeToggle />
-        </div>
-        <div className="w-full max-w-sm">
-          <Logo />
-          <div className="mt-10">{children}</div>
-        </div>
-      </div>
+    <div className="dark relative flex min-h-[100svh] flex-col bg-[#04070f] text-white [color-scheme:dark]">
+      <AuthBackdrop />
 
-      <div className="relative hidden lg:block">
-        <Image
-          src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1600&q=80"
-          alt="Scenic desert road at dusk"
-          fill
-          priority
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-primary-950/85 via-primary-900/30 to-transparent" />
-        <div className="absolute inset-x-12 bottom-14 text-white">
-          <p className="text-2xl font-bold leading-snug">
-            Book Your Perfect Ride For Every Journey
-          </p>
-          <p className="mt-3 text-white/80">
-            Join 50,000+ travellers who trust TravelEase for comfortable,
-            verified rides across the country.
-          </p>
+      {/* top bar */}
+      <header className="relative z-20 flex items-center justify-between px-5 py-5 sm:px-8">
+        <Logo inverted />
+        <Link
+          href="/"
+          className="hover-underline inline-flex items-center gap-1.5 text-sm text-white/60 transition-colors hover:text-white"
+        >
+          <Icon name="arrow-right" className="h-4 w-4 rotate-180" />
+          Back to website
+        </Link>
+      </header>
+
+      {/* composition */}
+      <div className="relative z-10 grid flex-1 lg:grid-cols-[1.1fr_1fr]">
+        <AuthShowcase />
+        <div className="flex items-center justify-center px-5 pb-14 pt-4 sm:px-8 lg:py-14 lg:pr-16 xl:pr-24">
+          <div className="w-full max-w-[27rem]">
+            <AuthCard>{children}</AuthCard>
+          </div>
         </div>
       </div>
     </div>
