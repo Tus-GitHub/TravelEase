@@ -197,6 +197,66 @@
   }
 }
 
+/* ─── Auth experience (§7–12) ─────────────────────────────── */
+
+/* Very slow, very faint aurora behind the auth shell — "alive, not distracting". */
+@keyframes auth-aurora {
+  0%, 100% { transform: translate3d(-4%, 0, 0) scale(1.05); opacity: 0.28; }
+  50%      { transform: translate3d(4%, 3%, 0) scale(1.18); opacity: 0.42; }
+}
+.auth-aurora {
+  position: absolute;
+  left: -25%;
+  right: -25%;
+  top: -20%;
+  height: 80%;
+  pointer-events: none;
+  background: conic-gradient(
+    from 200deg at 50% 50%,
+    transparent 0deg,
+    rgb(56 189 248 / 0.12) 70deg,
+    rgb(37 99 235 / 0.10) 150deg,
+    transparent 240deg,
+    rgb(245 158 11 / 0.07) 320deg,
+    transparent 360deg
+  );
+  filter: blur(110px);
+  opacity: 0.3;
+  animation: auth-aurora 34s ease-in-out infinite;
+}
+
+/* Sign In <-> Sign Up swap — a quiet fade + short lift. Only the card content
+   carries this; the shell / visual / nav stay put (see AuthTemplate). */
+@keyframes auth-swap {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.auth-swap {
+  animation: auth-swap 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) 0.12s both;
+}
+
+/* Password eye-toggle: a quick, calm icon change (not a spin). */
+@keyframes auth-iconpop {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.auth-iconpop { animation: auth-iconpop 0.18s ease-out both; }
+
+/* Field error message: gentle drop-in, never a shake. */
+@keyframes auth-errslide {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.auth-errslide { animation: auth-errslide 0.2s ease-out both; }
+
+/* Soft focus glow for inputs inside the dark auth card. */
+.auth-scope input:focus,
+.auth-scope select:focus,
+.auth-scope textarea:focus {
+  border-color: rgb(245 158 11 / 0.55);
+  box-shadow: 0 0 0 3px rgb(245 158 11 / 0.14), 0 0 22px -6px rgb(245 158 11 / 0.35);
+}
+
 /* ─── Hero ────────────────────────────────────────────────── */
 @keyframes scrollcue {
   0% { transform: translateY(0); opacity: 0; }

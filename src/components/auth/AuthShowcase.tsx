@@ -19,21 +19,23 @@ const trust: { icon: IconName; label: string }[] = [
 export default function AuthShowcase() {
   return (
     <div className="relative hidden overflow-hidden lg:block">
-      <Image
-        src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1400&q=80"
-        alt=""
-        fill
-        priority
-        sizes="55vw"
-        className="object-cover object-center"
-      />
+      <div data-auth-el="visual" className="absolute inset-0">
+        <Image
+          src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1400&q=80"
+          alt=""
+          fill
+          priority
+          sizes="55vw"
+          className="object-cover object-center"
+        />
+      </div>
       {/* grade the photo into the shell — dark on the text side, open on the far edge */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#04070f] via-[#04070f]/85 to-[#04070f]/30" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#04070f] via-transparent to-[#04070f]/55" />
       <div className="absolute -left-[8%] top-[10%] h-[55vh] w-[55vh] rounded-full bg-primary-600/20 blur-[130px]" />
 
       {/* foreground copy */}
-      <div className="absolute inset-x-12 bottom-14 xl:inset-x-16">
+      <div data-auth-el="headline" className="absolute inset-x-12 bottom-14 xl:inset-x-16">
         <p className="text-xs font-semibold uppercase tracking-[0.4em] text-white/50">
           TravelEase — Members
         </p>

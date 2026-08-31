@@ -79,7 +79,12 @@ export default function LoginPage() {
           </p>
         )}
 
-        <FormField label="Email" icon="mail" error={emailError ?? undefined}>
+        <FormField
+          label="Email"
+          icon="mail"
+          error={emailError ?? undefined}
+          valid={!emailError && email.length > 3 && isValidEmail(email)}
+        >
           <input
             type="email"
             required
@@ -95,6 +100,7 @@ export default function LoginPage() {
               if (email && !isValidEmail(email)) setEmailError("Enter a valid email address.");
             }}
             className={fieldBase}
+            suppressHydrationWarning
           />
         </FormField>
 
@@ -114,6 +120,7 @@ export default function LoginPage() {
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-3.5 w-3.5 rounded border-white/20 bg-white/5 accent-accent-500"
+                suppressHydrationWarning
               />
               Keep me signed in
             </label>
@@ -148,7 +155,10 @@ export default function LoginPage() {
 
       <p className="mt-7 text-center text-sm text-white/55">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-semibold text-accent-400 hover:text-accent-300">
+        <Link
+          href="/signup"
+          className="hover-underline font-semibold text-accent-400 transition-colors hover:text-accent-300"
+        >
           Create one
         </Link>
       </p>

@@ -10,10 +10,12 @@ interface FormFieldProps {
   children: React.ReactNode;
   /** When set, shows an inline error message and switches the field to its error state. */
   error?: string;
+  /** When true (and no error), shows a subtle check — a quiet "looks good". */
+  valid?: boolean;
 }
 
 /** Labelled input wrapper with a leading icon — shared by every form in the app. */
-export default function FormField({ label, icon, children, error }: FormFieldProps) {
+export default function FormField({ label, icon, children, error, valid }: FormFieldProps) {
   return (
     <label className="group block text-left">
       <span
@@ -39,9 +41,19 @@ export default function FormField({ label, icon, children, error }: FormFieldPro
           }`}
         />
         {children}
+        {valid && !error && (
+          <Icon
+            name="check"
+            aria-hidden
+            className="auth-iconpop pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400"
+          />
+        )}
       </span>
       {error && (
-        <span className="mt-1.5 block text-xs font-medium text-red-500 dark:text-red-400" role="alert">
+        <span
+          className="auth-errslide mt-1.5 block text-xs font-medium text-red-500 dark:text-red-400"
+          role="alert"
+        >
           {error}
         </span>
       )}

@@ -96,7 +96,12 @@ export default function SignupPage() {
           </p>
         )}
 
-        <FormField label="Full name" icon="user" error={fieldErrors.name}>
+        <FormField
+          label="Full name"
+          icon="user"
+          error={fieldErrors.name}
+          valid={!fieldErrors.name && name.trim().length >= 2}
+        >
           <input
             type="text"
             required
@@ -108,10 +113,16 @@ export default function SignupPage() {
               clearError("name");
             }}
             className={fieldBase}
+            suppressHydrationWarning
           />
         </FormField>
 
-        <FormField label="Email" icon="mail" error={fieldErrors.email}>
+        <FormField
+          label="Email"
+          icon="mail"
+          error={fieldErrors.email}
+          valid={!fieldErrors.email && email.length > 3 && isValidEmail(email)}
+        >
           <input
             type="email"
             required
@@ -127,10 +138,16 @@ export default function SignupPage() {
                 setFieldErrors((p) => ({ ...p, email: "Enter a valid email address." }));
             }}
             className={fieldBase}
+            suppressHydrationWarning
           />
         </FormField>
 
-        <FormField label="Phone number" icon="phone" error={fieldErrors.phone}>
+        <FormField
+          label="Phone number"
+          icon="phone"
+          error={fieldErrors.phone}
+          valid={!fieldErrors.phone && isValidPhone(phone)}
+        >
           <input
             type="tel"
             required
@@ -143,6 +160,7 @@ export default function SignupPage() {
               clearError("phone");
             }}
             className={fieldBase}
+            suppressHydrationWarning
           />
         </FormField>
 
@@ -199,7 +217,10 @@ export default function SignupPage() {
 
       <p className="mt-7 text-center text-sm text-white/55">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-accent-400 hover:text-accent-300">
+        <Link
+          href="/login"
+          className="hover-underline font-semibold text-accent-400 transition-colors hover:text-accent-300"
+        >
           Sign in
         </Link>
       </p>

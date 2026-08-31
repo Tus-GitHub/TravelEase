@@ -41,6 +41,7 @@ export default function PasswordField({
         aria-invalid={error ? true : undefined}
         onChange={(e) => onChange(e.target.value)}
         className={`${fieldBase} pr-10`}
+        suppressHydrationWarning
       />
       <button
         type="button"
@@ -49,7 +50,11 @@ export default function PasswordField({
         aria-pressed={isVisible}
         className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-faint transition-colors hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60"
       >
-        <Icon name={isVisible ? "eye-off" : "eye"} className="h-4 w-4" />
+        <Icon
+          key={isVisible ? "off" : "on"}
+          name={isVisible ? "eye-off" : "eye"}
+          className="auth-iconpop h-4 w-4"
+        />
       </button>
     </FormField>
   );
