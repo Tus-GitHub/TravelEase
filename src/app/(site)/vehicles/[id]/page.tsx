@@ -9,6 +9,8 @@ import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import StarRating from "@/components/common/StarRating";
 import VehicleCard from "@/components/cards/VehicleCard";
+import Magnetic from "@/components/motion/Magnetic";
+import Spotlight from "@/components/motion/Spotlight";
 import { vehicles } from "@/data/vehicles";
 
 export function generateStaticParams() {
@@ -35,7 +37,7 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
     <Section bg="gray">
       <Link
         href="/vehicles"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 hover:underline"
+        className="hover-underline inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 dark:text-primary-300"
       >
         <Icon name="arrow-right" className="h-4 w-4 rotate-180" />
         All vehicles
@@ -43,14 +45,16 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-card">
-          <Image
-            src={vehicle.imageUrl}
-            alt={vehicle.name}
-            fill
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover"
-            priority
-          />
+          <Spotlight className="h-full w-full">
+            <Image
+              src={vehicle.imageUrl}
+              alt={vehicle.name}
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover"
+              priority
+            />
+          </Spotlight>
           <span className="absolute left-4 top-4 flex gap-2">
             <Badge tone="primary">{vehicle.type}</Badge>
             <Badge tone={vehicle.isAvailable ? "success" : "neutral"}>
@@ -60,7 +64,7 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
         </div>
 
         <div>
-          <h1 className="font-display text-3xl font-bold text-fg">{vehicle.name}</h1>
+          <h1 className="font-display text-display-sm text-fg">{vehicle.name}</h1>
           <div className="mt-2 flex items-center gap-3">
             <StarRating rating={vehicle.rating} showValue />
             <span className="text-sm text-muted">{vehicle.seatingCapacity} seater</span>
@@ -80,14 +84,16 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
           </div>
 
           <div className="mt-7 flex flex-wrap gap-3">
-            <Button
-              href={`/booking/${vehicle.id}`}
-              variant="accent"
-              size="lg"
-              iconRight="arrow-right"
-            >
-              Book Now
-            </Button>
+            <Magnetic>
+              <Button
+                href={`/booking/${vehicle.id}`}
+                variant="accent"
+                size="lg"
+                iconRight="arrow-right"
+              >
+                Book Now
+              </Button>
+            </Magnetic>
             <Button href="/vehicles" variant="outline" size="lg">
               Back to fleet
             </Button>

@@ -5,6 +5,8 @@ import Badge from "@/components/common/Badge";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import StarRating from "@/components/common/StarRating";
+import Magnetic from "@/components/motion/Magnetic";
+import Spotlight from "@/components/motion/Spotlight";
 import type { Vehicle } from "@/types";
 
 export interface VehicleCardProps {
@@ -16,14 +18,16 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
   return (
     <Card className="flex h-full flex-col transition-shadow duration-300 group-hover:shadow-[0_20px_50px_-12px_rgba(37,99,235,0.35)] group-hover:ring-1 group-hover:ring-primary-400/40">
       <Link href={`/vehicles/${vehicle.id}`} className="relative block h-48 w-full overflow-hidden">
-        <Image
-          src={vehicle.imageUrl}
-          alt={vehicle.name}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          className="object-cover transition-transform duration-[600ms] ease-out group-hover:scale-110"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <Spotlight className="h-full w-full">
+          <Image
+            src={vehicle.imageUrl}
+            alt={vehicle.name}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover transition-transform duration-[600ms] ease-out group-hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        </Spotlight>
         <span className="absolute left-3 top-3">
           <Badge tone="primary">{vehicle.type}</Badge>
         </span>
@@ -62,14 +66,16 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
             </span>
             <span className="text-sm text-muted"> / day</span>
           </div>
-          <Button
-            href={`/booking/${vehicle.id}`}
-            variant="accent"
-            size="sm"
-            iconRight="arrow-right"
-          >
-            Book Now
-          </Button>
+          <Magnetic strength={0.25} radius={70}>
+            <Button
+              href={`/booking/${vehicle.id}`}
+              variant="accent"
+              size="sm"
+              iconRight="arrow-right"
+            >
+              Book Now
+            </Button>
+          </Magnetic>
         </div>
       </div>
     </Card>

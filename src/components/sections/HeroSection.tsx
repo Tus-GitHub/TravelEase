@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Button from "@/components/common/Button";
+import Magnetic from "@/components/motion/Magnetic";
 import SearchForm from "@/components/forms/SearchForm";
 import HeroBackdrop from "@/components/sections/hero/HeroBackdrop";
 import HeroVehicle from "@/components/sections/hero/HeroVehicle";
@@ -121,7 +122,7 @@ export default function HeroSection() {
             TravelEase
           </p>
 
-          <h1 className="mt-5 font-display text-[13vw] font-extrabold leading-[0.92] sm:text-6xl lg:text-7xl xl:text-[5.4rem]">
+          <h1 className="mt-5 font-display text-display">
             <span className="block overflow-hidden">
               <span data-hero="title-line" className="block">
                 Your journey.
@@ -143,9 +144,11 @@ export default function HeroSection() {
           </p>
 
           <div data-hero="cta" className="mt-8 flex flex-wrap gap-3">
-            <Button href="/vehicles" variant="accent" size="lg" iconRight="arrow-right">
-              Explore the fleet
-            </Button>
+            <Magnetic>
+              <Button href="/vehicles" variant="accent" size="lg" iconRight="arrow-right">
+                Explore the fleet
+              </Button>
+            </Magnetic>
             <Button href="/booking" variant="glass" size="lg">
               Build a trip
             </Button>
@@ -157,8 +160,8 @@ export default function HeroSection() {
           >
             {stats.map((s) => (
               <div key={s.label}>
-                <dt className="font-display text-2xl font-bold sm:text-3xl">{s.value}</dt>
-                <dd className="text-xs text-white/50">{s.label}</dd>
+                <dt className="font-display text-stat">{s.value}</dt>
+                <dd className="mt-1 text-xs uppercase tracking-wide text-white/45">{s.label}</dd>
               </div>
             ))}
           </dl>

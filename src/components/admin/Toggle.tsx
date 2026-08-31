@@ -38,7 +38,7 @@ export default function Toggle({
     >
       <span
         aria-hidden="true"
-        className={`h-5 w-5 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 ${
+        className={`h-5 w-5 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] will-change-transform motion-reduce:transition-none ${
           on ? "translate-x-5" : "translate-x-0"
         }`}
       />

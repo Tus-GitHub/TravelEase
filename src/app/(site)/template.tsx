@@ -1,25 +1,20 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 /**
  * Contextual route-enter transition for the marketing pages — a quick clip +
- * lift rather than a generic crossfade. Re-mounts on every navigation.
+ * lift rather than a generic crossfade. Keyed on the pathname so it replays on
+ * every navigation. Pure CSS (`.route-enter` in globals.css) so there's no
+ * SSR/client branching to break hydration; disabled under prefers-reduced-motion.
  * (Full shared-element morphs, e.g. a vehicle image expanding into its detail
  * page, are a deeper follow-up.)
  */
 export default function SiteTemplate({ children }: { children: React.ReactNode }) {
-  const reduced = useReducedMotion();
-
-  if (reduced) return <>{children}</>;
-
+  const pathname = usePathname();
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 14, clipPath: "inset(0 0 6% 0)" }}
-      animate={{ opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" }}
-      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
-    >
+    <div key={pathname} className="route-enter">
       {children}
-    </motion.div>
+    </div>
   );
 }

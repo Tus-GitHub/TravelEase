@@ -39,7 +39,7 @@ export default function ContactForm() {
       <Card padded hover={false}>
         {sent ? (
           <div className="flex flex-col items-center py-10 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <span className="animate-pop-check flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <Icon name="check" className="h-6 w-6" />
             </span>
             <h2 className="mt-4 font-display text-lg font-bold text-fg">
@@ -106,7 +106,7 @@ export default function ContactForm() {
                 placeholder="How can we help?"
                 value={form.message}
                 onChange={set("message")}
-                className="w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg placeholder:text-faint focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
+                className="w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg placeholder:text-faint transition-[border-color,box-shadow] duration-200 hover:border-faint focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/60"
               />
             </label>
 

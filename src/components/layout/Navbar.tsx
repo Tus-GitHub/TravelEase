@@ -52,7 +52,7 @@ export default function Navbar() {
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-[transform,background-color,box-shadow,backdrop-filter] duration-300 ${
         hidden && !isOpen ? "-translate-y-full" : "translate-y-0"
-      } ${solid ? "bg-canvas/85 shadow-sm backdrop-blur-lg" : "bg-transparent"}`}
+      } ${solid ? "glass border-x-0 border-t-0 shadow-sm" : "bg-transparent"}`}
     >
       <nav
         className={`section-container flex items-center justify-between transition-[height] duration-300 ${

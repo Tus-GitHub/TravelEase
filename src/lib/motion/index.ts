@@ -13,6 +13,17 @@ export function prefersReducedMotion(): boolean {
   );
 }
 
+/**
+ * True for a mouse-class pointer (desktop). Gates cursor/magnetic effects so
+ * they never run on touch devices — where "hover" and "approach" don't exist.
+ */
+export function isFinePointer(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(pointer: fine)").matches
+  );
+}
+
 /** Cheap WebGL capability probe, used to decide whether to mount R3F at all. */
 export function hasWebGL(): boolean {
   if (typeof window === "undefined") return false;

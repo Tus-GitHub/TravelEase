@@ -40,7 +40,7 @@ const PRICE_OPTIONS = [
 type Sort = "recommended" | "price-asc" | "price-desc" | "seats-desc";
 
 const controlBase =
-  "w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
+  "w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg transition-[border-color,box-shadow] duration-200 hover:border-faint focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/60";
 
 export default function VehiclesBrowser() {
   const params = useSearchParams();
@@ -201,7 +201,7 @@ export default function VehiclesBrowser() {
           <button
             type="button"
             onClick={clearAll}
-            className="text-sm font-medium text-primary-700 hover:underline"
+            className="hover-underline text-sm font-medium text-primary-700 dark:text-primary-300"
           >
             Clear filters
           </button>
@@ -241,10 +241,10 @@ function TypeChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
+      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-[transform,color,background-color,border-color] duration-150 active:scale-95 motion-reduce:active:scale-100 ${
         active
           ? "border-primary-600 bg-primary-600 text-white"
-          : "border-line bg-surface text-muted hover:border-line"
+          : "border-line bg-surface text-muted hover:border-faint"
       }`}
     >
       {children}

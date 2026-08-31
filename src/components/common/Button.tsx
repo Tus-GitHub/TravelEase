@@ -6,7 +6,7 @@ type Variant = "primary" | "accent" | "outline" | "ghost" | "white" | "glass";
 type Size = "sm" | "md" | "lg";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-[transform,box-shadow,background-color,border-color,color] duration-200 will-change-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0";
+  "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-[transform,box-shadow,background-color,border-color,color] duration-200 will-change-transform hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0 active:scale-[0.97] active:duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:scale-100 motion-reduce:transition-colors motion-reduce:hover:translate-y-0 motion-reduce:hover:scale-100 motion-reduce:active:scale-100";
 
 const variants: Record<Variant, string> = {
   primary:
@@ -37,6 +37,8 @@ export interface ButtonProps
   fullWidth?: boolean;
   iconLeft?: IconName;
   iconRight?: IconName;
+  /** Shows an inline spinner and disables the button. `<button>` only. */
+  loading?: boolean;
 }
 
 /**
@@ -50,8 +52,10 @@ export default function Button({
   fullWidth,
   iconLeft,
   iconRight,
+  loading = false,
   className = "",
   children,
+  disabled,
   ...props
 }: ButtonProps) {
   const classes = `${base} ${variants[variant]} ${sizes[size]} ${
@@ -60,7 +64,11 @@ export default function Button({
 
   const content = (
     <>
-      {iconLeft && <Icon name={iconLeft} className="h-4 w-4" />}
+      {loading ? (
+        <span className="btn-spinner" aria-hidden />
+      ) : (
+        iconLeft && <Icon name={iconLeft} className="h-4 w-4" />
+      )}
       {children}
       {iconRight && <Icon name={iconRight} className="h-4 w-4" />}
     </>
@@ -75,7 +83,7 @@ export default function Button({
   }
 
   return (
-    <button className={classes} {...props}>
+    <button className={classes} disabled={disabled ?? loading} aria-busy={loading || undefined} {...props}>
       {content}
     </button>
   );

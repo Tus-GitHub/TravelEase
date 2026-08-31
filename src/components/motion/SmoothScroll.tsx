@@ -8,6 +8,9 @@ import { gsap, ScrollTrigger, prefersReducedMotion } from "@/lib/motion";
  * Lenis smooth scroll for the marketing site, driven by GSAP's ticker so
  * ScrollTrigger stays in sync. No-ops (native scroll) when the user prefers
  * reduced motion. Nested scrollers opt out with `data-lenis-prevent`.
+ *
+ * `<ReactLenis root>` renders its children directly (no wrapper element), so
+ * the reduced-motion branch below produces identical DOM — safe for hydration.
  */
 export default function SmoothScroll({ children }: { children: React.ReactNode }) {
   const lenisRef = useRef<LenisRef>(null);

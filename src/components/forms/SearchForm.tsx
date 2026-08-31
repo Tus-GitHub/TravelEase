@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Icon from "@/components/common/Icon";
+import Magnetic from "@/components/motion/Magnetic";
 import { categories } from "@/data/categories";
 import type { SearchFormData } from "@/types";
 
@@ -45,7 +46,7 @@ export default function SearchForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-3xl border border-white/12 bg-white/[0.055] p-6 shadow-[0_30px_80px_-20px_rgba(2,6,20,0.7)] backdrop-blur-xl"
+      className="glass-dark rounded-3xl p-6 shadow-[0_30px_80px_-20px_rgba(2,6,20,0.7)]"
     >
       <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/45">
         Where are you going?
@@ -110,24 +111,26 @@ export default function SearchForm() {
         </span>
       </div>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="group relative mt-4 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-accent-500 py-3.5 text-base font-semibold text-white transition hover:bg-accent-600 disabled:opacity-90"
-      >
-        <span
-          className={`absolute inset-y-0 left-0 bg-white/20 transition-[width] duration-700 ${
-            submitting ? "w-full" : "w-0"
-          }`}
-        />
-        <span className="relative flex items-center gap-2">
-          <Icon
-            name={submitting ? "arrow-right" : "search"}
-            className={`h-4 w-4 ${submitting ? "animate-pulse" : ""}`}
+      <Magnetic className="mt-4 w-full" strength={0.2} radius={80}>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-accent-500 py-3.5 text-base font-semibold text-white transition-[background-color,transform] duration-200 hover:bg-accent-600 active:scale-[0.985] disabled:opacity-90 motion-reduce:active:scale-100"
+        >
+          <span
+            className={`absolute inset-y-0 left-0 bg-white/20 transition-[width] duration-700 ${
+              submitting ? "w-full" : "w-0"
+            }`}
           />
-          {submitting ? "Plotting your route…" : "Plan my journey"}
-        </span>
-      </button>
+          <span className="relative flex items-center gap-2">
+            <Icon
+              name={submitting ? "arrow-right" : "search"}
+              className={`h-4 w-4 ${submitting ? "animate-pulse" : ""}`}
+            />
+            {submitting ? "Plotting your route…" : "Plan my journey"}
+          </span>
+        </button>
+      </Magnetic>
     </form>
   );
 }

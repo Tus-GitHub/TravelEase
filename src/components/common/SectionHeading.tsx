@@ -1,3 +1,9 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import RevealText from "@/components/motion/RevealText";
+import { gsap, prefersReducedMotion } from "@/lib/motion";
+
 export interface SectionHeadingProps {
   eyebrow?: string;
   title: string;
@@ -7,7 +13,12 @@ export interface SectionHeadingProps {
   inverted?: boolean;
 }
 
-/** Consistent eyebrow + heading + subtext block used at the top of every section. */
+/**
+ * Eyebrow + heading + subtext block at the top of every section. The heading
+ * carries the editorial display scale (§23) and reveals itself line-by-line
+ * with a mask; the eyebrow and subtitle fade in around it. All static under
+ * reduced motion.
+ */
 export default function SectionHeading({
   eyebrow,
   title,
@@ -15,31 +26,51 @@ export default function SectionHeading({
   align = "center",
   inverted = false,
 }: SectionHeadingProps) {
+  const root = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = root.current;
+    if (!el || prefersReducedMotion()) return;
+    if (!el.querySelector("[data-sh-fade]")) return;
+    const ctx = gsap.context(() => {
+      gsap.from("[data-sh-fade]", {
+        opacity: 0,
+        y: 14,
+        duration: 0.7,
+        ease: "power2.out",
+        stagger: 0.12,
+        scrollTrigger: { trigger: el, start: "top 86%", once: true },
+      });
+    }, el);
+    return () => ctx.revert();
+  }, []);
+
   return (
     <div
+      ref={root}
       className={`max-w-2xl ${
         align === "center" ? "mx-auto text-center" : "text-left"
       }`}
     >
       {eyebrow && (
         <p
-          className={`text-sm font-semibold uppercase tracking-wider ${
-            inverted ? "text-accent-400" : "text-accent-500"
-          }`}
+          data-sh-fade
+          className={`text-eyebrow ${inverted ? "text-accent-400" : "text-accent-500"}`}
         >
           {eyebrow}
         </p>
       )}
       <h2
-        className={`mt-2 font-display text-3xl font-bold md:text-4xl ${
+        className={`mt-3 font-display text-display-sm text-balance ${
           inverted ? "text-white" : "text-fg"
         }`}
       >
-        {title}
+        <RevealText text={title} />
       </h2>
       {subtitle && (
         <p
-          className={`mt-4 text-lg ${
+          data-sh-fade
+          className={`mt-4 text-lg text-pretty ${
             inverted ? "text-primary-100" : "text-muted"
           }`}
         >

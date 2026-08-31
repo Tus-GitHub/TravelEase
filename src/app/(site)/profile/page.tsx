@@ -558,10 +558,10 @@ function PreferencesCard({
               type="button"
               onClick={() => toggle(tag)}
               aria-pressed={active}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-[transform,color,background-color,border-color] duration-150 active:scale-95 motion-reduce:active:scale-100 ${
                 active
                   ? "border-primary-600 bg-primary-600 text-white"
-                  : "border-line bg-surface text-muted hover:border-line"
+                  : "border-line bg-surface text-muted hover:border-faint"
               }`}
             >
               {tag}

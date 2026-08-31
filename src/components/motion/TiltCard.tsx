@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { prefersReducedMotion } from "@/lib/motion";
 
@@ -25,7 +25,12 @@ export default function TiltCard({
   const rotateX = useTransform(sy, [0, 1], [max, -max]);
   const rotateY = useTransform(sx, [0, 1], [-max, max]);
 
-  const disabled = typeof window !== "undefined" && prefersReducedMotion();
+  // Resolve reduced-motion only after mount so SSR and the first client render
+  // agree (both tilt-enabled), then disable — avoids a hydration mismatch on
+  // the transform style.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const disabled = mounted && prefersReducedMotion();
 
   const onMove = (e: React.PointerEvent) => {
     if (disabled || e.pointerType !== "mouse") return;
