@@ -10,8 +10,17 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <div className="site-grain" aria-hidden />
       <ScrollProgress />
       <Navbar />
-      {children}
-      <Footer />
+      {/*
+        Contains transient horizontal overflow from scroll-reveal transforms
+        (e.g. a panel sitting at translateX(40px) before its trigger fires)
+        WITHOUT putting `overflow` on html/body — that would break Lenis's
+        wheel/touch scrolling. `clip` establishes no scroll container, so the
+        document still scrolls and `position: sticky` still works.
+      */}
+      <div className="overflow-x-clip">
+        {children}
+        <Footer />
+      </div>
     </SmoothScroll>
   );
 }

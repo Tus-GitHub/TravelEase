@@ -50,15 +50,15 @@
 
   html {
     scroll-behavior: smooth;
-    /* Belt-and-braces against stray horizontal scroll from decorative
-       layers (§29). `clip` doesn't create a scroll container, so
-       position: sticky keeps working. */
-    overflow-x: clip;
   }
 
   body {
     @apply bg-canvas font-sans text-fg antialiased;
-    overflow-x: clip;
+    /* NOTE: never put `overflow`/`overflow-x` (hidden or clip) or a fixed
+       height on `html`/`body` — Lenis (SmoothScroll) drives the document
+       scroll and those rules stop the wheel/touch/keyboard from moving the
+       page (only the native scrollbar keeps working). Contain stray
+       horizontal overflow on the offending element instead. */
   }
 
   /* ── Global reduced-motion safety net (§30) ──────────────────

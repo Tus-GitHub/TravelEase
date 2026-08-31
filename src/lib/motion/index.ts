@@ -3,6 +3,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
+  // Keep scrub animations from lurching to catch up after a dropped frame.
+  gsap.ticker.lagSmoothing(0);
 }
 
 /** True when the user asked for reduced motion (SSR-safe → false on the server). */

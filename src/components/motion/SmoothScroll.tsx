@@ -1,46 +1,38 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { ReactLenis, type LenisRef } from "lenis/react";
-import { gsap, ScrollTrigger, prefersReducedMotion } from "@/lib/motion";
+import { ReactLenis, useLenis } from "lenis/react";
+import { ScrollTrigger, prefersReducedMotion } from "@/lib/motion";
 
 /**
- * Lenis smooth scroll for the marketing site, driven by GSAP's ticker so
- * ScrollTrigger stays in sync. No-ops (native scroll) when the user prefers
- * reduced motion. Nested scrollers opt out with `data-lenis-prevent`.
+ * Lenis smooth-scroll for the marketing site.
  *
- * `<ReactLenis root>` renders its children directly (no wrapper element), so
- * the reduced-motion branch below produces identical DOM — safe for hydration.
+ * Lenis runs its own RAF (`autoRaf`, the default), so real wheel / touchpad /
+ * touch input eases the *document* scroll. In `root` mode Lenis reads and
+ * writes the real `window` scroll position, so keyboard, Page Up/Down,
+ * Home/End, Space and dragging the native scrollbar all keep working too.
+ * `<GsapBridge>` (a context child, renders nothing) forwards Lenis's scroll
+ * frames to GSAP ScrollTrigger. Fully native scroll under prefers-reduced-motion.
+ *
+ * Architecture:  native scroll input → Lenis → ScrollTrigger → animations.
+ *
+ * Do NOT reintroduce `autoRaf: false` + a hand-wired `gsap.ticker` pump here —
+ * `ReactLenis` populates its ref a render *after* this component's effect, so
+ * the pump silently never gets wired and wheel/touch scrolling dies while the
+ * scrollbar still works.
  */
+function GsapBridge() {
+  useLenis(() => ScrollTrigger.update());
+  return null;
+}
+
 export default function SmoothScroll({ children }: { children: React.ReactNode }) {
-  const lenisRef = useRef<LenisRef>(null);
   const reduced = typeof window !== "undefined" && prefersReducedMotion();
-
-  useEffect(() => {
-    if (reduced) return;
-
-    const lenis = lenisRef.current?.lenis;
-    if (!lenis) return;
-
-    const update = (time: number) => lenis.raf(time * 1000);
-    gsap.ticker.add(update);
-    gsap.ticker.lagSmoothing(0);
-    lenis.on("scroll", ScrollTrigger.update);
-
-    return () => {
-      gsap.ticker.remove(update);
-      lenis.off("scroll", ScrollTrigger.update);
-    };
-  }, [reduced]);
 
   if (reduced) return <>{children}</>;
 
   return (
-    <ReactLenis
-      root
-      ref={lenisRef}
-      options={{ autoRaf: false, lerp: 0.11, wheelMultiplier: 1, touchMultiplier: 1.6 }}
-    >
+    <ReactLenis root options={{ lerp: 0.11, wheelMultiplier: 1, touchMultiplier: 1.6 }}>
+      <GsapBridge />
       {children}
     </ReactLenis>
   );

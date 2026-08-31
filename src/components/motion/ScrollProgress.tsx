@@ -50,7 +50,10 @@ export default function ScrollProgress() {
   }, []);
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-[2px]">
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-[2px] overflow-x-clip"
+    >
       <div className="absolute inset-0 bg-fg/5" />
       <div
         ref={bar}
