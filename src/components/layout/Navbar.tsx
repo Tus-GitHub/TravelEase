@@ -7,6 +7,7 @@ import Logo from "@/components/common/Logo";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import Avatar from "@/components/common/Avatar";
+import ThemeToggle from "@/components/common/ThemeToggle";
 import UserMenu from "@/components/layout/UserMenu";
 import { navLinks } from "@/data/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -43,7 +44,7 @@ export default function Navbar() {
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
         solid
-          ? "bg-white/95 shadow-sm backdrop-blur"
+          ? "bg-canvas/90 shadow-sm backdrop-blur"
           : "bg-transparent"
       }`}
     >
@@ -57,7 +58,7 @@ export default function Navbar() {
               <Link
                 href={link.href}
                 className={`text-sm font-medium transition-colors hover:text-accent-500 ${
-                  solid ? "text-slate-700" : "text-white/90"
+                  solid ? "text-fg" : "text-white/90"
                 }`}
               >
                 {link.label}
@@ -66,7 +67,8 @@ export default function Navbar() {
           ))}
         </ul>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-2 md:flex">
+          <ThemeToggle tone={solid ? "default" : "light"} />
           {isLoading ? null : user ? (
             <UserMenu user={user} onLogout={() => logout()} />
           ) : (
@@ -76,21 +78,24 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile toggle */}
-        <button
-          type="button"
-          aria-label={isOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isOpen}
-          onClick={() => setIsOpen((v) => !v)}
-          className={`md:hidden ${solid ? "text-slate-800" : "text-white"}`}
-        >
-          <Icon name={isOpen ? "close" : "menu"} className="h-7 w-7" />
-        </button>
+        {/* Mobile actions */}
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle tone={solid ? "default" : "light"} />
+          <button
+            type="button"
+            aria-label={isOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isOpen}
+            onClick={() => setIsOpen((v) => !v)}
+            className={solid ? "text-fg" : "text-white"}
+          >
+            <Icon name={isOpen ? "close" : "menu"} className="h-7 w-7" />
+          </button>
+        </div>
       </nav>
 
       {/* Mobile drawer */}
       <div
-        className={`overflow-hidden border-t border-slate-100 bg-white transition-[max-height] duration-300 md:hidden ${
+        className={`overflow-hidden border-t border-line-subtle bg-canvas transition-[max-height] duration-300 md:hidden ${
           isOpen ? "max-h-96" : "max-h-0 border-transparent"
         }`}
       >
@@ -99,7 +104,7 @@ export default function Navbar() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-900"
+                className="block rounded-lg px-3 py-2.5 text-sm font-medium text-fg hover:bg-primary-50 hover:text-primary-900"
               >
                 {link.label}
               </Link>
@@ -107,19 +112,19 @@ export default function Navbar() {
           ))}
           <li className="mt-2 px-3">
             {isLoading ? null : user ? (
-              <div className="rounded-xl border border-slate-100">
-                <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-3">
+              <div className="rounded-xl border border-line-subtle">
+                <div className="flex items-center gap-2 border-b border-line-subtle px-3 py-3">
                   <Avatar name={user.name} className="h-9 w-9 text-xs" />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900">
+                    <p className="truncate text-sm font-semibold text-fg">
                       {user.name}
                     </p>
-                    <p className="truncate text-xs text-slate-500">{user.email}</p>
+                    <p className="truncate text-xs text-muted">{user.email}</p>
                   </div>
                 </div>
                 <Link
                   href="/profile"
-                  className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-slate-700 hover:bg-primary-50 hover:text-primary-900"
+                  className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-fg hover:bg-primary-50 hover:text-primary-900"
                 >
                   <Icon name="user" className="h-4 w-4" />
                   Profile Settings
@@ -130,7 +135,7 @@ export default function Navbar() {
                     setIsOpen(false);
                     logout();
                   }}
-                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
                 >
                   <Icon name="logout" className="h-4 w-4" />
                   Logout

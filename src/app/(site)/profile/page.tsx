@@ -18,7 +18,7 @@ import type { IconName } from "@/types";
 // Leaflet touches `window`, so the map only loads in the browser.
 const LocationPicker = dynamic(() => import("@/components/forms/LocationPicker"), {
   ssr: false,
-  loading: () => <div className="h-64 w-full animate-pulse rounded-xl bg-slate-100" />,
+  loading: () => <div className="h-64 w-full animate-pulse rounded-xl bg-surface-hover" />,
 });
 
 interface AccountData {
@@ -105,7 +105,7 @@ export default function ProfilePage() {
   if (isLoading || !user || !loaded || !account) {
     return (
       <Section bg="gray" className="!py-32">
-        <p className="text-center text-sm text-slate-500">Loading…</p>
+        <p className="text-center text-sm text-muted">Loading…</p>
       </Section>
     );
   }
@@ -130,12 +130,12 @@ export default function ProfilePage() {
             <Avatar name={account.name} className="h-16 w-16 text-lg" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="truncate text-lg font-bold text-slate-900">{account.name}</p>
+                <p className="truncate text-lg font-bold text-fg">{account.name}</p>
                 <Badge tone={roleTone[account.role] ?? "neutral"} className="capitalize">
                   {account.role}
                 </Badge>
               </div>
-              <p className="text-sm text-slate-500">Member since {memberSince}</p>
+              <p className="text-sm text-muted">Member since {memberSince}</p>
             </div>
             <Button
               variant="outline"
@@ -182,8 +182,8 @@ function CardHeader({
   return (
     <div className="flex items-start justify-between gap-3">
       <div>
-        <h2 className="text-base font-bold text-slate-900">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-sm text-slate-500">{subtitle}</p>}
+        <h2 className="text-base font-bold text-fg">{title}</h2>
+        {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
       </div>
       {onEdit && (
         <Button variant="ghost" size="sm" onClick={onEdit}>
@@ -197,11 +197,11 @@ function CardHeader({
 function ReadField({ icon, label, value }: { icon: IconName; label: string; value: string }) {
   return (
     <div>
-      <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-faint">
         <Icon name={icon} className="h-4 w-4" />
         {label}
       </dt>
-      <dd className="mt-1 text-sm text-slate-800">{value || "—"}</dd>
+      <dd className="mt-1 text-sm text-fg">{value || "—"}</dd>
     </div>
   );
 }
@@ -209,7 +209,7 @@ function ReadField({ icon, label, value }: { icon: IconName; label: string; valu
 function ErrorNote({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{message}</p>
+    <p className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">{message}</p>
   );
 }
 
@@ -279,11 +279,11 @@ function AccountCard({
             />
           </FormField>
           <div>
-            <span className="mb-1.5 block text-xs font-semibold text-slate-600">Email</span>
-            <p className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-500">
+            <span className="mb-1.5 block text-xs font-semibold text-muted">Email</span>
+            <p className="rounded-xl bg-surface-muted px-3 py-2.5 text-sm text-muted">
               {account.email}
             </p>
-            <p className="mt-1 text-xs text-slate-400">Email can’t be changed.</p>
+            <p className="mt-1 text-xs text-faint">Email can’t be changed.</p>
           </div>
           <div className="flex gap-2">
             <Button variant="accent" size="sm" onClick={save} disabled={saving}>
@@ -406,10 +406,10 @@ function AddressCard({
           </div>
 
           <div>
-            <span className="mb-1 block text-xs font-semibold text-slate-600">
-              Pin your location <span className="font-normal text-slate-400">(optional)</span>
+            <span className="mb-1 block text-xs font-semibold text-muted">
+              Pin your location <span className="font-normal text-faint">(optional)</span>
             </span>
-            <p className="mb-2 text-xs text-slate-400">
+            <p className="mb-2 text-xs text-faint">
               Search, use your current location, or drag the pin. Powers nearby-destination
               suggestions.
             </p>
@@ -466,11 +466,11 @@ function AddressCard({
             </dl>
           ) : (
             profile.latitude == null && (
-              <p className="mt-4 text-sm text-slate-500">No address saved yet.</p>
+              <p className="mt-4 text-sm text-muted">No address saved yet.</p>
             )
           )}
           {profile.latitude != null && (
-            <p className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
+            <p className="mt-4 flex items-center gap-1.5 text-xs text-faint">
               <Icon name="map-pin" className="h-3.5 w-3.5" />
               Map location pinned
             </p>
@@ -540,7 +540,7 @@ function PreferencesCard({
               className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                 active
                   ? "border-primary-600 bg-primary-600 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                  : "border-line bg-surface text-muted hover:border-line"
               }`}
             >
               {tag}
@@ -553,7 +553,7 @@ function PreferencesCard({
         <Button variant="accent" size="sm" onClick={save} disabled={!dirty || saving}>
           {saving ? "Saving…" : "Save preferences"}
         </Button>
-        {savedNote && <span className="text-xs font-medium text-emerald-600">Saved</span>}
+        {savedNote && <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Saved</span>}
       </div>
     </Card>
   );

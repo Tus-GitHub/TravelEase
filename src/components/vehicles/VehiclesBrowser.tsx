@@ -40,7 +40,7 @@ const PRICE_OPTIONS = [
 type Sort = "recommended" | "price-asc" | "price-desc" | "seats-desc";
 
 const controlBase =
-  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
+  "w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
 
 export default function VehiclesBrowser() {
   const params = useSearchParams();
@@ -93,7 +93,7 @@ export default function VehiclesBrowser() {
   return (
     <div>
       {(pickup || drop || date) && (
-        <p className="mb-6 rounded-xl bg-primary-50 px-4 py-3 text-sm text-primary-900">
+        <p className="mb-6 rounded-xl bg-primary-50 px-4 py-3 text-sm text-primary-900 dark:bg-primary-950/40 dark:text-primary-200">
           Showing our fleet
           {pickup && (
             <>
@@ -133,7 +133,7 @@ export default function VehiclesBrowser() {
           <label className="relative block">
             <Icon
               name="search"
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint"
             />
             <input
               type="text"
@@ -181,20 +181,20 @@ export default function VehiclesBrowser() {
           </select>
         </div>
 
-        <label className="mt-3 flex w-fit items-center gap-2 text-sm text-slate-600">
+        <label className="mt-3 flex w-fit items-center gap-2 text-sm text-muted">
           <input
             type="checkbox"
             checked={availableOnly}
             onChange={(e) => setAvailableOnly(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 accent-primary-600"
+            className="h-4 w-4 rounded border-line accent-primary-600"
           />
           Available only
         </label>
       </Card>
 
       <div className="mb-5 flex items-center justify-between gap-3">
-        <p className="text-sm text-slate-500">
-          <span className="font-semibold text-slate-800">{results.length}</span>{" "}
+        <p className="text-sm text-muted">
+          <span className="font-semibold text-fg">{results.length}</span>{" "}
           {results.length === 1 ? "vehicle" : "vehicles"}
         </p>
         {isFiltered && (
@@ -216,7 +216,7 @@ export default function VehiclesBrowser() {
         </Grid>
       ) : (
         <Card padded hover={false} className="text-center">
-          <p className="text-sm text-slate-500">No vehicles match these filters.</p>
+          <p className="text-sm text-muted">No vehicles match these filters.</p>
           <div className="mt-3">
             <Button variant="outline" size="sm" onClick={clearAll}>
               Clear filters
@@ -244,7 +244,7 @@ function TypeChip({
       className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
         active
           ? "border-primary-600 bg-primary-600 text-white"
-          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+          : "border-line bg-surface text-muted hover:border-line"
       }`}
     >
       {children}

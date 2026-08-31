@@ -53,19 +53,19 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
       </button>
 
       <div
-        className={`absolute right-0 top-full w-64 overflow-hidden bg-white transition-[max-height] duration-300 ${
+        className={`absolute right-0 top-full w-64 overflow-hidden bg-surface transition-[max-height] duration-300 ${
           isOpen ? "max-h-96 border-t-2 border-primary-900" : "max-h-0 border-t-0"
         }`}
       >
-        <div className="border-b border-slate-100 px-4 py-3">
-          <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
-          <p className="truncate text-xs text-slate-500">{user.email}</p>
+        <div className="border-b border-line-subtle px-4 py-3">
+          <p className="truncate text-sm font-semibold text-fg">{user.name}</p>
+          <p className="truncate text-xs text-muted">{user.email}</p>
         </div>
 
         <Link
           href="/profile"
           onClick={() => setIsOpen(false)}
-          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-primary-50 hover:text-primary-900"
+          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-primary-50 hover:text-primary-900"
         >
           <Icon name="user" className="h-4 w-4" />
           Profile Settings
@@ -77,7 +77,7 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
             setIsOpen(false);
             onLogout();
           }}
-          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
         >
           <Icon name="logout" className="h-4 w-4" />
           Logout

@@ -27,10 +27,10 @@ export default function CategoryCard({ category }: CategoryCardProps) {
       </div>
 
       <div className="flex flex-1 flex-col p-5">
-        <h3 className="font-display text-lg font-semibold text-slate-900">
+        <h3 className="font-display text-lg font-semibold text-fg">
           {category.title}
         </h3>
-        <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
+        <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
           {category.description}
         </p>
         <Link

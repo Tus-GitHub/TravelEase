@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 /** The only sections that are individually grantable — Dashboard is always
  * visible to anyone let into /admin at all, so it never needs a toggle and
@@ -26,6 +33,8 @@ export const ADMIN_SECTION_PATHS: Record<AdminSection, string> = {
 
 type PermissionMatrix = Record<PermissionRole, Record<AdminSection, boolean>>;
 
+// Mirrors the migration 011 defaults; used until the real matrix loads and as a
+// fallback if the fetch fails.
 const DEFAULT_MATRIX: PermissionMatrix = {
   agent: { users: false, vehicles: true, geography: true, packages: true },
   customer: { users: false, vehicles: false, geography: false, packages: false },
@@ -37,7 +46,13 @@ function isPermissionRole(role: string): role is PermissionRole {
 
 interface AdminPermissionsContextValue {
   matrix: PermissionMatrix;
-  setSectionAccess: (role: PermissionRole, section: AdminSection, allowed: boolean) => void;
+  /** false until the persisted matrix has been fetched at least once. */
+  permissionsLoaded: boolean;
+  setSectionAccess: (
+    role: PermissionRole,
+    section: AdminSection,
+    allowed: boolean,
+  ) => Promise<{ ok: boolean; error?: string }>;
   canAccess: (role: string, section: AdminSection) => boolean;
   hasAnyAccess: (role: string) => boolean;
 }
@@ -46,15 +61,48 @@ const AdminPermissionsContext = createContext<AdminPermissionsContextValue | nul
 
 export function AdminPermissionsProvider({ children }: { children: React.ReactNode }) {
   const [matrix, setMatrix] = useState<PermissionMatrix>(DEFAULT_MATRIX);
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
+
+  const reload = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/permissions");
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.matrix) setMatrix(data.matrix as PermissionMatrix);
+    } catch {
+      // keep whatever we have
+    } finally {
+      setPermissionsLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
 
   const setSectionAccess = useCallback(
-    (role: PermissionRole, section: AdminSection, allowed: boolean) => {
-      setMatrix((prev) => ({
-        ...prev,
-        [role]: { ...prev[role], [section]: allowed },
-      }));
+    async (role: PermissionRole, section: AdminSection, allowed: boolean) => {
+      const previous = matrix;
+      // optimistic
+      setMatrix((prev) => ({ ...prev, [role]: { ...prev[role], [section]: allowed } }));
+      try {
+        const res = await fetch("/api/admin/permissions", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role, section, isAllowed: allowed }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setMatrix(previous);
+          return { ok: false, error: data.error || "Couldn't save." };
+        }
+        if (data.matrix) setMatrix(data.matrix as PermissionMatrix);
+        return { ok: true };
+      } catch {
+        setMatrix(previous);
+        return { ok: false, error: "Couldn't save." };
+      }
     },
-    [],
+    [matrix],
   );
 
   const canAccess = useCallback(
@@ -76,8 +124,8 @@ export function AdminPermissionsProvider({ children }: { children: React.ReactNo
   );
 
   const value = useMemo(
-    () => ({ matrix, setSectionAccess, canAccess, hasAnyAccess }),
-    [matrix, setSectionAccess, canAccess, hasAnyAccess],
+    () => ({ matrix, permissionsLoaded, setSectionAccess, canAccess, hasAnyAccess }),
+    [matrix, permissionsLoaded, setSectionAccess, canAccess, hasAnyAccess],
   );
 
   return (

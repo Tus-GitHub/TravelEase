@@ -32,7 +32,7 @@ function TabSwitcher({
 }) {
   return (
     <div className="flex justify-center mb-12">
-      <div className="relative flex rounded-2xl bg-slate-100 p-1.5 gap-1">
+      <div className="relative flex rounded-2xl bg-surface-hover p-1.5 gap-1">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -41,7 +41,7 @@ function TabSwitcher({
             className={`relative z-10 flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${
               active === tab.id
                 ? "text-white"
-                : "text-slate-500 hover:text-slate-700"
+                : "text-muted hover:text-fg"
             }`}
           >
             {/* Sliding background */}
@@ -73,7 +73,7 @@ function ChoosePackage({ onBuildOwn }: { onBuildOwn: () => void }) {
           </AnimateInView>
         ))}
       </div>
-      <p className="mt-8 text-center text-sm text-slate-400">
+      <p className="mt-8 text-center text-sm text-faint">
         Can&apos;t find what you&apos;re looking for?{" "}
         <button
           type="button"
@@ -126,7 +126,7 @@ function StepIndicator({ current }: { current: number }) {
                   ? "text-accent-600"
                   : current > step.num
                   ? "text-primary-700"
-                  : "text-slate-400"
+                  : "text-faint"
               }`}
             >
               {step.label}
@@ -159,7 +159,7 @@ function RegionPicker({
 }) {
   return (
     <div>
-      <p className="mb-6 text-center text-slate-500">
+      <p className="mb-6 text-center text-muted">
         Select the region you want to explore
       </p>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
@@ -246,7 +246,7 @@ function RouteBuilder({
 
   return (
     <div className="mx-auto max-w-xl">
-      <p className="mb-6 text-center text-slate-500">
+      <p className="mb-6 text-center text-muted">
         Use the arrows to set your preferred travel order
       </p>
 
@@ -272,7 +272,7 @@ function RouteBuilder({
               </motion.span>
 
               {/* Card */}
-              <div className="flex flex-1 items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-card">
+              <div className="flex flex-1 items-center gap-3 rounded-xl border border-line-subtle bg-surface p-3 shadow-card">
                 <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg">
                   <Image
                     src={spot.imageUrl}
@@ -283,7 +283,7 @@ function RouteBuilder({
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-900 truncate">
+                  <p className="font-semibold text-fg truncate">
                     {spot.name}
                   </p>
                   <Badge tone="primary" className="mt-1">
@@ -296,7 +296,7 @@ function RouteBuilder({
                     disabled={i === 0}
                     onClick={() => move(i, -1)}
                     aria-label="Move up"
-                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-primary-50 hover:text-primary-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="rounded-lg p-1.5 text-faint transition-colors hover:bg-primary-50 hover:text-primary-800 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -317,7 +317,7 @@ function RouteBuilder({
                     disabled={i === spots.length - 1}
                     onClick={() => move(i, 1)}
                     aria-label="Move down"
-                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-primary-50 hover:text-primary-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="rounded-lg p-1.5 text-faint transition-colors hover:bg-primary-50 hover:text-primary-800 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -343,11 +343,11 @@ function RouteBuilder({
       {/* Route preview strip */}
       <motion.div
         layout
-        className="mt-8 flex flex-wrap items-center justify-center gap-2 rounded-2xl bg-slate-50 px-6 py-4 text-sm"
+        className="mt-8 flex flex-wrap items-center justify-center gap-2 rounded-2xl bg-surface-muted px-6 py-4 text-sm"
       >
         {spots.map((spot, i) => (
           <span key={spot.id} className="flex items-center gap-2">
-            <span className="font-semibold text-primary-900">{spot.name}</span>
+            <span className="font-semibold text-primary-900 dark:text-primary-300 ">{spot.name}</span>
             {i < spots.length - 1 && (
               <Icon name="arrow-right" className="h-4 w-4 text-accent-500" />
             )}
@@ -410,16 +410,16 @@ function PackageSummary({
           <Badge tone="accent" className="text-sm px-4 py-1.5">
             Your Custom Package
           </Badge>
-          <h3 className="mt-3 font-display text-2xl font-bold text-slate-900">
+          <h3 className="mt-3 font-display text-2xl font-bold text-fg">
             {region.name} Explorer
           </h3>
-          <p className="mt-1 text-slate-500">
+          <p className="mt-1 text-muted">
             {spots.length} destinations · Self-curated
           </p>
         </div>
 
         {/* Route card */}
-        <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-card">
+        <div className="overflow-hidden rounded-2xl border border-line-subtle bg-surface shadow-card">
           {/* Region banner */}
           <div className="relative h-32">
             <Image
@@ -444,7 +444,7 @@ function PackageSummary({
 
           {/* Itinerary */}
           <div className="p-6">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-faint">
               Your Itinerary
             </p>
             <ol className="space-y-3">
@@ -460,7 +460,7 @@ function PackageSummary({
                     {i + 1}
                   </span>
                   <div className="flex flex-1 items-center justify-between">
-                    <span className="font-semibold text-slate-800">
+                    <span className="font-semibold text-fg">
                       {spot.name}
                     </span>
                     <Badge tone="neutral">{spot.tag}</Badge>
@@ -470,8 +470,8 @@ function PackageSummary({
             </ol>
 
             {/* Vehicle selector */}
-            <div className="mt-6 border-t border-slate-100 pt-5">
-              <label className="block text-sm font-semibold text-slate-700">
+            <div className="mt-6 border-t border-line-subtle pt-5">
+              <label className="block text-sm font-semibold text-fg">
                 Choose Vehicle
               </label>
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -484,7 +484,7 @@ function PackageSummary({
                     className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                       vehicle === opt.value
                         ? "border-accent-500 bg-accent-50 text-accent-700 shadow-sm"
-                        : "border-slate-200 text-slate-600 hover:border-primary-300 hover:bg-primary-50"
+                        : "border-line text-muted hover:border-primary-300 hover:bg-primary-50"
                     }`}
                   >
                     {opt.label}
@@ -508,7 +508,7 @@ function PackageSummary({
               </Button>
             </div>
 
-            <p className="mt-4 text-center text-xs text-slate-400">
+            <p className="mt-4 text-center text-xs text-faint">
               Pricing shown after selecting travel dates in the next step
             </p>
           </div>

@@ -23,12 +23,12 @@ export default function StarRating({
           key={i}
           name="star"
           className={`h-4 w-4 ${
-            i < filled ? "fill-accent-500 text-accent-500" : "text-slate-300"
+            i < filled ? "fill-accent-500 text-accent-500" : "text-faint"
           }`}
         />
       ))}
       {showValue && (
-        <span className="ml-1 text-sm font-semibold text-slate-700">
+        <span className="ml-1 text-sm font-semibold text-fg">
           {rating.toFixed(1)}
         </span>
       )}

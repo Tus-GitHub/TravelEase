@@ -5,361 +5,282 @@ import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import FormField, { fieldBase } from "@/components/forms/FormField";
 import AdminTabs from "@/components/admin/AdminTabs";
-import {
-  mockRegions,
-  mockCities,
-  mockTouristSpots,
-  type AdminRegionRow,
-  type AdminCityRow,
-  type AdminTouristSpotRow,
-} from "@/lib/admin/mockData";
+import RowActions from "@/components/admin/RowActions";
+import Toggle from "@/components/admin/Toggle";
+import { ErrorNote, EmptyRow, LoadingRow } from "@/components/admin/tableBits";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
+import { useAdminResource } from "@/lib/admin/useAdminResource";
+import { useCrudForm } from "@/lib/admin/useCrudForm";
+
+interface Region {
+  id: number;
+  name: string;
+  state: string;
+  isActive: boolean;
+}
+interface City {
+  id: number;
+  regionId: number;
+  regionName: string;
+  name: string;
+  latitude: number | null;
+  longitude: number | null;
+  isPickupPoint: boolean;
+  isAirport: boolean;
+}
+interface TouristSpot {
+  id: number;
+  cityId: number;
+  cityName: string;
+  name: string;
+  tag: string;
+  description: string;
+}
 
 type Tab = "regions" | "cities" | "spots";
 
 function RegionsTab() {
-  const [regions, setRegions] = useState<AdminRegionRow[]>(mockRegions);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", state: "" });
-
-  const toggleActive = (id: string) => {
-    setRegions((prev) => prev.map((r) => (r.id === id ? { ...r, isActive: !r.isActive } : r)));
-  };
-
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name.trim() || !form.state.trim()) return;
-    setRegions((prev) => [
-      ...prev,
-      { id: `r-${Date.now()}`, name: form.name.trim(), state: form.state.trim(), isActive: true },
-    ]);
-    setForm({ name: "", state: "" });
-    setIsFormOpen(false);
-  };
+  const r = useAdminResource<Region>("/api/admin/regions");
+  const form = useCrudForm({
+    empty: { name: "", state: "" },
+    onCreate: (d) => r.create(d),
+    onUpdate: (id, d) => r.update(id, d),
+  });
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-slate-500">{regions.length} regions</p>
-        <Button variant="accent" size="sm" iconLeft="map-pin" onClick={() => setIsFormOpen((v) => !v)}>
-          {isFormOpen ? "Cancel" : "Add Region"}
-        </Button>
-      </div>
+      <SectionHead
+        count={`${r.items.length} regions`}
+        open={form.open}
+        onToggle={() => (form.open ? form.cancel() : form.startCreate())}
+        addLabel="Add Region"
+        icon="map-pin"
+      />
+      {r.error && <ErrorNote message={r.error} />}
 
-      {isFormOpen && (
-        <Card padded hover={false} className="mb-6">
-          <form onSubmit={handleAdd} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Name" icon="map-pin">
-              <input
-                required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className={fieldBase}
-                placeholder="e.g. Kerala Backwaters"
-              />
-            </FormField>
-            <FormField label="State" icon="map-pin">
-              <input
-                required
-                value={form.state}
-                onChange={(e) => setForm({ ...form, state: e.target.value })}
-                className={fieldBase}
-                placeholder="e.g. Kerala"
-              />
-            </FormField>
-            <div className="sm:col-span-2">
-              <Button type="submit" variant="primary" size="sm">Save Region</Button>
-            </div>
-          </form>
-        </Card>
+      {form.open && (
+        <FormCard onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
+          <FormField label="Name" icon="map-pin">
+            <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Coorg" />
+          </FormField>
+          <FormField label="State" icon="location">
+            <input required value={form.draft.state} onChange={(e) => form.patch({ state: e.target.value })} className={fieldBase} placeholder="e.g. Karnataka" />
+          </FormField>
+        </FormCard>
       )}
 
-      <Card hover={false} className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-5 py-3">Name</th>
-                <th className="px-5 py-3">State</th>
-                <th className="px-5 py-3">Active</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {regions.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50/60">
-                  <td className="px-5 py-3.5 font-medium text-slate-900">{r.name}</td>
-                  <td className="px-5 py-3.5 text-slate-600">{r.state}</td>
-                  <td className="px-5 py-3.5">
-                    <button
-                      type="button"
-                      onClick={() => toggleActive(r.id)}
-                      aria-pressed={r.isActive}
-                      aria-label="Toggle active"
-                      className={`relative h-6 w-11 rounded-full transition-colors ${r.isActive ? "bg-emerald-500" : "bg-slate-300"}`}
-                    >
-                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${r.isActive ? "translate-x-5" : "translate-x-0.5"}`} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <TableCard headers={["Region", "State", "Active", "Actions"]}>
+        {r.items.map((row) => (
+          <tr key={row.id} className="hover:bg-surface-hover/60">
+            <td className="px-5 py-3.5 font-medium text-fg">{row.name}</td>
+            <td className="px-5 py-3.5 text-muted">{row.state}</td>
+            <td className="px-5 py-3.5">
+              <Toggle on={row.isActive} onChange={(next) => r.update(row.id, { isActive: next })} label="Toggle active" />
+            </td>
+            <td className="px-5 py-3.5 text-right">
+              <RowActions
+                onEdit={() => form.startEdit(row.id, { name: row.name, state: row.state })}
+                onDelete={() => r.remove(row.id)}
+              />
+            </td>
+          </tr>
+        ))}
+        <EmptyRow show={!r.loading && r.items.length === 0} cols={4} label="No regions yet." />
+        <LoadingRow show={r.loading} cols={4} />
+      </TableCard>
     </div>
   );
 }
 
 function CitiesTab() {
-  const [regions] = useState<AdminRegionRow[]>(mockRegions);
-  const [cities, setCities] = useState<AdminCityRow[]>(mockCities);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", regionId: "", latitude: "", longitude: "", isPickupPoint: true, isAirport: false });
+  const regions = useAdminResource<Region>("/api/admin/regions");
+  const r = useAdminResource<City>("/api/admin/cities");
+  const form = useCrudForm({
+    empty: {
+      regionId: "",
+      name: "",
+      latitude: "",
+      longitude: "",
+      isPickupPoint: true,
+      isAirport: false,
+    },
+    onCreate: (d) => r.create(toCityBody(d)),
+    onUpdate: (id, d) => r.update(id, toCityBody(d)),
+  });
 
   const regionName = useMemo(() => {
-    const map = new Map(regions.map((r) => [r.id, r.name]));
-    return (id: string) => map.get(id) ?? "—";
-  }, [regions]);
-
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name.trim() || !form.regionId) return;
-    setCities((prev) => [
-      ...prev,
-      {
-        id: `c-${Date.now()}`,
-        regionId: form.regionId,
-        name: form.name.trim(),
-        latitude: Number(form.latitude) || 0,
-        longitude: Number(form.longitude) || 0,
-        isPickupPoint: form.isPickupPoint,
-        isAirport: form.isAirport,
-      },
-    ]);
-    setForm({ name: "", regionId: "", latitude: "", longitude: "", isPickupPoint: true, isAirport: false });
-    setIsFormOpen(false);
-  };
+    const map = new Map(regions.items.map((x) => [x.id, x.name]));
+    return (id: number) => map.get(id) ?? "—";
+  }, [regions.items]);
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-slate-500">{cities.length} cities</p>
-        <Button variant="accent" size="sm" iconLeft="map-pin" onClick={() => setIsFormOpen((v) => !v)}>
-          {isFormOpen ? "Cancel" : "Add City"}
-        </Button>
-      </div>
+      <SectionHead
+        count={`${r.items.length} cities`}
+        open={form.open}
+        onToggle={() => (form.open ? form.cancel() : form.startCreate())}
+        addLabel="Add City"
+        icon="location"
+      />
+      {r.error && <ErrorNote message={r.error} />}
 
-      {isFormOpen && (
-        <Card padded hover={false} className="mb-6">
-          <form onSubmit={handleAdd} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <FormField label="Name" icon="map-pin">
-              <input
-                required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className={fieldBase}
-                placeholder="e.g. Alleppey"
-              />
-            </FormField>
-            <FormField label="Region" icon="map-pin">
-              <select
-                required
-                value={form.regionId}
-                onChange={(e) => setForm({ ...form, regionId: e.target.value })}
-                className={`${fieldBase} appearance-none`}
-              >
-                <option value="" disabled>Select region</option>
-                {regions.map((r) => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
-                ))}
-              </select>
-            </FormField>
-            <FormField label="Latitude" icon="map-pin">
-              <input
-                type="number"
-                step="any"
-                value={form.latitude}
-                onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-                className={fieldBase}
-                placeholder="9.4981"
-              />
-            </FormField>
-            <FormField label="Longitude" icon="map-pin">
-              <input
-                type="number"
-                step="any"
-                value={form.longitude}
-                onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-                className={fieldBase}
-                placeholder="76.3388"
-              />
-            </FormField>
-            <label className="flex items-center gap-2 text-sm text-slate-600">
-              <input
-                type="checkbox"
-                checked={form.isPickupPoint}
-                onChange={(e) => setForm({ ...form, isPickupPoint: e.target.checked })}
-                className="h-4 w-4 rounded border-slate-300 accent-primary-900"
-              />
-              Pickup point
-            </label>
-            <label className="flex items-center gap-2 text-sm text-slate-600">
-              <input
-                type="checkbox"
-                checked={form.isAirport}
-                onChange={(e) => setForm({ ...form, isAirport: e.target.checked })}
-                className="h-4 w-4 rounded border-slate-300 accent-primary-900"
-              />
-              Has airport
-            </label>
-            <div className="sm:col-span-2 lg:col-span-4">
-              <Button type="submit" variant="primary" size="sm">Save City</Button>
-            </div>
-          </form>
-        </Card>
+      {form.open && (
+        <FormCard onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
+          <FormField label="Region" icon="map-pin">
+            <select required value={form.draft.regionId} onChange={(e) => form.patch({ regionId: e.target.value })} className={`${fieldBase} appearance-none`}>
+              <option value="" disabled>Select region</option>
+              {regions.items.map((x) => (
+                <option key={x.id} value={x.id}>{x.name}</option>
+              ))}
+            </select>
+          </FormField>
+          <FormField label="City name" icon="location">
+            <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Madikeri" />
+          </FormField>
+          <FormField label="Latitude" icon="map-pin">
+            <input value={form.draft.latitude} onChange={(e) => form.patch({ latitude: e.target.value })} className={fieldBase} inputMode="decimal" placeholder="12.4244" />
+          </FormField>
+          <FormField label="Longitude" icon="map-pin">
+            <input value={form.draft.longitude} onChange={(e) => form.patch({ longitude: e.target.value })} className={fieldBase} inputMode="decimal" placeholder="75.7382" />
+          </FormField>
+          <label className="flex items-center gap-2 text-sm text-muted">
+            <input type="checkbox" checked={form.draft.isPickupPoint} onChange={(e) => form.patch({ isPickupPoint: e.target.checked })} className="h-4 w-4 accent-primary-600" />
+            Pickup point
+          </label>
+          <label className="flex items-center gap-2 text-sm text-muted">
+            <input type="checkbox" checked={form.draft.isAirport} onChange={(e) => form.patch({ isAirport: e.target.checked })} className="h-4 w-4 accent-primary-600" />
+            Has airport
+          </label>
+        </FormCard>
       )}
 
-      <Card hover={false} className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-5 py-3">Name</th>
-                <th className="px-5 py-3">Region</th>
-                <th className="px-5 py-3">Coordinates</th>
-                <th className="px-5 py-3">Pickup</th>
-                <th className="px-5 py-3">Airport</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {cities.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50/60">
-                  <td className="px-5 py-3.5 font-medium text-slate-900">{c.name}</td>
-                  <td className="px-5 py-3.5 text-slate-600">{regionName(c.regionId)}</td>
-                  <td className="px-5 py-3.5 text-slate-500">{c.latitude.toFixed(2)}, {c.longitude.toFixed(2)}</td>
-                  <td className="px-5 py-3.5">
-                    {c.isPickupPoint ? <span className="text-emerald-600">✓</span> : <span className="text-slate-300">—</span>}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    {c.isAirport ? <span className="text-emerald-600">✓</span> : <span className="text-slate-300">—</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <TableCard headers={["City", "Region", "Coordinates", "Pickup", "Airport", "Actions"]}>
+        {r.items.map((row) => (
+          <tr key={row.id} className="hover:bg-surface-hover/60">
+            <td className="px-5 py-3.5 font-medium text-fg">{row.name}</td>
+            <td className="px-5 py-3.5 text-muted">{row.regionName || regionName(row.regionId)}</td>
+            <td className="px-5 py-3.5 text-muted">
+              {row.latitude != null && row.longitude != null
+                ? `${row.latitude.toFixed(4)}, ${row.longitude.toFixed(4)}`
+                : "—"}
+            </td>
+            <td className="px-5 py-3.5 text-muted">{row.isPickupPoint ? "Yes" : "No"}</td>
+            <td className="px-5 py-3.5 text-muted">{row.isAirport ? "Yes" : "No"}</td>
+            <td className="px-5 py-3.5 text-right">
+              <RowActions
+                onEdit={() =>
+                  form.startEdit(row.id, {
+                    regionId: String(row.regionId),
+                    name: row.name,
+                    latitude: row.latitude != null ? String(row.latitude) : "",
+                    longitude: row.longitude != null ? String(row.longitude) : "",
+                    isPickupPoint: row.isPickupPoint,
+                    isAirport: row.isAirport,
+                  })
+                }
+                onDelete={() => r.remove(row.id)}
+              />
+            </td>
+          </tr>
+        ))}
+        <EmptyRow show={!r.loading && r.items.length === 0} cols={6} label="No cities yet." />
+        <LoadingRow show={r.loading} cols={6} />
+      </TableCard>
     </div>
   );
 }
 
-function TouristSpotsTab() {
-  const [cities] = useState<AdminCityRow[]>(mockCities);
-  const [spots, setSpots] = useState<AdminTouristSpotRow[]>(mockTouristSpots);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", cityId: "", tag: "" });
+function SpotsTab() {
+  const cities = useAdminResource<City>("/api/admin/cities");
+  const r = useAdminResource<TouristSpot>("/api/admin/tourist-spots");
+  const form = useCrudForm({
+    empty: { cityId: "", name: "", tag: "", description: "" },
+    onCreate: (d) => r.create({ ...d, cityId: Number(d.cityId) }),
+    onUpdate: (id, d) => r.update(id, { ...d, cityId: Number(d.cityId) }),
+  });
 
   const cityName = useMemo(() => {
-    const map = new Map(cities.map((c) => [c.id, c.name]));
-    return (id: string) => map.get(id) ?? "—";
-  }, [cities]);
-
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name.trim() || !form.cityId) return;
-    setSpots((prev) => [
-      ...prev,
-      {
-        id: `ts-${Date.now()}`,
-        cityId: form.cityId,
-        name: form.name.trim(),
-        tag: form.tag.trim(),
-        displayOrder: prev.filter((s) => s.cityId === form.cityId).length + 1,
-      },
-    ]);
-    setForm({ name: "", cityId: "", tag: "" });
-    setIsFormOpen(false);
-  };
+    const map = new Map(cities.items.map((x) => [x.id, x.name]));
+    return (id: number) => map.get(id) ?? "—";
+  }, [cities.items]);
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-slate-500">{spots.length} tourist spots</p>
-        <Button variant="accent" size="sm" iconLeft="map-pin" onClick={() => setIsFormOpen((v) => !v)}>
-          {isFormOpen ? "Cancel" : "Add Tourist Spot"}
-        </Button>
-      </div>
+      <SectionHead
+        count={`${r.items.length} tourist spots`}
+        open={form.open}
+        onToggle={() => (form.open ? form.cancel() : form.startCreate())}
+        addLabel="Add Tourist Spot"
+        icon="star"
+      />
+      {r.error && <ErrorNote message={r.error} />}
 
-      {isFormOpen && (
-        <Card padded hover={false} className="mb-6">
-          <form onSubmit={handleAdd} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <FormField label="Name" icon="map-pin">
-              <input
-                required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className={fieldBase}
-                placeholder="e.g. Vembanad Lake"
-              />
-            </FormField>
-            <FormField label="City" icon="map-pin">
-              <select
-                required
-                value={form.cityId}
-                onChange={(e) => setForm({ ...form, cityId: e.target.value })}
-                className={`${fieldBase} appearance-none`}
-              >
-                <option value="" disabled>Select city</option>
-                {cities.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </FormField>
-            <FormField label="Tag" icon="tag">
-              <input
-                value={form.tag}
-                onChange={(e) => setForm({ ...form, tag: e.target.value })}
-                className={fieldBase}
-                placeholder="e.g. Lake, Heritage, Beach"
-              />
-            </FormField>
-            <div className="sm:col-span-3">
-              <Button type="submit" variant="primary" size="sm">Save Tourist Spot</Button>
-            </div>
-          </form>
-        </Card>
+      {form.open && (
+        <FormCard onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
+          <FormField label="City" icon="location">
+            <select required value={form.draft.cityId} onChange={(e) => form.patch({ cityId: e.target.value })} className={`${fieldBase} appearance-none`}>
+              <option value="" disabled>Select city</option>
+              {cities.items.map((x) => (
+                <option key={x.id} value={x.id}>{x.name}</option>
+              ))}
+            </select>
+          </FormField>
+          <FormField label="Spot name" icon="star">
+            <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Abbey Falls" />
+          </FormField>
+          <FormField label="Tag" icon="tag">
+            <input value={form.draft.tag} onChange={(e) => form.patch({ tag: e.target.value })} className={fieldBase} placeholder="e.g. Waterfall" />
+          </FormField>
+          <FormField label="Description" icon="tag">
+            <input value={form.draft.description} onChange={(e) => form.patch({ description: e.target.value })} className={fieldBase} placeholder="Short description" />
+          </FormField>
+        </FormCard>
       )}
 
-      <Card hover={false} className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-5 py-3">Name</th>
-                <th className="px-5 py-3">City</th>
-                <th className="px-5 py-3">Tag</th>
-                <th className="px-5 py-3">Order</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {spots.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50/60">
-                  <td className="px-5 py-3.5 font-medium text-slate-900">{s.name}</td>
-                  <td className="px-5 py-3.5 text-slate-600">{cityName(s.cityId)}</td>
-                  <td className="px-5 py-3.5">
-                    <span className="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-800">
-                      {s.tag}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-slate-500">{s.displayOrder}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <TableCard headers={["Spot", "City", "Tag", "Actions"]}>
+        {r.items.map((row) => (
+          <tr key={row.id} className="hover:bg-surface-hover/60">
+            <td className="px-5 py-3.5 font-medium text-fg">{row.name}</td>
+            <td className="px-5 py-3.5 text-muted">{row.cityName || cityName(row.cityId)}</td>
+            <td className="px-5 py-3.5 text-muted">{row.tag || "—"}</td>
+            <td className="px-5 py-3.5 text-right">
+              <RowActions
+                onEdit={() =>
+                  form.startEdit(row.id, {
+                    cityId: String(row.cityId),
+                    name: row.name,
+                    tag: row.tag,
+                    description: row.description,
+                  })
+                }
+                onDelete={() => r.remove(row.id)}
+              />
+            </td>
+          </tr>
+        ))}
+        <EmptyRow show={!r.loading && r.items.length === 0} cols={4} label="No tourist spots yet." />
+        <LoadingRow show={r.loading} cols={4} />
+      </TableCard>
     </div>
   );
+}
+
+function toCityBody(d: {
+  regionId: string;
+  name: string;
+  latitude: string;
+  longitude: string;
+  isPickupPoint: boolean;
+  isAirport: boolean;
+}) {
+  return {
+    regionId: Number(d.regionId),
+    name: d.name,
+    latitude: d.latitude.trim() === "" ? null : Number(d.latitude),
+    longitude: d.longitude.trim() === "" ? null : Number(d.longitude),
+    isPickupPoint: d.isPickupPoint,
+    isAirport: d.isAirport,
+  };
 }
 
 export default function AdminGeographyPage() {
@@ -367,16 +288,14 @@ export default function AdminGeographyPage() {
   const [tab, setTab] = useState<Tab>("regions");
 
   if (isLoading || !allowed) {
-    return <p className="text-sm text-slate-500">Loading…</p>;
+    return <p className="text-sm text-muted">Loading…</p>;
   }
 
   return (
     <div>
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Geography</h1>
-        <p className="text-sm text-slate-500">
-          Regions, cities and tourist spots that feed the Package Builder and search.
-        </p>
+        <h1 className="text-2xl font-bold text-fg">Geography</h1>
+        <p className="text-sm text-muted">Regions, cities and tourist spots.</p>
       </header>
 
       <AdminTabs
@@ -389,13 +308,105 @@ export default function AdminGeographyPage() {
         onChange={setTab}
       />
 
-      {tab === "regions" && <RegionsTab />}
-      {tab === "cities" && <CitiesTab />}
-      {tab === "spots" && <TouristSpotsTab />}
-
-      <p className="mt-3 text-xs text-slate-400">
-        This is a UI preview — changes here aren&apos;t saved yet.
-      </p>
+      {tab === "regions" ? <RegionsTab /> : tab === "cities" ? <CitiesTab /> : <SpotsTab />}
     </div>
+  );
+}
+
+// ─── shared layout bits (geography only) ─────────────────────────────────────
+
+function SectionHead({
+  count,
+  open,
+  onToggle,
+  addLabel,
+  icon,
+}: {
+  count: string;
+  open: boolean;
+  onToggle: () => void;
+  addLabel: string;
+  icon: "map-pin" | "location" | "star";
+}) {
+  return (
+    <div className="mb-4 flex items-center justify-between">
+      <p className="text-sm text-muted">{count}</p>
+      <Button variant="accent" size="sm" iconLeft={icon} onClick={onToggle}>
+        {open ? "Cancel" : addLabel}
+      </Button>
+    </div>
+  );
+}
+
+function FormCard({
+  children,
+  onSubmit,
+  error,
+  saving,
+  editing,
+  onCancel,
+}: {
+  children: React.ReactNode;
+  onSubmit: () => void;
+  error: string | null;
+  saving: boolean;
+  editing: boolean;
+  onCancel: () => void;
+}) {
+  return (
+    <Card padded hover={false} className="mb-6">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit();
+        }}
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+      >
+        {children}
+        {error && (
+          <div className="sm:col-span-2">
+            <ErrorNote message={error} />
+          </div>
+        )}
+        <div className="flex gap-2 sm:col-span-2">
+          <Button type="submit" variant="primary" size="sm" disabled={saving}>
+            {saving ? "Saving…" : editing ? "Save changes" : "Add"}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+function TableCard({
+  headers,
+  children,
+}: {
+  headers: string[];
+  children: React.ReactNode;
+}) {
+  return (
+    <Card hover={false} className="overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-line-subtle bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted">
+            <tr>
+              {headers.map((h) => (
+                <th
+                  key={h}
+                  className={`px-5 py-3 ${h === "Actions" ? "text-right" : ""}`}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line-subtle">{children}</tbody>
+        </table>
+      </div>
+    </Card>
   );
 }

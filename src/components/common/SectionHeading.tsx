@@ -32,7 +32,7 @@ export default function SectionHeading({
       )}
       <h2
         className={`mt-2 font-display text-3xl font-bold md:text-4xl ${
-          inverted ? "text-white" : "text-slate-900"
+          inverted ? "text-white" : "text-fg"
         }`}
       >
         {title}
@@ -40,7 +40,7 @@ export default function SectionHeading({
       {subtitle && (
         <p
           className={`mt-4 text-lg ${
-            inverted ? "text-primary-100" : "text-slate-600"
+            inverted ? "text-primary-100" : "text-muted"
           }`}
         >
           {subtitle}

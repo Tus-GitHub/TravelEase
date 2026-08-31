@@ -1,9 +1,9 @@
-import type { AdminRole } from "@/lib/admin/mockData";
+import type { AdminRole } from "@/lib/admin/types";
 
 const roleStyles: Record<AdminRole, string> = {
   admin: "bg-accent-100 text-accent-700",
-  agent: "bg-primary-100 text-primary-800",
-  customer: "bg-slate-100 text-slate-600",
+  agent: "bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300",
+  customer: "bg-surface-hover text-muted",
 };
 
 export default function RoleBadge({ role }: { role: AdminRole }) {

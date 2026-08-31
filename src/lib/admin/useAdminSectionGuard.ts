@@ -9,15 +9,16 @@ import { useAdminPermissions, type AdminSection } from "@/context/AdminPermissio
 export function useAdminSectionGuard(section: AdminSection) {
   const router = useRouter();
   const { user, isLoading } = useAuth();
-  const { canAccess } = useAdminPermissions();
+  const { canAccess, permissionsLoaded } = useAdminPermissions();
 
   useEffect(() => {
-    if (isLoading || !user) return;
+    if (isLoading || !permissionsLoaded || !user) return;
     if (!canAccess(user.role, section)) {
       router.replace("/admin");
     }
-  }, [isLoading, user, section, canAccess, router]);
+  }, [isLoading, permissionsLoaded, user, section, canAccess, router]);
 
-  const allowed = !isLoading && !!user && canAccess(user.role, section);
-  return { isLoading: isLoading || !user, allowed };
+  const ready = !isLoading && permissionsLoaded && !!user;
+  const allowed = ready && canAccess(user.role, section);
+  return { isLoading: !ready, allowed };
 }

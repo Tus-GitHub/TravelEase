@@ -3,9 +3,10 @@ import SectionHeading from "./SectionHeading";
 type Bg = "white" | "gray" | "primary";
 
 const backgrounds: Record<Bg, string> = {
-  white: "bg-white",
-  gray: "bg-slate-50",
-  primary: "bg-gradient-to-br from-primary-900 to-primary-800",
+  white: "bg-canvas",
+  gray: "bg-surface-muted",
+  primary:
+    "bg-gradient-to-br from-primary-900 to-primary-800 dark:from-primary-950 dark:to-primary-900",
 };
 
 export interface SectionProps {

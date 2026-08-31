@@ -60,15 +60,15 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
         </div>
 
         <div>
-          <h1 className="font-display text-3xl font-bold text-slate-900">{vehicle.name}</h1>
+          <h1 className="font-display text-3xl font-bold text-fg">{vehicle.name}</h1>
           <div className="mt-2 flex items-center gap-3">
             <StarRating rating={vehicle.rating} showValue />
-            <span className="text-sm text-slate-500">{vehicle.seatingCapacity} seater</span>
+            <span className="text-sm text-muted">{vehicle.seatingCapacity} seater</span>
           </div>
 
           <div className="mt-5 flex items-end gap-1">
-            <span className="font-display text-3xl font-bold text-primary-900">{priceLabel}</span>
-            <span className="pb-1 text-sm text-slate-500">/ day</span>
+            <span className="font-display text-3xl font-bold text-primary-900 dark:text-primary-300 ">{priceLabel}</span>
+            <span className="pb-1 text-sm text-muted">/ day</span>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
@@ -93,14 +93,14 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
             </Button>
           </div>
 
-          <p className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
+          <p className="mt-4 flex items-center gap-1.5 text-xs text-faint">
             <Icon name="shield-check" className="h-4 w-4" />
             Chauffeur-driven. Driver allowance, fuel and tolls billed per trip type.
           </p>
         </div>
       </div>
 
-      <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-slate-200 pt-6 sm:grid-cols-4">
+      <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-6 sm:grid-cols-4">
         <Spec label="Type" value={vehicle.type} />
         <Spec label="Seating" value={`${vehicle.seatingCapacity} passengers`} />
         <Spec label="Daily rate" value={priceLabel} />
@@ -109,7 +109,7 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
 
       {similar.length > 0 && (
         <div className="mt-14">
-          <h2 className="font-display text-xl font-bold text-slate-900">Similar vehicles</h2>
+          <h2 className="font-display text-xl font-bold text-fg">Similar vehicles</h2>
           <div className="mt-6">
             <Grid cols={{ base: 1, sm: 2, lg: 3 }}>
               {similar.map((v) => (
@@ -126,8 +126,8 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
 function Spec({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</dt>
-      <dd className="mt-1 text-sm font-medium text-slate-800">{value}</dd>
+      <dt className="text-xs font-semibold uppercase tracking-wide text-faint">{label}</dt>
+      <dd className="mt-1 text-sm font-medium text-fg">{value}</dd>
     </div>
   );
 }

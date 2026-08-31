@@ -42,7 +42,7 @@ export default function PasswordField({
         type="button"
         onClick={() => setIsVisible((v) => !v)}
         aria-label={isVisible ? "Hide password" : "Show password"}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-600"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-faint transition-colors hover:text-muted"
       >
         <Icon name={isVisible ? "eye-off" : "eye"} className="h-4 w-4" />
       </button>

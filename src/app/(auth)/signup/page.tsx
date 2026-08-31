@@ -59,14 +59,14 @@ export default function SignupPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-slate-900">Create your account</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <h1 className="text-2xl font-bold text-fg">Create your account</h1>
+      <p className="mt-1 text-sm text-muted">
         Join TravelEase to book and track your trips.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
             {error}
           </p>
         )}
@@ -138,9 +138,9 @@ export default function SignupPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-sm text-muted">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-primary-900 hover:underline">
+        <Link href="/login" className="font-semibold text-primary-900 dark:text-primary-300  hover:underline">
           Log in
         </Link>
       </p>

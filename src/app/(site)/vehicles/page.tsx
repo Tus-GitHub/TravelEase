@@ -17,7 +17,7 @@ export default function VehiclesPage() {
       title="Browse Vehicles"
       subtitle="Chauffeur-driven vehicles for every trip — from city rides to multi-day tours."
     >
-      <Suspense fallback={<p className="text-center text-sm text-slate-500">Loading…</p>}>
+      <Suspense fallback={<p className="text-center text-sm text-muted">Loading…</p>}>
         <VehiclesBrowser />
       </Suspense>
     </Section>

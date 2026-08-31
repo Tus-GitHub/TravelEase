@@ -39,15 +39,15 @@ export default function ContactForm() {
       <Card padded hover={false}>
         {sent ? (
           <div className="flex flex-col items-center py-10 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <Icon name="check" className="h-6 w-6" />
             </span>
-            <h2 className="mt-4 font-display text-lg font-bold text-slate-900">
+            <h2 className="mt-4 font-display text-lg font-bold text-fg">
               Thanks, {form.name.split(" ")[0] || "there"}!
             </h2>
-            <p className="mt-1 max-w-sm text-sm text-slate-600">
+            <p className="mt-1 max-w-sm text-sm text-muted">
               Your message is in. Our support team will get back to you at{" "}
-              <span className="font-medium text-slate-800">{form.email}</span> within a few hours.
+              <span className="font-medium text-fg">{form.email}</span> within a few hours.
             </p>
             <div className="mt-5">
               <Button
@@ -99,14 +99,14 @@ export default function ContactForm() {
             </FormField>
 
             <label className="block text-left">
-              <span className="mb-1.5 block text-xs font-semibold text-slate-600">Message</span>
+              <span className="mb-1.5 block text-xs font-semibold text-muted">Message</span>
               <textarea
                 required
                 rows={5}
                 placeholder="How can we help?"
                 value={form.message}
                 onChange={set("message")}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
+                className="w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg placeholder:text-faint focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
               />
             </label>
 
@@ -121,19 +121,19 @@ export default function ContactForm() {
         {details.map((detail) => (
           <Card key={detail.label} padded hover={false}>
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-800">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-800 dark:bg-primary-950 dark:text-primary-300">
                 <Icon name={detail.icon} className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-wide text-faint">
                   {detail.label}
                 </p>
                 {detail.href ? (
-                  <a href={detail.href} className="mt-1 block text-sm text-slate-800 hover:text-primary-700">
+                  <a href={detail.href} className="mt-1 block text-sm text-fg hover:text-primary-700">
                     {detail.value}
                   </a>
                 ) : (
-                  <p className="mt-1 text-sm text-slate-800">{detail.value}</p>
+                  <p className="mt-1 text-sm text-fg">{detail.value}</p>
                 )}
               </div>
             </div>
@@ -141,14 +141,14 @@ export default function ContactForm() {
         ))}
 
         <Card padded hover={false}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-wide text-faint">
             Support hours
           </p>
           <dl className="mt-3 space-y-2">
             {supportHours.map((row) => (
               <div key={row.label} className="text-sm">
-                <dt className="font-medium text-slate-800">{row.label}</dt>
-                <dd className="text-slate-500">{row.value}</dd>
+                <dt className="font-medium text-fg">{row.label}</dt>
+                <dd className="text-muted">{row.value}</dd>
               </div>
             ))}
           </dl>

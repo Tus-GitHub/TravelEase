@@ -199,6 +199,20 @@ const paths: Record<IconName, React.ReactNode> = {
       d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"
     />
   ),
+  sun: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.36 6.36l-1.42-1.42M7.05 7.05L5.64 5.64m12.72 0l-1.42 1.42M7.05 16.95l-1.41 1.41M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+    />
+  ),
+  moon: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"
+    />
+  ),
   "chevron-down": (
     <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
   ),

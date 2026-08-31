@@ -40,7 +40,7 @@ export default function SearchForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid grid-cols-1 gap-4 rounded-2xl border border-white/40 bg-white/95 p-5 shadow-card backdrop-blur md:grid-cols-2 lg:grid-cols-4"
+      className="grid grid-cols-1 gap-4 rounded-2xl border border-line bg-canvas/95 p-5 shadow-card backdrop-blur md:grid-cols-2 lg:grid-cols-4"
     >
       <FormField label="Pickup Location" icon="map-pin">
         <input

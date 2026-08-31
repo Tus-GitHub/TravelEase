@@ -21,18 +21,18 @@ export default function CancellationPolicyPage() {
       intro={cancellationIntro}
       sections={cancellationSections}
     >
-      <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200">
+      <div className="mt-8 overflow-hidden rounded-2xl border border-line">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
+          <thead className="bg-surface-muted text-xs uppercase tracking-wide text-faint">
             <tr>
               <th className="px-4 py-3 font-semibold">When the trip is cancelled</th>
               <th className="px-4 py-3 font-semibold">Refund</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-line-subtle">
             {cancellationTiers.map((tier) => (
               <tr key={tier.window}>
-                <td className="px-4 py-3 text-slate-700">{tier.window}</td>
+                <td className="px-4 py-3 text-fg">{tier.window}</td>
                 <td className="px-4 py-3">
                   <Badge tone={tier.tone}>{tier.refund}</Badge>
                 </td>

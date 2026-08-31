@@ -32,17 +32,17 @@ export default function BookingPage() {
           {bookingSteps.map((step, i) => (
             <Card key={step.title} padded hover={false}>
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-800">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-800 dark:bg-primary-950 dark:text-primary-300">
                   <Icon name={step.icon} className="h-5 w-5" />
                 </span>
-                <span className="font-display text-sm font-bold text-slate-400">
+                <span className="font-display text-sm font-bold text-faint">
                   Step {i + 1}
                 </span>
               </div>
-              <h3 className="mt-4 font-display text-lg font-semibold text-slate-900">
+              <h3 className="mt-4 font-display text-lg font-semibold text-fg">
                 {step.title}
               </h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{step.body}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{step.body}</p>
             </Card>
           ))}
         </Grid>
@@ -58,12 +58,12 @@ export default function BookingPage() {
           {popularRoutes.map((route) => (
             <Link key={`${route.from}-${route.to}`} href="/vehicles">
               <Card padded className="h-full">
-                <div className="flex items-center gap-2 font-display font-semibold text-slate-900">
+                <div className="flex items-center gap-2 font-display font-semibold text-fg">
                   {route.from}
                   <Icon name="arrow-right" className="h-4 w-4 shrink-0 text-accent-500" />
                   {route.to}
                 </div>
-                <p className="mt-1.5 text-xs text-slate-500">{route.note}</p>
+                <p className="mt-1.5 text-xs text-muted">{route.note}</p>
               </Card>
             </Link>
           ))}

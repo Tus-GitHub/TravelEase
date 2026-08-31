@@ -35,7 +35,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
 
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-display text-lg font-semibold text-slate-900">
+          <h3 className="font-display text-lg font-semibold text-fg">
             <Link href={`/vehicles/${vehicle.id}`} className="hover:text-primary-700">
               {vehicle.name}
             </Link>
@@ -43,7 +43,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
           <StarRating rating={vehicle.rating} showValue />
         </div>
 
-        <div className="mt-2 flex items-center gap-1.5 text-sm text-slate-500">
+        <div className="mt-2 flex items-center gap-1.5 text-sm text-muted">
           <Icon name="seat" className="h-4 w-4" />
           {vehicle.seatingCapacity} Seater
         </div>
@@ -54,12 +54,12 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
           ))}
         </div>
 
-        <div className="mt-5 flex items-end justify-between border-t border-slate-100 pt-4">
+        <div className="mt-5 flex items-end justify-between border-t border-line-subtle pt-4">
           <div>
-            <span className="font-display text-2xl font-bold text-primary-900">
+            <span className="font-display text-2xl font-bold text-primary-900 dark:text-primary-300 ">
               ₹{vehicle.pricePerDay.toLocaleString("en-IN")}
             </span>
-            <span className="text-sm text-slate-500"> / day</span>
+            <span className="text-sm text-muted"> / day</span>
           </div>
           <Button
             href={`/booking/${vehicle.id}`}

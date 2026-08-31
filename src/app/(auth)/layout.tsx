@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Logo from "@/components/common/Logo";
+import ThemeToggle from "@/components/common/ThemeToggle";
 
 /**
  * Full-screen shell for auth pages: form on the left, brand image on the
@@ -7,8 +8,11 @@ import Logo from "@/components/common/Logo";
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-      <div className="flex items-center justify-center px-6 py-12 sm:px-12 lg:px-20">
+    <div className="grid min-h-screen grid-cols-1 bg-canvas lg:grid-cols-2">
+      <div className="relative flex items-center justify-center px-6 py-12 sm:px-12 lg:px-20">
+        <div className="absolute right-4 top-4">
+          <ThemeToggle />
+        </div>
         <div className="w-full max-w-sm">
           <Logo />
           <div className="mt-10">{children}</div>

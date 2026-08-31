@@ -16,7 +16,7 @@ export default function Logo({ inverted = false }: LogoProps) {
       </span>
       <span
         className={`font-display text-xl font-bold tracking-tight ${
-          inverted ? "text-white" : "text-primary-900"
+          inverted ? "text-white" : "text-primary-900 dark:text-white"
         }`}
       >
         {site.name}

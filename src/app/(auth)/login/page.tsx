@@ -35,14 +35,14 @@ export default function LoginPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-slate-900">Welcome back</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <h1 className="text-2xl font-bold text-fg">Welcome back</h1>
+      <p className="mt-1 text-sm text-muted">
         Log in to manage your bookings and trips.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
             {error}
           </p>
         )}
@@ -68,12 +68,12 @@ export default function LoginPage() {
           onChange={setPassword}
         />
 
-        <label className="flex items-center gap-2 text-sm text-slate-600">
+        <label className="flex items-center gap-2 text-sm text-muted">
           <input
             type="checkbox"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 accent-primary-900 focus:ring-primary-500"
+            className="h-4 w-4 rounded border-line accent-primary-900 focus:ring-primary-500"
           />
           Remember me for 30 days
         </label>
@@ -89,9 +89,9 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-sm text-muted">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-semibold text-primary-900 hover:underline">
+        <Link href="/signup" className="font-semibold text-primary-900 dark:text-primary-300  hover:underline">
           Sign up
         </Link>
       </p>

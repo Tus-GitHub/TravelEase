@@ -4,10 +4,11 @@ import type { IconName } from "@/types";
 type Tone = "neutral" | "primary" | "accent" | "success";
 
 const tones: Record<Tone, string> = {
-  neutral: "bg-slate-100 text-slate-600",
-  primary: "bg-primary-50 text-primary-800",
-  accent: "bg-accent-50 text-accent-700",
-  success: "bg-emerald-50 text-emerald-700",
+  neutral: "bg-surface-hover text-muted",
+  primary: "bg-primary-50 text-primary-800 dark:bg-primary-950 dark:text-primary-300",
+  accent: "bg-accent-50 text-accent-700 dark:bg-accent-500/15 dark:text-accent-300",
+  success:
+    "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
 };
 
 export interface BadgeProps {

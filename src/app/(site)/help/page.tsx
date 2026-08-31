@@ -22,19 +22,19 @@ export default function HelpPage() {
           <div key={group.category}>
             <div className="flex items-center gap-2">
               <Icon name={group.icon} className="h-5 w-5 text-primary-700" />
-              <h2 className="font-display text-lg font-bold text-slate-900">{group.category}</h2>
+              <h2 className="font-display text-lg font-bold text-fg">{group.category}</h2>
             </div>
-            <div className="mt-4 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <div className="mt-4 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
               {group.items.map((item) => (
                 <details key={item.q} className="group px-5 py-4">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-fg [&::-webkit-details-marker]:hidden">
                     {item.q}
                     <Icon
                       name="chevron-down"
-                      className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180"
+                      className="h-4 w-4 shrink-0 text-faint transition-transform group-open:rotate-180"
                     />
                   </summary>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{item.a}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-muted">{item.a}</p>
                 </details>
               ))}
             </div>
@@ -43,7 +43,7 @@ export default function HelpPage() {
       </div>
 
       <div className="mx-auto mt-12 max-w-3xl rounded-2xl bg-primary-50 px-6 py-7 text-center">
-        <p className="text-sm text-slate-600">Still stuck? Our team is a message away.</p>
+        <p className="text-sm text-muted">Still stuck? Our team is a message away.</p>
         <div className="mt-3">
           <Button href="/contact" variant="accent" size="sm">
             Contact support

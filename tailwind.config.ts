@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,6 +10,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Semantic tokens — resolved from CSS vars in globals.css, swap per theme.
+        canvas: "rgb(var(--c-canvas) / <alpha-value>)",
+        surface: "rgb(var(--c-surface) / <alpha-value>)",
+        "surface-muted": "rgb(var(--c-surface-muted) / <alpha-value>)",
+        "surface-hover": "rgb(var(--c-surface-hover) / <alpha-value>)",
+        fg: "rgb(var(--c-fg) / <alpha-value>)",
+        muted: "rgb(var(--c-muted) / <alpha-value>)",
+        faint: "rgb(var(--c-faint) / <alpha-value>)",
+        line: "rgb(var(--c-line) / <alpha-value>)",
+        "line-subtle": "rgb(var(--c-line-subtle) / <alpha-value>)",
         primary: {
           50: "#eff6ff",
           100: "#dbeafe",

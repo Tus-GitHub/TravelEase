@@ -14,10 +14,10 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 function AdminGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, isLoading } = useAuth();
-  const { hasAnyAccess } = useAdminPermissions();
+  const { hasAnyAccess, permissionsLoaded } = useAdminPermissions();
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || !permissionsLoaded) return;
     if (!user) {
       router.replace("/login");
       return;
@@ -25,18 +25,18 @@ function AdminGate({ children }: { children: React.ReactNode }) {
     if (!hasAnyAccess(user.role)) {
       router.replace("/");
     }
-  }, [isLoading, user, hasAnyAccess, router]);
+  }, [isLoading, permissionsLoaded, user, hasAnyAccess, router]);
 
-  if (isLoading || !user || !hasAnyAccess(user.role)) {
+  if (isLoading || !permissionsLoaded || !user || !hasAnyAccess(user.role)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-sm text-slate-500">Loading…</p>
+      <div className="flex min-h-screen items-center justify-center bg-canvas">
+        <p className="text-sm text-muted">Loading…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 lg:pl-64">
+    <div className="min-h-screen bg-canvas lg:pl-64">
       <AdminSidebar user={user} />
       <main className="px-4 py-8 sm:px-6 lg:px-10">{children}</main>
     </div>

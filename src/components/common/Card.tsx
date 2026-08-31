@@ -19,7 +19,7 @@ export default function Card({
 }: CardProps) {
   return (
     <div
-      className={`group overflow-hidden rounded-2xl bg-white shadow-card ${
+      className={`group overflow-hidden rounded-2xl border border-line-subtle bg-surface shadow-card ${
         hover
           ? "transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card-hover"
           : ""

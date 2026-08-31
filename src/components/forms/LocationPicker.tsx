@@ -188,7 +188,7 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
         <span className="relative block">
           <Icon
             name="search"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint"
           />
           <input
             type="text"
@@ -199,19 +199,19 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
             className={`${fieldBase} pr-9`}
           />
           {searching && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-faint">
               …
             </span>
           )}
         </span>
         {open && results.length > 0 && (
-          <ul className="absolute left-0 right-0 z-[1200] mt-1 max-h-56 overflow-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+          <ul className="absolute left-0 right-0 z-[1200] mt-1 max-h-56 overflow-auto rounded-xl border border-line bg-surface py-1 shadow-lg">
             {results.map((r, i) => (
               <li key={`${r.lat},${r.lng},${i}`}>
                 <button
                   type="button"
                   onClick={() => chooseResult(r)}
-                  className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                  className="block w-full px-3 py-2 text-left text-sm text-fg hover:bg-surface-hover"
                 >
                   {r.label}
                 </button>
@@ -221,7 +221,7 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
         )}
       </div>
 
-      <div className="h-64 w-full overflow-hidden rounded-xl border border-slate-200">
+      <div className="h-64 w-full overflow-hidden rounded-xl border border-line">
         <MapContainer center={center} zoom={value ? PIN_ZOOM : DEFAULT_ZOOM} className="h-full w-full">
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -260,12 +260,12 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
           <button
             type="button"
             onClick={clear}
-            className="text-xs font-medium text-slate-500 underline hover:text-slate-700"
+            className="text-xs font-medium text-muted underline hover:text-fg"
           >
             Clear location
           </button>
         )}
-        {status && <span className="text-xs text-slate-500">📍 {status}</span>}
+        {status && <span className="text-xs text-muted">📍 {status}</span>}
       </div>
     </div>
   );

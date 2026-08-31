@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import Logo from "@/components/common/Logo";
 import Avatar from "@/components/common/Avatar";
 import Icon from "@/components/common/Icon";
+import ThemeToggle from "@/components/common/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
 import type { AuthUser } from "@/context/AuthContext";
 import { useAdminPermissions, type AdminSection } from "@/context/AdminPermissionsContext";
@@ -79,14 +80,17 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
       {/* Mobile top bar */}
       <div className="flex items-center justify-between border-b border-primary-800 bg-primary-900 px-4 py-3 lg:hidden">
         <Logo inverted />
-        <button
-          type="button"
-          onClick={() => setIsMobileOpen((v) => !v)}
-          aria-label={isMobileOpen ? "Close menu" : "Open menu"}
-          className="text-white"
-        >
-          <Icon name={isMobileOpen ? "close" : "menu"} className="h-6 w-6" />
-        </button>
+        <div className="flex items-center gap-1">
+          <ThemeToggle tone="light" />
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen((v) => !v)}
+            aria-label={isMobileOpen ? "Close menu" : "Open menu"}
+            className="text-white"
+          >
+            <Icon name={isMobileOpen ? "close" : "menu"} className="h-6 w-6" />
+          </button>
+        </div>
       </div>
       <div
         className={`overflow-hidden bg-primary-900 transition-[max-height] duration-300 lg:hidden ${
@@ -131,10 +135,11 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
         <div className="border-t border-white/10 pt-4">
           <div className="mb-3 flex items-center gap-3 px-2">
             <Avatar name={user.name} className="h-9 w-9 text-xs" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-white">{user.name}</p>
               <p className="truncate text-xs capitalize text-white/50">{user.role}</p>
             </div>
+            <ThemeToggle tone="light" />
           </div>
           <Link
             href="/"

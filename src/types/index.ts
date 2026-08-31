@@ -41,7 +41,9 @@ export type IconName =
   | "logout"
   | "grid"
   | "eye"
-  | "eye-off";
+  | "eye-off"
+  | "sun"
+  | "moon";
 
 export interface NavLink {
   label: string;

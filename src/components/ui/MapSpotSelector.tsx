@@ -47,7 +47,7 @@ export default function MapSpotSelector({
   return (
     <div className="w-full">
       {/* Header count */}
-      <p className="mb-5 text-center text-sm text-slate-500">
+      <p className="mb-5 text-center text-sm text-muted">
         Hover a spot to preview · Click to select ·{" "}
         <span
           className={`font-semibold ${
@@ -337,7 +337,7 @@ export default function MapSpotSelector({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.18 }}
-              className="flex max-w-sm w-full items-start gap-3 rounded-xl border border-slate-100 bg-white px-5 py-3 shadow-card"
+              className="flex max-w-sm w-full items-start gap-3 rounded-xl border border-line-subtle bg-surface px-5 py-3 shadow-card"
             >
               <div className="h-12 w-14 shrink-0 overflow-hidden rounded-lg">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -348,10 +348,10 @@ export default function MapSpotSelector({
                 />
               </div>
               <div className="min-w-0">
-                <p className="font-display font-semibold text-slate-900">
+                <p className="font-display font-semibold text-fg">
                   {hovered.name}
                 </p>
-                <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-slate-500">
+                <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted">
                   {hovered.description}
                 </p>
               </div>
@@ -362,7 +362,7 @@ export default function MapSpotSelector({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="text-sm text-slate-400"
+              className="text-sm text-faint"
             >
               {selected.length === 0
                 ? "Hover a spot to preview · Click to add to your package"
