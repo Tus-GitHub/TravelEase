@@ -1,3 +1,6 @@
+"use client";
+
+import { cloneElement, isValidElement, useId, type ReactElement } from "react";
 import Icon from "@/components/common/Icon";
 import type { IconName } from "@/types";
 
@@ -14,8 +17,22 @@ interface FormFieldProps {
   valid?: boolean;
 }
 
-/** Labelled input wrapper with a leading icon — shared by every form in the app. */
+/**
+ * Labelled input wrapper with a leading icon — shared by every form in the app.
+ * When `error` is set, the single control child is cloned to add
+ * `aria-invalid` + `aria-describedby` so screen readers announce the message.
+ */
 export default function FormField({ label, icon, children, error, valid }: FormFieldProps) {
+  const errorId = useId();
+
+  const control =
+    error && isValidElement(children)
+      ? cloneElement(children as ReactElement, {
+          "aria-invalid": true,
+          "aria-describedby": errorId,
+        })
+      : children;
+
   return (
     <label className="group block text-left">
       <span
@@ -40,7 +57,7 @@ export default function FormField({ label, icon, children, error, valid }: FormF
             error ? "text-red-400" : "text-faint group-focus-within:text-primary-500"
           }`}
         />
-        {children}
+        {control}
         {valid && !error && (
           <Icon
             name="check"
@@ -51,6 +68,7 @@ export default function FormField({ label, icon, children, error, valid }: FormF
       </span>
       {error && (
         <span
+          id={errorId}
           className="auth-errslide mt-1.5 block text-xs font-medium text-red-500 dark:text-red-400"
           role="alert"
         >

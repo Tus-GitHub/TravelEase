@@ -222,7 +222,12 @@
   );
   filter: blur(110px);
   opacity: 0.3;
-  animation: auth-aurora 34s ease-in-out infinite;
+}
+/* Drift is a desktop-only luxury — on phones it just costs frames (§13). */
+@media (min-width: 768px) {
+  .auth-aurora {
+    animation: auth-aurora 34s ease-in-out infinite;
+  }
 }
 
 /* Sign In <-> Sign Up swap — a quiet fade + short lift. Only the card content

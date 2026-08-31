@@ -50,6 +50,7 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return; // no duplicate submissions while a request is in flight
     setError(null);
 
     const errs = validate();
@@ -72,7 +73,7 @@ export default function SignupPage() {
       <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent-400">
         Start your journey
       </p>
-      <h1 className="mt-2 font-display text-[1.9rem] font-bold leading-tight text-white">
+      <h1 className="mt-2 font-display text-[1.65rem] font-bold leading-tight text-white sm:text-[1.9rem]">
         Create your account
       </h1>
       <p className="mt-1.5 text-sm text-white/55">
@@ -207,10 +208,10 @@ export default function SignupPage() {
         </Button>
       </form>
 
-      <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-widest text-white/35">
-        <span className="h-px flex-1 bg-white/10" />
+      <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-widest text-white/45">
+        <span className="h-px flex-1 bg-white/12" />
         or
-        <span className="h-px flex-1 bg-white/10" />
+        <span className="h-px flex-1 bg-white/12" />
       </div>
 
       <GoogleButton next="/signup" />

@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,13 +32,22 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return; // no duplicate submissions while a request is in flight
     setError(null);
 
+    let bad = false;
     if (!isValidEmail(email)) {
       setEmailError("Enter a valid email address.");
-      return;
+      bad = true;
     }
+    if (!password) {
+      setPasswordError("Enter your password.");
+      bad = true;
+    }
+    if (bad) return;
+
     setEmailError(null);
+    setPasswordError(null);
     setIsSubmitting(true);
 
     const result = await login(email, password, rememberMe);
@@ -55,7 +65,7 @@ export default function LoginPage() {
       <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent-400">
         Sign in
       </p>
-      <h1 className="mt-2 font-display text-[1.9rem] font-bold leading-tight text-white">
+      <h1 className="mt-2 font-display text-[1.65rem] font-bold leading-tight text-white sm:text-[1.9rem]">
         Welcome back
       </h1>
       <p className="mt-1.5 text-sm text-white/55">
@@ -111,7 +121,11 @@ export default function LoginPage() {
             autoComplete="current-password"
             placeholder="Your password"
             value={password}
-            onChange={setPassword}
+            error={passwordError ?? undefined}
+            onChange={(v) => {
+              setPassword(v);
+              if (passwordError) setPasswordError(null);
+            }}
           />
           <div className="mt-2 flex items-center justify-between">
             <label className="flex items-center gap-2 text-xs text-white/55">
@@ -145,10 +159,10 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-widest text-white/35">
-        <span className="h-px flex-1 bg-white/10" />
+      <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-widest text-white/45">
+        <span className="h-px flex-1 bg-white/12" />
         or
-        <span className="h-px flex-1 bg-white/10" />
+        <span className="h-px flex-1 bg-white/12" />
       </div>
 
       <GoogleButton next="/login" />

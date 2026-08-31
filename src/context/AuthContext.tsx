@@ -62,11 +62,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string, rememberMe = false): Promise<AuthResult> => {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, rememberMe }),
-      });
+      let res: Response;
+      try {
+        res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, rememberMe }),
+        });
+      } catch {
+        return { ok: false, error: "Couldn't reach the server. Check your connection and try again." };
+      }
       if (!res.ok) return { ok: false, error: await parseError(res, "Login failed.") };
       const data = await res.json();
       setUser(data.user);
@@ -77,11 +82,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signup = useCallback(
     async (name: string, email: string, phone: string, password: string): Promise<AuthResult> => {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, password }),
-      });
+      let res: Response;
+      try {
+        res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, phone, password }),
+        });
+      } catch {
+        return { ok: false, error: "Couldn't reach the server. Check your connection and try again." };
+      }
       if (!res.ok) return { ok: false, error: await parseError(res, "Sign up failed.") };
       const data = await res.json();
       setUser(data.user);
