@@ -10,6 +10,7 @@ import Badge from "@/components/common/Badge";
 import Icon from "@/components/common/Icon";
 import Button from "@/components/common/Button";
 import FormField, { fieldBase } from "@/components/forms/FormField";
+import Skeleton from "@/components/common/Skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { isValidPhone, isValidPincode } from "@/lib/validation";
 import { TRAVEL_TAGS } from "@/lib/travelTags";
@@ -104,8 +105,28 @@ export default function ProfilePage() {
 
   if (isLoading || !user || !loaded || !account) {
     return (
-      <Section bg="gray" className="!py-32">
-        <p className="text-center text-sm text-muted">Loading…</p>
+      <Section bg="gray" eyebrow="Account" title="Profile Settings">
+        <div className="mx-auto w-full max-w-3xl space-y-6">
+          <div className="rounded-2xl border border-line-subtle bg-surface p-6">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-16 w-16 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-3.5 w-56" />
+              </div>
+            </div>
+          </div>
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-line-subtle bg-surface p-6">
+              <Skeleton className="h-5 w-32" />
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            </div>
+          ))}
+        </div>
       </Section>
     );
   }

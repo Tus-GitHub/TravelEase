@@ -79,6 +79,33 @@
   70% { transform: translateX(560%) rotate(12deg); opacity: 0; }
 }
 
+/* ─── Skeletons ───────────────────────────────────────────── */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgb(var(--c-surface-hover));
+  border-radius: 0.5rem;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.08),
+    transparent
+  );
+  animation: shimmer 1.6s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+}
+
 /* GSAP sets the start state; this keeps content hidden pre-hydration only when
    the timeline will actually run (JS on, motion allowed). */
 .js-hero [data-hero] { will-change: transform, opacity; }
