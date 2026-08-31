@@ -40,7 +40,9 @@ export default function HeroVehicle({
   const [use3d, setUse3d] = useState(false);
 
   useEffect(() => {
-    setUse3d(!prefersReducedMotion() && hasWebGL());
+    // Phones get the lit photo — a WebGL hero car isn't worth the battery.
+    const bigScreen = window.matchMedia("(min-width: 768px)").matches;
+    setUse3d(bigScreen && !prefersReducedMotion() && hasWebGL());
   }, []);
 
   return (

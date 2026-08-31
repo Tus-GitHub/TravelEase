@@ -96,15 +96,15 @@ export default function HeroBackdrop() {
       {/* colour blooms */}
       <div
         data-hero-layer="1"
-        className="absolute -left-[15%] top-[-10%] h-[65vh] w-[65vh] rounded-full bg-primary-600/25 blur-[120px]"
+        className="absolute -left-[15%] top-[-10%] h-[65vh] w-[65vh] rounded-full bg-primary-600/25 blur-[64px] md:blur-[120px]"
       />
       <div
         data-hero-layer="2"
-        className="absolute right-[-10%] top-[20%] h-[55vh] w-[55vh] rounded-full bg-accent-500/15 blur-[130px]"
+        className="absolute right-[-10%] top-[20%] h-[55vh] w-[55vh] rounded-full bg-accent-500/15 blur-[64px] md:blur-[130px]"
       />
       <div
         data-hero-layer="3"
-        className="absolute bottom-[-20%] left-[30%] h-[50vh] w-[70vh] rounded-full bg-primary-500/15 blur-[140px]"
+        className="absolute bottom-[-20%] left-[30%] h-[50vh] w-[70vh] rounded-full bg-primary-500/15 blur-[64px] md:blur-[140px]"
       />
       {/* fine grid */}
       <div

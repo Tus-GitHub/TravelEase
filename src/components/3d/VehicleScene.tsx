@@ -5,6 +5,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { MathUtils, type Group } from "three";
 import VehicleModel from "./VehicleModel";
 import VehicleEnvironment from "./VehicleEnvironment";
+import CameraRig from "./CameraRig";
 import { prefersReducedMotion } from "@/lib/motion";
 
 interface Props {
@@ -12,7 +13,12 @@ interface Props {
   progressRef: MutableRefObject<number>;
 }
 
-function Rig({ progressRef, reduced }: Props & { reduced: boolean }) {
+/** Rotates/settles the car itself; the camera is handled by <CameraRig>. */
+function VehicleRig({
+  progressRef,
+  reduced,
+  mobile,
+}: Props & { reduced: boolean; mobile: boolean }) {
   const car = useRef<Group>(null);
 
   useFrame((state, delta) => {
@@ -23,27 +29,18 @@ function Rig({ progressRef, reduced }: Props & { reduced: boolean }) {
     if (reduced) {
       car0.rotation.set(0, Math.PI * 0.16, 0);
       car0.position.set(0, -0.55, 0);
-      state.camera.position.set(5.4, 1.7, 6);
-      state.camera.lookAt(0, 0.4, 0);
       return;
     }
 
-    // slow auto-rotate + subtle mouse parallax
+    const mouse = mobile ? 0 : 1;
     const targetY =
-      Math.PI * 0.16 + state.clock.elapsedTime * 0.12 + state.pointer.x * 0.22;
-    const targetX = -0.03 + state.pointer.y * 0.05;
+      Math.PI * 0.16 + state.clock.elapsedTime * 0.12 + state.pointer.x * 0.22 * mouse;
+    const targetX = -0.03 + state.pointer.y * 0.05 * mouse;
     car0.rotation.y = MathUtils.damp(car0.rotation.y, targetY, 3, delta);
     car0.rotation.x = MathUtils.damp(car0.rotation.x, targetX, 3, delta);
 
-    // scroll: ease forward + settle down
     car0.position.z = MathUtils.damp(car0.position.z, p * 1.8, 4, delta);
     car0.position.y = MathUtils.damp(car0.position.y, -0.55 - p * 0.2, 4, delta);
-
-    // camera lifts + pulls in as you scroll
-    state.camera.position.x = MathUtils.damp(state.camera.position.x, 5.4 - p * 1.4, 3, delta);
-    state.camera.position.y = MathUtils.damp(state.camera.position.y, 1.7 + p * 1.4, 3, delta);
-    state.camera.position.z = MathUtils.damp(state.camera.position.z, 6 - p * 0.6, 3, delta);
-    state.camera.lookAt(0, 0.4, 0);
   });
 
   return <VehicleModel ref={car} />;
@@ -53,6 +50,7 @@ export default function VehicleScene({ progressRef }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(true);
   const reduced = typeof window !== "undefined" && prefersReducedMotion();
+  const mobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   useEffect(() => {
     const el = wrap.current;
@@ -67,14 +65,15 @@ export default function VehicleScene({ progressRef }: Props) {
   return (
     <div ref={wrap} className="h-full w-full">
       <Canvas
-        shadows
-        dpr={[1, 1.75]}
+        shadows={!mobile}
+        dpr={[1, mobile ? 1.25 : 1.75]}
         frameloop={visible && !reduced ? "always" : "demand"}
         camera={{ position: [5.4, 1.7, 6], fov: 40 }}
-        gl={{ antialias: true, powerPreference: "high-performance" }}
+        gl={{ antialias: !mobile, powerPreference: "high-performance" }}
       >
-        <VehicleEnvironment />
-        <Rig progressRef={progressRef} reduced={reduced} />
+        <VehicleEnvironment mobile={mobile} />
+        <CameraRig progressRef={progressRef} reduced={reduced} mobile={mobile} />
+        <VehicleRig progressRef={progressRef} reduced={reduced} mobile={mobile} />
       </Canvas>
     </div>
   );

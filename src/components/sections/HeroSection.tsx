@@ -23,6 +23,7 @@ export default function HeroSection() {
   useEffect(() => {
     if (prefersReducedMotion() || !root.current) return;
     const el = root.current;
+    const mobile = window.innerWidth < 768;
 
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(el);
@@ -68,19 +69,22 @@ export default function HeroSection() {
       });
 
       // ── scroll: parallax layers + hero dissolves into the page ────────
-      gsap.to(q('[data-hero-layer="1"]'), {
-        yPercent: 30,
-        ease: "none",
-        scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
-      });
-      gsap.to(q('[data-hero-layer="2"]'), {
-        yPercent: -20,
-        ease: "none",
-        scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
-      });
+      // Parallax is a desktop luxury; on phones it just costs frames.
+      if (!mobile) {
+        gsap.to(q('[data-hero-layer="1"]'), {
+          yPercent: 30,
+          ease: "none",
+          scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
+        });
+        gsap.to(q('[data-hero-layer="2"]'), {
+          yPercent: -20,
+          ease: "none",
+          scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
+        });
+      }
       gsap.to(q('[data-hero="content"]'), {
-        yPercent: -12,
-        opacity: 0.15,
+        yPercent: mobile ? -4 : -12,
+        opacity: mobile ? 0.4 : 0.15,
         ease: "none",
         scrollTrigger: {
           trigger: el,
