@@ -18,6 +18,8 @@ export default function PackageShowcase() {
   useEffect(() => {
     if (prefersReducedMotion() || !root.current) return;
     const el = root.current;
+    // Parallax is a desktop luxury; phones get the reveal only (§28).
+    const mobile = window.innerWidth < 768;
     const ctx = gsap.context(() => {
       gsap.utils.toArray<HTMLElement>("[data-pkg-card]").forEach((card) => {
         gsap.fromTo(
@@ -32,7 +34,7 @@ export default function PackageShowcase() {
           },
         );
         const img = card.querySelector("[data-pkg-img]");
-        if (img) {
+        if (img && !mobile) {
           gsap.fromTo(
             img,
             { yPercent: -8 },

@@ -49,6 +49,7 @@ function VehicleRig({
 export default function VehicleScene({ progressRef }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(true);
+  const [tabActive, setTabActive] = useState(true);
   const reduced = typeof window !== "undefined" && prefersReducedMotion();
   const mobile = typeof window !== "undefined" && window.innerWidth < 768;
 
@@ -59,7 +60,15 @@ export default function VehicleScene({ progressRef }: Props) {
       threshold: 0,
     });
     io.observe(el);
-    return () => io.disconnect();
+
+    // Stop rendering entirely while the tab is backgrounded.
+    const onVis = () => setTabActive(!document.hidden);
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, []);
 
   return (
@@ -67,7 +76,7 @@ export default function VehicleScene({ progressRef }: Props) {
       <Canvas
         shadows={!mobile}
         dpr={[1, mobile ? 1.25 : 1.75]}
-        frameloop={visible && !reduced ? "always" : "demand"}
+        frameloop={visible && tabActive && !reduced ? "always" : "demand"}
         camera={{ position: [5.4, 1.7, 6], fov: 40 }}
         gl={{ antialias: !mobile, powerPreference: "high-performance" }}
       >

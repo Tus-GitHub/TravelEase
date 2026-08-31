@@ -70,7 +70,7 @@ export default function Navbar() {
                 <Link
                   href={link.href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative text-sm font-medium transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-left after:bg-accent-500 after:transition-transform after:duration-300 hover:text-accent-500 hover:after:scale-x-100 ${
+                  className={`relative rounded-sm text-sm font-medium outline-none transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-left after:bg-accent-500 after:transition-transform after:duration-300 hover:text-accent-500 hover:after:scale-x-100 focus-visible:text-accent-500 focus-visible:after:scale-x-100 focus-visible:ring-2 focus-visible:ring-accent-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
                     active ? "after:scale-x-100" : "after:scale-x-0"
                   } ${
                     active

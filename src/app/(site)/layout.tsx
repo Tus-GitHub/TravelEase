@@ -7,6 +7,7 @@ import ScrollProgress from "@/components/motion/ScrollProgress";
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <SmoothScroll>
+      <div className="site-grain" aria-hidden />
       <ScrollProgress />
       <Navbar />
       {children}

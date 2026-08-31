@@ -32,6 +32,10 @@ const minPrice = Math.min(...vehicles.map((v) => v.pricePerDay));
 
 export default function DestinationMap() {
   const root = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const reduced = mounted && prefersReducedMotion();
+
   const [from, setFrom] = useState<MapNode>(
     () => mapNodes.find((n) => n.id === "delhi")!,
   );
@@ -149,19 +153,23 @@ export default function DestinationMap() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeDasharray="1000"
-                  strokeDashoffset="1000"
+                  strokeDashoffset={reduced ? "0" : "1000"}
                 >
-                  <animate
-                    attributeName="stroke-dashoffset"
-                    from="1000"
-                    to="0"
-                    dur="1.1s"
-                    fill="freeze"
-                  />
+                  {!reduced && (
+                    <animate
+                      attributeName="stroke-dashoffset"
+                      from="1000"
+                      to="0"
+                      dur="1.1s"
+                      fill="freeze"
+                    />
+                  )}
                 </path>
-                <circle r="3.5" fill="#fffbeb">
-                  <animateMotion dur="1.9s" repeatCount="indefinite" path={route} />
-                </circle>
+                {!reduced && (
+                  <circle r="3.5" fill="#fffbeb">
+                    <animateMotion dur="1.9s" repeatCount="indefinite" path={route} />
+                  </circle>
+                )}
               </g>
             )}
 
@@ -176,11 +184,14 @@ export default function DestinationMap() {
                   className="cursor-pointer"
                   onClick={() => pick(n)}
                 >
-                  {active && (
+                  {active && !reduced && (
                     <circle r="10" fill="none" stroke="#fcd34d" strokeWidth="1.5">
                       <animate attributeName="r" from="6" to="16" dur="1.8s" repeatCount="indefinite" />
                       <animate attributeName="opacity" from="0.7" to="0" dur="1.8s" repeatCount="indefinite" />
                     </circle>
+                  )}
+                  {active && reduced && (
+                    <circle r="10" fill="none" stroke="#fcd34d" strokeWidth="1.5" strokeOpacity="0.4" />
                   )}
                   <circle r="4.5" fill={active ? "#fcd34d" : "#bfdbfe"} />
                   <circle r="9" fill="transparent" />

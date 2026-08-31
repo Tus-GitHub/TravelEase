@@ -93,6 +93,8 @@ export default function HeroBackdrop() {
     <div className="pointer-events-none absolute inset-0 overflow-hidden bg-[#050914]">
       {/* deep base + vignette */}
       <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_-10%,#0d1b3a_0%,#060b18_45%,#04070f_100%)]" />
+      {/* aurora sweep — soft, slow, well behind the content (CSS-only) */}
+      <div className="hero-aurora" />
       {/* colour blooms */}
       <div
         data-hero-layer="1"

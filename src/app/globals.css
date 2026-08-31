@@ -50,10 +50,34 @@
 
   html {
     scroll-behavior: smooth;
+    /* Belt-and-braces against stray horizontal scroll from decorative
+       layers (§29). `clip` doesn't create a scroll container, so
+       position: sticky keeps working. */
+    overflow-x: clip;
   }
 
   body {
     @apply bg-canvas font-sans text-fg antialiased;
+    overflow-x: clip;
+  }
+
+  /* ── Global reduced-motion safety net (§30) ──────────────────
+     Per-component JS gates handle the big stuff; this neutralises
+     any remaining CSS keyframe / long transition (spinners, drift,
+     twinkle, floats) while leaving end states intact. Functional
+     transitions still fire — just instantly. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    html {
+      scroll-behavior: auto;
+    }
   }
 }
 
@@ -114,6 +138,62 @@
   .hover-underline:hover::after,
   .hover-underline:focus-visible::after {
     transform: scaleX(1);
+  }
+}
+
+/* ─── Atmosphere (§25) ────────────────────────────────────── */
+
+/* A whisper of film grain over the marketing pages — adds texture/depth
+   without touching legibility. Static, fixed, non-interactive, ~2.5%. */
+.site-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+:root:not(.dark) .site-grain {
+  opacity: 0.02;
+  mix-blend-mode: multiply;
+}
+
+/* Soft aurora sweep behind the hero — very low opacity, heavy blur, slow
+   drift. Desktop only; the reduced-motion net above freezes the drift. */
+@keyframes aurora-drift {
+  0%,
+  100% {
+    transform: translate3d(-6%, 0, 0) scale(1.1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate3d(6%, 2%, 0) scale(1.25);
+    opacity: 0.8;
+  }
+}
+.hero-aurora {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  top: -25%;
+  height: 70%;
+  pointer-events: none;
+  background: conic-gradient(
+    from 120deg at 50% 50%,
+    transparent 0deg,
+    rgb(56 189 248 / 0.16) 60deg,
+    rgb(37 99 235 / 0.12) 140deg,
+    transparent 220deg,
+    rgb(245 158 11 / 0.1) 300deg,
+    transparent 360deg
+  );
+  filter: blur(90px);
+  opacity: 0.6;
+}
+@media (min-width: 768px) {
+  .hero-aurora {
+    animation: aurora-drift 22s ease-in-out infinite;
   }
 }
 

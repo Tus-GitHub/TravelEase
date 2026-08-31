@@ -1,10 +1,15 @@
+"use client";
+
 /**
  * Full-width animated SVG scene — night road with a driving Tempo Traveller.
- * Pure SVG + CSS: no framer-motion needed, zero JS runtime.
- * SMIL <animateTransform> handles vehicle X-position and cloud drift (reliable in
- * SVG coordinate space regardless of how the SVG is scaled by the browser).
- * CSS handles wheel rotation (transform-box: fill-box keeps origin at wheel center).
+ * Mostly SVG + CSS. SMIL <animateTransform> handles vehicle X-position and cloud
+ * drift; CSS handles wheel rotation. Under prefers-reduced-motion the SMIL is
+ * dropped and the bus is parked mid-scene (the CSS spins/twinkle are frozen by
+ * the global reduced-motion rule) — a static night-road illustration.
  */
+
+import { useEffect, useState } from "react";
+import { prefersReducedMotion } from "@/lib/motion";
 
 const TREE_X = [55, 195, 355, 510, 685, 840, 1005, 1155, 1320, 1430];
 
@@ -37,6 +42,10 @@ function Tree({ x, large }: { x: number; large: boolean }) {
 }
 
 export default function TravelAnimationBand() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const reduced = mounted && prefersReducedMotion();
+
   return (
     <div
       className="relative w-full overflow-hidden"
@@ -115,14 +124,16 @@ export default function TravelAnimationBand() {
               opacity="0.7"
             />
           ))}
-          <animateTransform
-            attributeName="transform"
-            type="translate"
-            from="0 0"
-            to="-100 0"
-            dur="0.55s"
-            repeatCount="indefinite"
-          />
+          {!reduced && (
+            <animateTransform
+              attributeName="transform"
+              type="translate"
+              from="0 0"
+              to="-100 0"
+              dur="0.55s"
+              repeatCount="indefinite"
+            />
+          )}
         </g>
 
         {/* ── Trees (static) ─────────────────────────── */}
@@ -146,14 +157,16 @@ export default function TravelAnimationBand() {
           <ellipse cx="2110" cy="30"  rx="54"  ry="18" fill="white" opacity="0.07" />
           <ellipse cx="2550" cy="56"  rx="80"  ry="22" fill="white" opacity="0.09" />
           <ellipse cx="2595" cy="46"  rx="48"  ry="16" fill="white" opacity="0.07" />
-          <animateTransform
-            attributeName="transform"
-            type="translate"
-            from="0 0"
-            to="-1440 0"
-            dur="28s"
-            repeatCount="indefinite"
-          />
+          {!reduced && (
+            <animateTransform
+              attributeName="transform"
+              type="translate"
+              from="0 0"
+              to="-1440 0"
+              dur="28s"
+              repeatCount="indefinite"
+            />
+          )}
         </g>
 
         {/* ── Tempo Traveller ─────────────────────────── */}
@@ -163,7 +176,7 @@ export default function TravelAnimationBand() {
           The inner <g> with SMIL only moves X; outer group provides the fixed Y.
         */}
         <g transform="translate(0, 176)">
-          <g>
+          <g transform={reduced ? "translate(620 0)" : undefined}>
             {/* ─ Roof rack ─ */}
             <rect x="4"   y="-79" width="149" height="7" rx="3" fill="#1e40af" />
             <rect x="20"  y="-79" width="3"   height="7" fill="#1d4ed8" />
@@ -238,14 +251,16 @@ export default function TravelAnimationBand() {
             </g>
 
             {/* SMIL: drive from off-left to off-right */}
-            <animateTransform
-              attributeName="transform"
-              type="translate"
-              from="-225 0"
-              to="1680 0"
-              dur="13s"
-              repeatCount="indefinite"
-            />
+            {!reduced && (
+              <animateTransform
+                attributeName="transform"
+                type="translate"
+                from="-225 0"
+                to="1680 0"
+                dur="13s"
+                repeatCount="indefinite"
+              />
+            )}
           </g>
         </g>
       </svg>
