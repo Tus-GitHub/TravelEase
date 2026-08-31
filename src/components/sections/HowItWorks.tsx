@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Section from "@/components/common/Section";
 import Icon from "@/components/common/Icon";
 import { gsap, prefersReducedMotion } from "@/lib/motion";
+import { DURATION, EASE } from "@/lib/motion/presets";
 import type { IconName } from "@/types";
 
 const steps: { n: string; title: string; body: string; icon: IconName }[] = [
@@ -38,17 +39,17 @@ export default function HowItWorks() {
         gsap.from(step, {
           opacity: 0,
           x: -24,
-          duration: 0.7,
-          ease: "power3.out",
+          duration: DURATION.reveal,
+          ease: EASE.out,
           scrollTrigger: { trigger: step, start: "top 82%", once: true },
         });
         gsap.fromTo(
           step.querySelector("[data-hiw='dot']"),
-          { scale: 0, boxShadow: "0 0 0 0 rgba(245,158,11,0)" },
+          { scale: 0 },
           {
             scale: 1,
-            duration: 0.5,
-            ease: "back.out(2.4)",
+            duration: DURATION.ui,
+            ease: EASE.pop,
             scrollTrigger: { trigger: step, start: "top 80%", once: true },
           },
         );

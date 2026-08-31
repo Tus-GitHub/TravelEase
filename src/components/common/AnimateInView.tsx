@@ -1,22 +1,23 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { gsap, ScrollTrigger, prefersReducedMotion } from "@/lib/motion";
+import { gsap, prefersReducedMotion } from "@/lib/motion";
+import { fadeInUp, scheduleRefresh } from "@/lib/motion/presets";
 
 interface AnimateInViewProps {
   children: ReactNode;
   delay?: number;
   className?: string;
-  /** How far (px) to slide up from. Default 32. */
+  /** How far (px) to travel from. Default 32. */
   y?: number;
   /** Reveal direction bias. */
   from?: "up" | "left" | "right";
 }
 
 /**
- * Cinematic scroll reveal — fade + rise + a touch of blur/scale, once, driven
- * by GSAP ScrollTrigger (synced to Lenis). Content is fully visible with no JS
- * or under prefers-reduced-motion. Same API as the old Framer version.
+ * Cinematic scroll reveal — fade + rise + a touch of blur/scale, once. Thin
+ * wrapper over the shared `fadeInUp` preset; content is fully visible with no
+ * JS or under prefers-reduced-motion.
  */
 export default function AnimateInView({
   children,
@@ -31,41 +32,14 @@ export default function AnimateInView({
     const el = ref.current;
     if (!el || prefersReducedMotion()) return;
 
-    const start =
-      from === "left"
-        ? { opacity: 0, x: -y, y: 0, filter: "blur(8px)" }
-        : from === "right"
-          ? { opacity: 0, x: y, y: 0, filter: "blur(8px)" }
-          : { opacity: 0, x: 0, y, filter: "blur(8px)" };
+    const offset = from === "left" ? { x: -y, y: 0 } : from === "right" ? { x: y, y: 0 } : { x: 0, y };
+    const ctx = gsap.context(() => {
+      fadeInUp(el, { delay, ...offset });
+    }, el);
+    scheduleRefresh();
 
-    const anim = gsap.fromTo(
-      el,
-      { ...start, scale: 0.985 },
-      {
-        opacity: 1,
-        x: 0,
-        y: 0,
-        scale: 1,
-        filter: "blur(0px)",
-        duration: 0.9,
-        delay,
-        ease: "power3.out",
-        scrollTrigger: { trigger: el, start: "top 86%", once: true },
-      },
-    );
-
-    return () => {
-      anim.scrollTrigger?.kill();
-      anim.kill();
-    };
+    return () => ctx.revert();
   }, [delay, y, from]);
-
-  // Refresh once after mount so triggers measure post-layout (fonts, images).
-  useEffect(() => {
-    if (prefersReducedMotion()) return;
-    const id = window.setTimeout(() => ScrollTrigger.refresh(), 400);
-    return () => window.clearTimeout(id);
-  }, []);
 
   return (
     <div ref={ref} className={className}>

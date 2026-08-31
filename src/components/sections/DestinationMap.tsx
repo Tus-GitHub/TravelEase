@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/components/common/Button";
 import Section from "@/components/common/Section";
 import { gsap, prefersReducedMotion } from "@/lib/motion";
+import { DURATION, EASE } from "@/lib/motion/presets";
 import { vehicles } from "@/data/vehicles";
 import {
   mapNodes,
@@ -66,24 +67,24 @@ export default function DestinationMap() {
       gsap.from(q("[data-map='shape']"), {
         opacity: 0,
         scale: 0.9,
-        duration: 1.1,
-        ease: "power3.out",
+        duration: DURATION.reveal,
+        ease: EASE.out,
         scrollTrigger: { trigger: el, start: "top 75%", once: true },
       });
       gsap.from(q("[data-map='node']"), {
         opacity: 0,
         scale: 0,
         transformOrigin: "center",
-        duration: 0.5,
+        duration: DURATION.ui,
         stagger: 0.06,
-        ease: "back.out(2)",
+        ease: EASE.pop,
         scrollTrigger: { trigger: el, start: "top 70%", once: true },
       });
       gsap.from(q("[data-map='panel']"), {
         opacity: 0,
         x: 40,
-        duration: 0.9,
-        ease: "power3.out",
+        duration: DURATION.reveal,
+        ease: EASE.out,
         scrollTrigger: { trigger: el, start: "top 70%", once: true },
       });
     }, el);

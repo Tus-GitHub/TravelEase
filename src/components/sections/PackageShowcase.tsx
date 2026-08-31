@@ -8,6 +8,7 @@ import Icon from "@/components/common/Icon";
 import CountUp from "@/components/motion/CountUp";
 import Spotlight from "@/components/motion/Spotlight";
 import { gsap, prefersReducedMotion } from "@/lib/motion";
+import { parallax, scaleReveal } from "@/lib/motion/presets";
 import { travelPackages } from "@/data/packages";
 
 const featured = travelPackages.slice(0, 3);
@@ -22,29 +23,9 @@ export default function PackageShowcase() {
     const mobile = window.innerWidth < 768;
     const ctx = gsap.context(() => {
       gsap.utils.toArray<HTMLElement>("[data-pkg-card]").forEach((card) => {
-        gsap.fromTo(
-          card,
-          { clipPath: "inset(14% 8% 14% 8% round 24px)", opacity: 0.35 },
-          {
-            clipPath: "inset(0% 0% 0% 0% round 24px)",
-            opacity: 1,
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: { trigger: card, start: "top 82%", once: true },
-          },
-        );
-        const img = card.querySelector("[data-pkg-img]");
-        if (img && !mobile) {
-          gsap.fromTo(
-            img,
-            { yPercent: -8 },
-            {
-              yPercent: 8,
-              ease: "none",
-              scrollTrigger: { trigger: card, start: "top bottom", end: "bottom top", scrub: true },
-            },
-          );
-        }
+        scaleReveal(card);
+        const img = card.querySelector<HTMLElement>("[data-pkg-img]");
+        if (img && !mobile) parallax(img, { trigger: card });
       });
     }, el);
     return () => ctx.revert();

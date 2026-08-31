@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { gsap, prefersReducedMotion } from "@/lib/motion";
+import { DURATION, EASE } from "@/lib/motion/presets";
 
 /** Counts from 0 → value the first time it scrolls into view. */
 export default function CountUp({
@@ -28,8 +29,8 @@ export default function CountUp({
     const obj = { n: 0 };
     const tween = gsap.to(obj, {
       n: value,
-      duration: 1.4,
-      ease: "power2.out",
+      duration: DURATION.count,
+      ease: EASE.outSoft,
       onUpdate: () => setDisplay(Math.round(obj.n)),
       scrollTrigger: { trigger: el, start: "top 90%", once: true },
     });

@@ -3,6 +3,7 @@
 import { useEffect, useState, type MutableRefObject } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { hasWebGL, prefersReducedMotion } from "@/lib/motion";
 
 const VehicleScene = dynamic(() => import("@/components/3d/VehicleScene"), {
@@ -47,7 +48,15 @@ export default function HeroVehicle({
 
   return (
     <div data-hero="vehicle" className="relative aspect-[16/11] w-full">
-      {use3d ? <VehicleScene progressRef={progressRef} /> : <PhotoFallback />}
+      {use3d ? (
+        // If the WebGL scene throws at runtime (context lost, shader failure,
+        // missing model), fall back to the same lit photo — never crash.
+        <ErrorBoundary fallback={<PhotoFallback />}>
+          <VehicleScene progressRef={progressRef} />
+        </ErrorBoundary>
+      ) : (
+        <PhotoFallback />
+      )}
     </div>
   );
 }

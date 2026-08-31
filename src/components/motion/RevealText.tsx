@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { gsap, ScrollTrigger, prefersReducedMotion } from "@/lib/motion";
+import { gsap, prefersReducedMotion } from "@/lib/motion";
+import { revealLines, scheduleRefresh } from "@/lib/motion/presets";
 
 /**
  * Line-mask reveal for headings (§23) — each line sits in an `overflow-hidden`
  * clip and rises into place, once, when scrolled into view. Split on `\n`.
- * Deliberately line-level, not per-character: used for editorial headings, not
- * decoration. Renders plain, fully-visible text with no JS / reduced motion.
+ * Deliberately line-level, not per-character. Renders plain, fully-visible text
+ * with no JS / under reduced motion.
  */
 export default function RevealText({
   text,
@@ -26,27 +27,11 @@ export default function RevealText({
   useEffect(() => {
     const el = ref.current;
     if (!el || prefersReducedMotion()) return;
-
-    const inners = el.querySelectorAll<HTMLElement>("[data-rt-inner]");
-    const anim = gsap.fromTo(
-      inners,
-      { yPercent: 115 },
-      {
-        yPercent: 0,
-        duration: 0.9,
-        ease: "power3.out",
-        stagger,
-        delay,
-        scrollTrigger: { trigger: el, start: "top 88%", once: true },
-      },
-    );
-    const id = window.setTimeout(() => ScrollTrigger.refresh(), 400);
-
-    return () => {
-      window.clearTimeout(id);
-      anim.scrollTrigger?.kill();
-      anim.kill();
-    };
+    const ctx = gsap.context(() => {
+      revealLines(el, { delay, stagger });
+    }, el);
+    scheduleRefresh();
+    return () => ctx.revert();
   }, [delay, stagger]);
 
   return (

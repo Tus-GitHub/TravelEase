@@ -44,7 +44,7 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
       </Link>
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-card">
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-surface-hover shadow-card">
           <Spotlight className="h-full w-full">
             <Image
               src={vehicle.imageUrl}
@@ -86,7 +86,7 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
           <div className="mt-7 flex flex-wrap gap-3">
             <Magnetic>
               <Button
-                href={`/booking/${vehicle.id}`}
+                href={`/booking?vehicle=${vehicle.id}`}
                 variant="accent"
                 size="lg"
                 iconRight="arrow-right"

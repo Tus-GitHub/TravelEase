@@ -17,7 +17,10 @@ export interface VehicleCardProps {
 export default function VehicleCard({ vehicle }: VehicleCardProps) {
   return (
     <Card className="flex h-full flex-col transition-shadow duration-300 group-hover:shadow-[0_20px_50px_-12px_rgba(37,99,235,0.35)] group-hover:ring-1 group-hover:ring-primary-400/40">
-      <Link href={`/vehicles/${vehicle.id}`} className="relative block h-48 w-full overflow-hidden">
+      <Link
+        href={`/vehicles/${vehicle.id}`}
+        className="relative block h-48 w-full overflow-hidden bg-surface-hover"
+      >
         <Spotlight className="h-full w-full">
           <Image
             src={vehicle.imageUrl}
@@ -68,7 +71,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
           </div>
           <Magnetic strength={0.25} radius={70}>
             <Button
-              href={`/booking/${vehicle.id}`}
+              href={`/booking?vehicle=${vehicle.id}`}
               variant="accent"
               size="sm"
               iconRight="arrow-right"

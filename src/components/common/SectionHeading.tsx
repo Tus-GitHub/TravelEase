@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import RevealText from "@/components/motion/RevealText";
 import { gsap, prefersReducedMotion } from "@/lib/motion";
+import { DURATION, EASE, scheduleRefresh } from "@/lib/motion/presets";
 
 export interface SectionHeadingProps {
   eyebrow?: string;
@@ -36,12 +37,13 @@ export default function SectionHeading({
       gsap.from("[data-sh-fade]", {
         opacity: 0,
         y: 14,
-        duration: 0.7,
-        ease: "power2.out",
+        duration: DURATION.ui,
+        ease: EASE.outSoft,
         stagger: 0.12,
         scrollTrigger: { trigger: el, start: "top 86%", once: true },
       });
     }, el);
+    scheduleRefresh();
     return () => ctx.revert();
   }, []);
 

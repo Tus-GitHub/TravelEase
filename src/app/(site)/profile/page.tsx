@@ -80,6 +80,8 @@ export default function ProfilePage() {
   const [account, setAccount] = useState<AccountData | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Kick guests back to login once we know for sure there's no session.
   useEffect(() => {
@@ -88,12 +90,19 @@ export default function ProfilePage() {
 
   useEffect(() => {
     let cancelled = false;
+    setLoadError(false);
     fetch("/api/profile")
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (!res.ok) throw new Error(`profile ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
-        if (cancelled || !data) return;
+        if (cancelled || !data?.user) return;
         setAccount(data.user);
         setProfile(data.profile ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
       })
       .finally(() => {
         if (!cancelled) setLoaded(true);
@@ -101,7 +110,32 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
+
+  // Network / server error loading the profile — recoverable, not a dead end.
+  if (loaded && loadError && !account) {
+    return (
+      <Section bg="gray" eyebrow="Account" title="Profile Settings">
+        <Card padded hover={false} className="mx-auto max-w-md text-center">
+          <p className="text-sm text-muted">
+            We couldn&apos;t load your profile. Check your connection and try again.
+          </p>
+          <div className="mt-4">
+            <Button
+              variant="accent"
+              size="sm"
+              onClick={() => {
+                setLoaded(false);
+                setReloadKey((k) => k + 1);
+              }}
+            >
+              Retry
+            </Button>
+          </div>
+        </Card>
+      </Section>
+    );
+  }
 
   if (isLoading || !user || !loaded || !account) {
     return (
