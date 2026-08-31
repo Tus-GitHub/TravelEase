@@ -27,11 +27,20 @@ export default function CountUp({
       return;
     }
     const obj = { n: 0 };
+    let last = 0;
     const tween = gsap.to(obj, {
       n: value,
       duration: DURATION.count,
       ease: EASE.outSoft,
-      onUpdate: () => setDisplay(Math.round(obj.n)),
+      onUpdate: () => {
+        // Only re-render when the displayed integer actually changes — a 1.2s
+        // count would otherwise fire ~70 identical setStates.
+        const next = Math.round(obj.n);
+        if (next !== last) {
+          last = next;
+          setDisplay(next);
+        }
+      },
       scrollTrigger: { trigger: el, start: "top 90%", once: true },
     });
     return () => {

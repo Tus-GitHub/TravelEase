@@ -117,7 +117,7 @@ export default function HeroSection() {
         <div>
           <p
             data-hero="brand"
-            className="text-xs font-semibold uppercase tracking-[0.4em] text-white/45"
+            className="text-xs font-semibold uppercase tracking-[0.4em] text-white/60"
           >
             TravelEase
           </p>
@@ -161,7 +161,7 @@ export default function HeroSection() {
             {stats.map((s) => (
               <div key={s.label}>
                 <dt className="font-display text-stat">{s.value}</dt>
-                <dd className="mt-1 text-xs uppercase tracking-wide text-white/45">{s.label}</dd>
+                <dd className="mt-1 text-xs uppercase tracking-wide text-white/60">{s.label}</dd>
               </div>
             ))}
           </dl>

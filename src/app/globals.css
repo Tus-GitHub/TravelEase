@@ -341,15 +341,6 @@
 .sv-t3 { animation: svgTwinkle 3.8s ease-in-out infinite 1.7s; }
 .sv-t4 { animation: svgTwinkle 2.8s ease-in-out infinite 0.4s; }
 
-/* ─── Hero floating badges ────────────────────────────────── */
-@keyframes floatBadge {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-10px); }
-}
-.animate-float-a { animation: floatBadge 3.6s ease-in-out infinite; }
-.animate-float-b { animation: floatBadge 2.9s ease-in-out infinite 0.8s; }
-.animate-float-c { animation: floatBadge 3.3s ease-in-out infinite 1.5s; }
-
 /* ─── Confetti celebration (PackageBuilder step 4) ─────────── */
 @keyframes confettiFall {
   0%   { transform: translateY(-10px) rotate(0deg);   opacity: 1; }

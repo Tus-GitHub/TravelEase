@@ -215,7 +215,7 @@ export default function DestinationMap() {
 
         {/* ── panel ── */}
         <div data-map="panel" className="text-white">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/40">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
             {picking === "from" ? "Select your start" : "Select your destination"}
           </p>
 
@@ -230,15 +230,15 @@ export default function DestinationMap() {
 
           <dl className="mt-6 grid grid-cols-3 gap-4 border-y border-white/10 py-5">
             <div>
-              <dt className="text-[11px] uppercase tracking-wide text-white/40">Distance</dt>
+              <dt className="text-[11px] uppercase tracking-wide text-white/60">Distance</dt>
               <dd className="mt-1 font-display text-xl font-bold">{km.toLocaleString("en-IN")} km</dd>
             </div>
             <div>
-              <dt className="text-[11px] uppercase tracking-wide text-white/40">By road</dt>
+              <dt className="text-[11px] uppercase tracking-wide text-white/60">By road</dt>
               <dd className="mt-1 font-display text-xl font-bold">~{driveTime(km)}</dd>
             </div>
             <div>
-              <dt className="text-[11px] uppercase tracking-wide text-white/40">Fleet</dt>
+              <dt className="text-[11px] uppercase tracking-wide text-white/60">Fleet</dt>
               <dd className="mt-1 font-display text-xl font-bold">{vehicles.length} cars</dd>
             </div>
           </dl>

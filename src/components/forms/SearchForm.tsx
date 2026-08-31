@@ -48,7 +48,7 @@ export default function SearchForm() {
       onSubmit={handleSubmit}
       className="glass-dark rounded-3xl p-6 shadow-[0_30px_80px_-20px_rgba(2,6,20,0.7)]"
     >
-      <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/45">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/60">
         Where are you going?
       </p>
 
