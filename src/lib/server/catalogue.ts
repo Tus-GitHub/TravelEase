@@ -1,5 +1,5 @@
 import { getPool } from "./db";
-import type { Vehicle } from "@/types";
+import type { Vehicle, TravelPackage, PackageTag } from "@/types";
 
 /**
  * Public read layer for the catalogue (plan.md §31). Separate from
@@ -11,6 +11,17 @@ import type { Vehicle } from "@/types";
 /** Used when a vehicle has no image row yet. */
 export const VEHICLE_IMAGE_FALLBACK =
   "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80";
+
+/** Used when a package / stop has no image. */
+export const PACKAGE_IMAGE_FALLBACK =
+  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80";
+
+const PACKAGE_TAGS: PackageTag[] = ["Popular", "Best Value", "Premium", "Adventure"];
+
+/** Coerce a free-text `packages.tag` to one of the card's known styles. */
+export function normalizePackageTag(tag: string | null): PackageTag {
+  return PACKAGE_TAGS.find((t) => t === tag) ?? "Popular";
+}
 
 // ─── Vehicles ────────────────────────────────────────────────────────────────
 
@@ -268,6 +279,25 @@ function toPublicPackage(r: PackageRow, stops: PublicPackageStop[]): PublicPacka
     reviewCount: r.review_count,
     destinations: stops.map((s) => s.name),
     stops,
+  };
+}
+
+/** Adapt a PublicPackage to the `@/types` TravelPackage shape the cards render. */
+export function toCardPackage(p: PublicPackage): TravelPackage {
+  return {
+    id: p.slug,
+    name: p.name,
+    region: p.regionName,
+    duration: p.durationDays,
+    imageUrl: p.imageUrl ?? PACKAGE_IMAGE_FALLBACK,
+    destinations: p.destinations,
+    vehicleType: p.vehicleTypeTitle,
+    maxPersons: p.maxPersons,
+    highlights: p.highlights,
+    pricePerPerson: p.pricePerPerson,
+    rating: p.rating ?? 0,
+    reviewCount: p.reviewCount,
+    tag: normalizePackageTag(p.tag),
   };
 }
 

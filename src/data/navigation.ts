@@ -4,6 +4,7 @@ import type { NavLink, SocialLink } from "@/types";
 export const navLinks: NavLink[] = [
   { label: "Home", href: "/" },
   { label: "Vehicles", href: "/vehicles" },
+  { label: "Packages", href: "/packages" },
   { label: "Booking", href: "/booking" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
@@ -16,6 +17,7 @@ export const footerLinkGroups: { title: string; links: NavLink[] }[] = [
     links: [
       { label: "Home", href: "/" },
       { label: "Vehicles", href: "/vehicles" },
+      { label: "Packages", href: "/packages" },
       { label: "Booking", href: "/booking" },
       { label: "About Us", href: "/about" },
       { label: "Contact", href: "/contact" },

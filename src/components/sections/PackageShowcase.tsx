@@ -9,15 +9,14 @@ import CountUp from "@/components/motion/CountUp";
 import Spotlight from "@/components/motion/Spotlight";
 import { gsap, prefersReducedMotion } from "@/lib/motion";
 import { parallax, scaleReveal } from "@/lib/motion/presets";
-import { travelPackages } from "@/data/packages";
+import type { TravelPackage } from "@/types";
 
-const featured = travelPackages.slice(0, 3);
-
-export default function PackageShowcase() {
+export default function PackageShowcase({ packages }: { packages: TravelPackage[] }) {
   const root = useRef<HTMLDivElement>(null);
+  const featured = packages.slice(0, 3);
 
   useEffect(() => {
-    if (prefersReducedMotion() || !root.current) return;
+    if (prefersReducedMotion() || !root.current || featured.length === 0) return;
     const el = root.current;
     // Parallax is a desktop luxury; phones get the reveal only (§28).
     const mobile = window.innerWidth < 768;
@@ -29,7 +28,9 @@ export default function PackageShowcase() {
       });
     }, el);
     return () => ctx.revert();
-  }, []);
+  }, [featured.length]);
+
+  if (featured.length === 0) return null;
 
   return (
     <Section
@@ -42,7 +43,7 @@ export default function PackageShowcase() {
         {featured.map((p) => (
           <Link
             key={p.id}
-            href="/booking"
+            href={`/packages/${p.id}`}
             data-pkg-card
             className="group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-line-subtle bg-black"
           >
