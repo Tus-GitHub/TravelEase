@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
+import { dbErrorResponse } from "@/lib/server/api-errors";
 import { createVehicleType, listVehicleTypes } from "@/lib/server/admin/fleet";
 
 const slugify = (s: string) =>
@@ -35,12 +36,10 @@ export async function POST(request: Request) {
     const item = await createVehicleType({ slug, title, description }, auth.user.id);
     return NextResponse.json({ item }, { status: 201 });
   } catch (err) {
-    if (err instanceof Error && /unique|duplicate/i.test(err.message)) {
-      return NextResponse.json(
-        { error: "A vehicle type with that slug already exists." },
-        { status: 409 },
-      );
-    }
+    const res = dbErrorResponse(err, {
+      unique: "A vehicle type with that slug already exists.",
+    });
+    if (res) return res;
     throw err;
   }
 }

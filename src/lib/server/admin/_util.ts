@@ -49,3 +49,27 @@ export async function softDelete(
   );
   return (result.rowCount ?? 0) > 0;
 }
+
+/**
+ * How many non-deleted rows in `childTable` still point at `parentId` via
+ * `fkColumn`. `childTable`/`fkColumn` are always hard-coded by the caller —
+ * never taken from a request. Used to stop a soft-delete from silently
+ * orphaning child rows under a "deleted" parent.
+ */
+export async function countActiveChildren(
+  childTable: string,
+  fkColumn: string,
+  parentId: number,
+): Promise<number> {
+  const result = await getPool().query(
+    `SELECT count(*)::int AS n FROM ${childTable}
+     WHERE ${fkColumn} = $1 AND is_deleted = false`,
+    [parentId],
+  );
+  return result.rows[0].n as number;
+}
+
+/** Plural-aware "1 vehicle" / "3 vehicles" for dependent-row messages. */
+export function plural(n: number, singular: string, plural = `${singular}s`): string {
+  return `${n} ${n === 1 ? singular : plural}`;
+}

@@ -43,7 +43,8 @@ export type IconName =
   | "eye"
   | "eye-off"
   | "sun"
-  | "moon";
+  | "moon"
+  | "trash";
 
 export interface NavLink {
   label: string;

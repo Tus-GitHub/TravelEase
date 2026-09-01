@@ -258,6 +258,13 @@ const paths: Record<IconName, React.ReactNode> = {
       d="M6.5 8.5A2 2 0 106.5 4.5a2 2 0 000 4zM4.8 20h3.4v-9.5H4.8V20zm6 0h3.3v-5c0-1.4.3-2.7 2-2.7s1.7 1.6 1.7 2.8V20H21v-5.6c0-3-0.6-5.2-4.1-5.2-1.7 0-2.8.9-3.3 1.8h0V9.5h-3.3c.1 1 0 10.5 0 10.5z"
     />
   ),
+  trash: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"
+    />
+  ),
 };
 
 export interface IconProps {

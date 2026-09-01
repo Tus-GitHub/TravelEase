@@ -27,6 +27,23 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+
+  const handleResend = async () => {
+    if (!done || resendState === "sending") return;
+    setResendState("sending");
+    try {
+      await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: done }),
+      });
+      setResendState("sent");
+    } catch {
+      setResendState("idle");
+    }
+  };
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("notice") === "google-soon") {
@@ -65,8 +82,55 @@ export default function SignupPage() {
       setError(result.error);
       return;
     }
+    if (result.requiresVerification) {
+      setDone(email);
+      return;
+    }
     router.push("/");
   };
+
+  if (done) {
+    return (
+      <div data-auth-stagger>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent-400">
+          Almost there
+        </p>
+        <h1 className="mt-2 font-display text-[1.65rem] font-bold leading-tight text-white sm:text-[1.9rem]">
+          Confirm your email
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-white/60">
+          We sent a verification link to{" "}
+          <span className="font-semibold text-white">{done}</span>. Open it to
+          activate your account, then sign in.
+        </p>
+        <div className="mt-6 rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3 text-xs text-white/55">
+          Didn&apos;t get it? Check your spam folder, or resend below. The link
+          expires in 24 hours.
+        </div>
+        <div className="mt-5 flex flex-col gap-3">
+          <Button
+            type="button"
+            variant="glass"
+            size="lg"
+            fullWidth
+            loading={resendState === "sending"}
+            disabled={resendState === "sent"}
+            onClick={handleResend}
+          >
+            {resendState === "sent"
+              ? "Verification email sent"
+              : "Resend verification email"}
+          </Button>
+          <Link
+            href="/login"
+            className="hover-underline text-center text-sm text-white/55 hover:text-white"
+          >
+            Back to sign in
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div data-auth-stagger>

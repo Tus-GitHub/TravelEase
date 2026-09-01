@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
+import { dbErrorResponse } from "@/lib/server/api-errors";
 import { createTouristSpot, listTouristSpots } from "@/lib/server/admin/geography";
 
 export async function GET() {
@@ -40,9 +41,8 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ item }, { status: 201 });
   } catch (err) {
-    if (err instanceof Error && /foreign key/i.test(err.message)) {
-      return NextResponse.json({ error: "That city doesn't exist." }, { status: 400 });
-    }
+    const res = dbErrorResponse(err, { fk: "That city doesn't exist." });
+    if (res) return res;
     throw err;
   }
 }

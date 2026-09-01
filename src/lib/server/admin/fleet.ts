@@ -1,5 +1,6 @@
 import { getPool } from "../db";
-import { applyPartialUpdate, softDelete } from "./_util";
+import { DependentRowsError } from "../db-errors";
+import { applyPartialUpdate, countActiveChildren, plural, softDelete } from "./_util";
 
 // ─── Vehicle types ─────────────────────────────────────────────────────────────
 
@@ -94,7 +95,13 @@ export async function updateVehicleType(
   return ok ? getVehicleType(id) : null;
 }
 
-export function deleteVehicleType(id: number, actorId: string): Promise<boolean> {
+export async function deleteVehicleType(id: number, actorId: string): Promise<boolean> {
+  const children = await countActiveChildren("vehicles", "vehicle_type_id", id);
+  if (children > 0) {
+    throw new DependentRowsError(
+      `This vehicle type still has ${plural(children, "vehicle")}. Move or delete ${children === 1 ? "it" : "them"} first.`,
+    );
+  }
   return softDelete("vehicle_types", "vehicle_type_id", id, actorId);
 }
 

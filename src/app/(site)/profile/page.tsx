@@ -75,7 +75,7 @@ async function patchProfile(payload: Record<string, unknown>): Promise<PatchResu
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isLoading, logout, refreshUser } = useAuth();
+  const { user, isLoading, logout, deleteAccount, refreshUser } = useAuth();
 
   const [account, setAccount] = useState<AccountData | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -220,8 +220,103 @@ export default function ProfilePage() {
             <PreferencesCard profile={profile ?? EMPTY_PROFILE} onSaved={setProfile} />
           </>
         )}
+
+        <DangerZoneCard
+          isCustomer={isCustomer}
+          onDeleted={async () => {
+            await deleteAccount();
+            router.replace("/");
+          }}
+        />
       </div>
     </Section>
+  );
+}
+
+function DangerZoneCard({
+  isCustomer,
+  onDeleted,
+}: {
+  isCustomer: boolean;
+  onDeleted: () => Promise<void>;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [text, setText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const reset = () => {
+    setConfirming(false);
+    setText("");
+    setError(null);
+  };
+
+  const del = async () => {
+    if (text.trim() !== "DELETE") {
+      setError('Type "DELETE" exactly to confirm.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await onDeleted();
+    } catch {
+      setBusy(false);
+      setError("Something went wrong. Please try again.");
+    }
+  };
+
+  return (
+    <Card padded hover={false} className="border-red-300 dark:border-red-500/40">
+      <h2 className="text-base font-bold text-red-700 dark:text-red-300">Delete account</h2>
+      <p className="mt-1 text-sm text-muted">
+        Permanently deletes your account and{" "}
+        {isCustomer ? "erases your saved address, map location and travel preferences" : "your profile data"}.
+        This can&apos;t be undone. You can sign up again later with the same email as a fresh account.
+      </p>
+
+      {confirming ? (
+        <div className="mt-4 flex flex-col gap-3">
+          <FormField label='Type "DELETE" to confirm' icon="trash">
+            <input
+              className={fieldBase}
+              value={text}
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") del();
+              }}
+            />
+          </FormField>
+          {error && (
+            <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+              {error}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={del}
+              disabled={busy || text.trim() !== "DELETE"}
+            >
+              {busy ? "Deleting…" : "Delete my account"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={reset} disabled={busy}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4">
+          <Button variant="danger" size="sm" iconLeft="trash" onClick={() => setConfirming(true)}>
+            Delete my account
+          </Button>
+        </div>
+      )}
+    </Card>
   );
 }
 

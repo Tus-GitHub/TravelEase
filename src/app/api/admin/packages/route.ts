@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
+import { dbErrorResponse } from "@/lib/server/api-errors";
 import { createPackage, listPackages } from "@/lib/server/admin/catalog";
 
 function optRating(value: unknown): number | null {
@@ -67,12 +68,10 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ item }, { status: 201 });
   } catch (err) {
-    if (err instanceof Error && /foreign key/i.test(err.message)) {
-      return NextResponse.json(
-        { error: "The chosen region or vehicle type doesn't exist." },
-        { status: 400 },
-      );
-    }
+    const res = dbErrorResponse(err, {
+      fk: "The chosen region or vehicle type doesn't exist.",
+    });
+    if (res) return res;
     throw err;
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
+import { dbErrorResponse } from "@/lib/server/api-errors";
 import { deleteVehicle, updateVehicle } from "@/lib/server/admin/fleet";
 
 export async function PATCH(
@@ -63,9 +64,15 @@ export async function PATCH(
   }
   if (typeof body.isAvailable === "boolean") input.isAvailable = body.isAvailable;
 
-  const item = await updateVehicle(id, input, auth.user.id);
-  if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  return NextResponse.json({ item });
+  try {
+    const item = await updateVehicle(id, input, auth.user.id);
+    if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ item });
+  } catch (err) {
+    const res = dbErrorResponse(err, { fk: "That vehicle type doesn't exist." });
+    if (res) return res;
+    throw err;
+  }
 }
 
 export async function DELETE(

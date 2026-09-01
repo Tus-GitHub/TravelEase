@@ -23,12 +23,40 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [needsVerify, setNeedsVerify] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("notice") === "google-soon") {
-      setNotice("Google sign-in is coming soon — please continue with your email for now.");
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("notice") === "google-soon") {
+      setNotice("Google sign-in isn't configured yet — please continue with your email for now.");
+    } else if (p.get("notice") === "google-cancelled") {
+      setNotice("Google sign-in was cancelled.");
+    } else if (p.get("notice") === "google-failed") {
+      setNotice("Google sign-in didn't work. Try again, or use your email.");
+    } else if (p.get("verified") === "1") {
+      setNotice("Your email is verified — sign in to continue.");
+    } else if (p.get("reset") === "1") {
+      setNotice("Your password has been updated. Sign in with your new password.");
+    } else if (p.get("verify") === "invalid") {
+      setNotice("That verification link has expired or was already used. Sign in to send a new one.");
     }
   }, []);
+
+  const handleResend = async () => {
+    if (resendState === "sending") return;
+    setResendState("sending");
+    try {
+      await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setResendState("sent");
+    } catch {
+      setResendState("idle");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +83,8 @@ export default function LoginPage() {
     setIsSubmitting(false);
     if (!result.ok) {
       setError(result.error);
+      setNeedsVerify(result.code === "email_not_verified");
+      setResendState("idle");
       return;
     }
     router.push("/");
@@ -87,6 +117,23 @@ export default function LoginPage() {
           >
             {error}
           </p>
+        )}
+
+        {needsVerify && (
+          <div className="rounded-xl border border-accent-400/25 bg-accent-400/10 px-3 py-2.5 text-xs text-accent-200">
+            {resendState === "sent" ? (
+              <p>Verification email sent — check your inbox (and spam).</p>
+            ) : (
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendState === "sending"}
+                className="hover-underline font-semibold text-accent-200 disabled:opacity-60"
+              >
+                {resendState === "sending" ? "Sending…" : "Resend verification email"}
+              </button>
+            )}
+          </div>
         )}
 
         <FormField
@@ -139,7 +186,7 @@ export default function LoginPage() {
               Keep me signed in
             </label>
             <Link
-              href="/contact"
+              href="/forgot-password"
               className="hover-underline text-xs font-medium text-white/55 hover:text-white"
             >
               Forgot password?

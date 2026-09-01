@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { findUserById, toPublicUser, updateUser } from "@/lib/server/users";
+import { deleteAccount, findUserById, toPublicUser, updateUser } from "@/lib/server/users";
 import { getUserIdForToken, SESSION_COOKIE } from "@/lib/server/session";
 import {
   getCustomerProfile,
@@ -154,4 +154,34 @@ export async function PATCH(request: Request) {
   }
 
   return NextResponse.json({ user, profile });
+}
+
+// Irreversible self-service account deletion. Requires the literal
+// { "confirm": "DELETE" } in the body so a stray request can't trigger it.
+export async function DELETE(request: Request) {
+  const userId = await currentUserId();
+  if (!userId) return unauthorized();
+
+  let body: { confirm?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+  if (body?.confirm !== "DELETE") {
+    return NextResponse.json({ error: 'Type "DELETE" to confirm.' }, { status: 400 });
+  }
+
+  const removed = await deleteAccount(userId);
+  if (!removed) return unauthorized();
+
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(SESSION_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+  return response;
 }

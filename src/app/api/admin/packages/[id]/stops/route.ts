@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
+import { dbErrorResponse } from "@/lib/server/api-errors";
 import { addPackageStop } from "@/lib/server/admin/catalog";
 
 export async function POST(
@@ -44,12 +45,10 @@ export async function POST(
     if (!item) return NextResponse.json({ error: "Package not found." }, { status: 404 });
     return NextResponse.json({ item }, { status: 201 });
   } catch (err) {
-    if (err instanceof Error && /foreign key/i.test(err.message)) {
-      return NextResponse.json(
-        { error: "That package or tourist spot doesn't exist." },
-        { status: 400 },
-      );
-    }
+    const res = dbErrorResponse(err, {
+      fk: "That package or tourist spot doesn't exist.",
+    });
+    if (res) return res;
     throw err;
   }
 }

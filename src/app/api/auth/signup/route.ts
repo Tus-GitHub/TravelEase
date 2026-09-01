@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createUser, findUserByEmail } from "@/lib/server/users";
-import { createSession, SESSION_COOKIE } from "@/lib/server/session";
+import { isUniqueViolation } from "@/lib/server/db-errors";
+import { createAuthToken } from "@/lib/server/auth-tokens";
+import { sendVerificationEmail, appOrigin } from "@/lib/server/email";
 import { isValidEmail, isValidPhone, PASSWORD_MIN_LENGTH } from "@/lib/validation";
 
 export async function POST(request: Request) {
@@ -47,16 +49,44 @@ export async function POST(request: Request) {
     );
   }
 
-  const user = await createUser(name, email, phone, password);
-  const { token, maxAge } = await createSession(user.id, true);
+  let user;
+  try {
+    user = await createUser(name, email, phone, password);
+  } catch (err) {
+    // Two signups for the same email can both clear the check above and race to
+    // INSERT; the users.email UNIQUE index is the real guard. Report it the same
+    // way rather than 500-ing the loser.
+    if (isUniqueViolation(err)) {
+      return NextResponse.json(
+        { error: "An account with this email already exists." },
+        { status: 409 },
+      );
+    }
+    throw err;
+  }
 
-  const response = NextResponse.json({ user }, { status: 201 });
-  response.cookies.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    ...(maxAge !== undefined ? { maxAge } : {}),
-  });
-  return response;
+  // The account exists but is unverified — no session is issued. Login stays
+  // blocked until the verification link is clicked (plan.md §24).
+  try {
+    const token = await createAuthToken("email_verification", user.id);
+    await sendVerificationEmail(
+      user.email,
+      user.name,
+      `${appOrigin()}/api/auth/verify-email?token=${token}`,
+    );
+  } catch (err) {
+    console.error("signup: verification email failed", err);
+    return NextResponse.json(
+      {
+        error:
+          "Your account was created, but we couldn't send the verification email. Try resending it in a minute.",
+      },
+      { status: 502 },
+    );
+  }
+
+  return NextResponse.json(
+    { ok: true, requiresVerification: true, email: user.email },
+    { status: 201 },
+  );
 }

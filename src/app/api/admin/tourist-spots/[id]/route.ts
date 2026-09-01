@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
+import { dbErrorResponse } from "@/lib/server/api-errors";
 import { deleteTouristSpot, updateTouristSpot } from "@/lib/server/admin/geography";
 
 export async function PATCH(
@@ -33,9 +34,15 @@ export async function PATCH(
   if (typeof body.tag === "string") input.tag = body.tag.trim();
   if (typeof body.description === "string") input.description = body.description.trim();
 
-  const item = await updateTouristSpot(id, input, auth.user.id);
-  if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  return NextResponse.json({ item });
+  try {
+    const item = await updateTouristSpot(id, input, auth.user.id);
+    if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ item });
+  } catch (err) {
+    const res = dbErrorResponse(err, { fk: "That city doesn't exist." });
+    if (res) return res;
+    throw err;
+  }
 }
 
 export async function DELETE(
@@ -50,7 +57,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Invalid id." }, { status: 400 });
   }
 
-  const ok = await deleteTouristSpot(id, auth.user.id);
-  if (!ok) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  return NextResponse.json({ ok: true });
+  try {
+    const ok = await deleteTouristSpot(id, auth.user.id);
+    if (!ok) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const res = dbErrorResponse(err);
+    if (res) return res;
+    throw err;
+  }
 }

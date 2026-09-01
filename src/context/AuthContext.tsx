@@ -15,10 +15,13 @@ export interface AuthUser {
   email: string;
   phone: string;
   role: string;
+  emailVerified: boolean;
   createdAt: string;
 }
 
-type AuthResult = { ok: true } | { ok: false; error: string };
+type AuthResult =
+  | { ok: true; requiresVerification?: boolean }
+  | { ok: false; error: string; code?: string };
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -26,18 +29,26 @@ interface AuthContextValue {
   login: (email: string, password: string, rememberMe?: boolean) => Promise<AuthResult>;
   signup: (name: string, email: string, phone: string, password: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
+  /** Permanently delete the signed-in account, then clear local auth state. */
+  deleteAccount: () => Promise<AuthResult>;
   /** Re-fetch the current user (e.g. after a profile edit) so shared UI like the navbar stays in sync. */
   refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-async function parseError(response: Response, fallback: string): Promise<string> {
+async function parsePayload(
+  response: Response,
+  fallback: string,
+): Promise<{ error: string; code?: string }> {
   try {
     const data = await response.json();
-    return typeof data.error === "string" ? data.error : fallback;
+    return {
+      error: typeof data.error === "string" ? data.error : fallback,
+      code: typeof data.code === "string" ? data.code : undefined,
+    };
   } catch {
-    return fallback;
+    return { error: fallback };
   }
 }
 
@@ -72,7 +83,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {
         return { ok: false, error: "Couldn't reach the server. Check your connection and try again." };
       }
-      if (!res.ok) return { ok: false, error: await parseError(res, "Login failed.") };
+      if (!res.ok) {
+        const { error, code } = await parsePayload(res, "Login failed.");
+        return { ok: false, error, code };
+      }
       const data = await res.json();
       setUser(data.user);
       return { ok: true };
@@ -92,9 +106,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {
         return { ok: false, error: "Couldn't reach the server. Check your connection and try again." };
       }
-      if (!res.ok) return { ok: false, error: await parseError(res, "Sign up failed.") };
+      if (!res.ok) {
+        const { error } = await parsePayload(res, "Sign up failed.");
+        return { ok: false, error };
+      }
       const data = await res.json();
-      setUser(data.user);
+      // Signup no longer issues a session — the account must verify its email
+      // first. Leave `user` null and let the page show the "check your inbox"
+      // state.
+      if (data.requiresVerification) return { ok: true, requiresVerification: true };
+      setUser(data.user ?? null);
       return { ok: true };
     },
     [],
@@ -103,6 +124,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
+  }, []);
+
+  const deleteAccount = useCallback(async (): Promise<AuthResult> => {
+    let res: Response;
+    try {
+      res = await fetch("/api/profile", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "DELETE" }),
+      });
+    } catch {
+      return { ok: false, error: "Couldn't reach the server. Check your connection and try again." };
+    }
+    if (!res.ok) {
+      const { error, code } = await parsePayload(res, "Couldn't delete your account.");
+      return { ok: false, error, code };
+    }
+    setUser(null);
+    return { ok: true };
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -116,8 +156,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, isLoading, login, signup, logout, refreshUser }),
-    [user, isLoading, login, signup, logout, refreshUser],
+    () => ({ user, isLoading, login, signup, logout, deleteAccount, refreshUser }),
+    [user, isLoading, login, signup, logout, deleteAccount, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

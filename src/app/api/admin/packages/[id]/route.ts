@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
+import { dbErrorResponse } from "@/lib/server/api-errors";
 import { deletePackage, updatePackage } from "@/lib/server/admin/catalog";
 
 export async function PATCH(
@@ -84,9 +85,17 @@ export async function PATCH(
   }
   if (typeof body.isActive === "boolean") input.isActive = body.isActive;
 
-  const item = await updatePackage(id, input, auth.user.id);
-  if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  return NextResponse.json({ item });
+  try {
+    const item = await updatePackage(id, input, auth.user.id);
+    if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ item });
+  } catch (err) {
+    const res = dbErrorResponse(err, {
+      fk: "The chosen region or vehicle type doesn't exist.",
+    });
+    if (res) return res;
+    throw err;
+  }
 }
 
 export async function DELETE(

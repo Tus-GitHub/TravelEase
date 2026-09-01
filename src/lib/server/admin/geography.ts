@@ -1,5 +1,6 @@
 import { getPool } from "../db";
-import { applyPartialUpdate, softDelete } from "./_util";
+import { DependentRowsError } from "../db-errors";
+import { applyPartialUpdate, countActiveChildren, plural, softDelete } from "./_util";
 
 // ─── Regions ───────────────────────────────────────────────────────────────────
 
@@ -66,7 +67,19 @@ export async function updateRegion(
   return ok ? getRegion(id) : null;
 }
 
-export function deleteRegion(id: number, actorId: string): Promise<boolean> {
+export async function deleteRegion(id: number, actorId: string): Promise<boolean> {
+  const cities = await countActiveChildren("cities", "region_id", id);
+  if (cities > 0) {
+    throw new DependentRowsError(
+      `This region still has ${plural(cities, "city", "cities")}. Delete ${cities === 1 ? "it" : "them"} first.`,
+    );
+  }
+  const packages = await countActiveChildren("packages", "region_id", id);
+  if (packages > 0) {
+    throw new DependentRowsError(
+      `This region still has ${plural(packages, "package")}. Delete ${packages === 1 ? "it" : "them"} first.`,
+    );
+  }
   return softDelete("regions", "region_id", id, actorId);
 }
 
@@ -179,7 +192,13 @@ export async function updateCity(
   return ok ? getCity(id) : null;
 }
 
-export function deleteCity(id: number, actorId: string): Promise<boolean> {
+export async function deleteCity(id: number, actorId: string): Promise<boolean> {
+  const spots = await countActiveChildren("tourist_spots", "city_id", id);
+  if (spots > 0) {
+    throw new DependentRowsError(
+      `This city still has ${plural(spots, "tourist spot")}. Delete ${spots === 1 ? "it" : "them"} first.`,
+    );
+  }
   return softDelete("cities", "city_id", id, actorId);
 }
 
@@ -274,6 +293,12 @@ export async function updateTouristSpot(
   return ok ? getTouristSpot(id) : null;
 }
 
-export function deleteTouristSpot(id: number, actorId: string): Promise<boolean> {
+export async function deleteTouristSpot(id: number, actorId: string): Promise<boolean> {
+  const stops = await countActiveChildren("package_stops", "tourist_spot_id", id);
+  if (stops > 0) {
+    throw new DependentRowsError(
+      `This spot is used by ${plural(stops, "package stop")}. Remove ${stops === 1 ? "it" : "them"} first.`,
+    );
+  }
   return softDelete("tourist_spots", "tourist_spot_id", id, actorId);
 }

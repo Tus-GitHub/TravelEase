@@ -46,10 +46,17 @@ export async function listUsers(): Promise<AdminUser[]> {
   return result.rows.map(toAdminUser);
 }
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function setUserRole(
   userId: string,
   role: RoleName,
 ): Promise<AdminUser | null> {
+  // A non-UUID id can't match any row; bail before Postgres rejects the cast
+  // (22P02) and turns a plain "not found" into a 500.
+  if (!UUID_RE.test(userId)) return null;
+
   const pool = getPool();
   const updated = await pool.query(
     `UPDATE users

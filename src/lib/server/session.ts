@@ -53,3 +53,9 @@ export async function destroySession(token: string | undefined): Promise<void> {
   const pool = getPool();
   await pool.query("DELETE FROM sessions WHERE token = $1", [token]);
 }
+
+/** Invalidates every session for a user — used after a password reset. */
+export async function destroyAllSessionsForUser(userId: string): Promise<void> {
+  const pool = getPool();
+  await pool.query("DELETE FROM sessions WHERE user_id = $1", [userId]);
+}

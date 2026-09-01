@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
+import { dbErrorResponse } from "@/lib/server/api-errors";
 import { deleteRegion, updateRegion } from "@/lib/server/admin/geography";
 
 export async function PATCH(
@@ -43,7 +44,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Invalid id." }, { status: 400 });
   }
 
-  const ok = await deleteRegion(id, auth.user.id);
-  if (!ok) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  return NextResponse.json({ ok: true });
+  try {
+    const ok = await deleteRegion(id, auth.user.id);
+    if (!ok) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const res = dbErrorResponse(err);
+    if (res) return res;
+    throw err;
+  }
 }

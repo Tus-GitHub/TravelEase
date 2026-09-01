@@ -2,7 +2,7 @@ import Link from "next/link";
 import Icon from "./Icon";
 import type { IconName } from "@/types";
 
-type Variant = "primary" | "accent" | "outline" | "ghost" | "white" | "glass";
+type Variant = "primary" | "accent" | "outline" | "ghost" | "white" | "glass" | "danger";
 type Size = "sm" | "md" | "lg";
 
 const base =
@@ -20,6 +20,8 @@ const variants: Record<Variant, string> = {
   white: "bg-white text-primary-900 hover:bg-primary-50 shadow-sm",
   glass:
     "border border-white/20 bg-white/5 text-white backdrop-blur hover:bg-white/10 hover:border-white/30",
+  danger:
+    "bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md focus-visible:ring-red-500",
 };
 
 const sizes: Record<Size, string> = {

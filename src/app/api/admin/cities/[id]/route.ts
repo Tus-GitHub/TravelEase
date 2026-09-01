@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
+import { dbErrorResponse } from "@/lib/server/api-errors";
 import { deleteCity, updateCity } from "@/lib/server/admin/geography";
 
 function optCoord(value: unknown): number | null {
@@ -49,9 +50,15 @@ export async function PATCH(
   if (typeof body.isPickupPoint === "boolean") input.isPickupPoint = body.isPickupPoint;
   if (typeof body.isAirport === "boolean") input.isAirport = body.isAirport;
 
-  const item = await updateCity(id, input, auth.user.id);
-  if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  return NextResponse.json({ item });
+  try {
+    const item = await updateCity(id, input, auth.user.id);
+    if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ item });
+  } catch (err) {
+    const res = dbErrorResponse(err, { fk: "That region doesn't exist." });
+    if (res) return res;
+    throw err;
+  }
 }
 
 export async function DELETE(
@@ -66,7 +73,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Invalid id." }, { status: 400 });
   }
 
-  const ok = await deleteCity(id, auth.user.id);
-  if (!ok) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  return NextResponse.json({ ok: true });
+  try {
+    const ok = await deleteCity(id, auth.user.id);
+    if (!ok) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const res = dbErrorResponse(err);
+    if (res) return res;
+    throw err;
+  }
 }

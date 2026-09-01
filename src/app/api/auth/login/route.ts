@@ -28,6 +28,15 @@ export async function POST(request: Request) {
       { status: 401 },
     );
   }
+  if (!user.emailVerified) {
+    return NextResponse.json(
+      {
+        error: "Verify your email to sign in — check your inbox for the link.",
+        code: "email_not_verified",
+      },
+      { status: 403 },
+    );
+  }
 
   const { token, maxAge } = await createSession(user.id, rememberMe);
   const response = NextResponse.json({ user });
