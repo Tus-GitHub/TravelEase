@@ -32,6 +32,14 @@ export interface AdminBookingRow {
   dropAddress: string | null;
   passengerCount: number;
   customerNotes: string | null;
+  refund: {
+    amount: number;
+    chargeAmount: number;
+    tier: string;
+    status: "pending" | "paid" | "waived";
+    method: string | null;
+    reference: string | null;
+  } | null;
 }
 
 const ADMIN_SELECT = `
@@ -40,13 +48,17 @@ const ADMIN_SELECT = `
          cu.name AS customer_name, cu.email AS customer_email, cu.phone AS customer_phone,
          b.assigned_agent_user_id, ag.name AS agent_name,
          vt.title AS vehicle_type_title, p.name AS package_name,
-         b.pickup_address, b.drop_address, b.passenger_count, b.customer_notes
+         b.pickup_address, b.drop_address, b.passenger_count, b.customer_notes,
+         rf.amount AS refund_amount, rf.charge_amount AS refund_charge,
+         rf.tier AS refund_tier, rf.status AS refund_status,
+         rf.method AS refund_method, rf.reference AS refund_reference
   FROM bookings b
   JOIN booking_types bt ON bt.booking_type_id = b.booking_type_id
   JOIN users cu ON cu.user_id = b.user_id
   LEFT JOIN users ag ON ag.user_id = b.assigned_agent_user_id
   LEFT JOIN vehicle_types vt ON vt.vehicle_type_id = b.vehicle_type_id
   LEFT JOIN packages p ON p.package_id = b.package_id
+  LEFT JOIN refunds rf ON rf.booking_id = b.booking_id
   WHERE b.is_deleted = false`;
 
 function toRow(r: Record<string, unknown>): AdminBookingRow {
@@ -70,6 +82,17 @@ function toRow(r: Record<string, unknown>): AdminBookingRow {
     dropAddress: (r.drop_address as string) ?? null,
     passengerCount: r.passenger_count as number,
     customerNotes: (r.customer_notes as string) ?? null,
+    refund:
+      r.refund_amount != null
+        ? {
+            amount: Number(r.refund_amount),
+            chargeAmount: Number(r.refund_charge),
+            tier: r.refund_tier as string,
+            status: r.refund_status as "pending" | "paid" | "waived",
+            method: (r.refund_method as string) ?? null,
+            reference: (r.refund_reference as string) ?? null,
+          }
+        : null,
   };
 }
 
@@ -96,9 +119,12 @@ export function adminTransition(
   toStatus: BookingStatus,
   admin: PublicUser,
   reason?: string,
+  refundInitiatedBy?: "customer" | "operator",
 ): Promise<TransitionResult> {
-  return transitionBooking({ bookingId, toStatus, user: admin, reason });
+  return transitionBooking({ bookingId, toStatus, user: admin, reason, refundInitiatedBy });
 }
+
+export { settleRefund } from "../refunds";
 
 export type AssignResult =
   | { ok: true }

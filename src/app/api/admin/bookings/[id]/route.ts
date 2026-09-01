@@ -48,7 +48,12 @@ export async function PATCH(
     return NextResponse.json({ error: "Booking not found." }, { status: 404 });
   }
 
-  let body: { status?: unknown; reason?: unknown; assignedAgentUserId?: unknown };
+  let body: {
+    status?: unknown;
+    reason?: unknown;
+    assignedAgentUserId?: unknown;
+    refundInitiatedBy?: unknown;
+  };
   try {
     body = await request.json();
   } catch {
@@ -64,6 +69,7 @@ export async function PATCH(
       body.status as BookingStatus,
       auth.user,
       typeof body.reason === "string" ? body.reason.slice(0, 500) : undefined,
+      body.refundInitiatedBy === "operator" ? "operator" : "customer",
     );
     if (!result.ok) {
       return NextResponse.json(

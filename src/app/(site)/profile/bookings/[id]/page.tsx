@@ -11,6 +11,7 @@ import Skeleton from "@/components/common/Skeleton";
 import BookingStatusBadge from "@/components/booking/BookingStatusBadge";
 import { useAuth } from "@/context/AuthContext";
 import { site } from "@/data/site";
+import { calculateRefund } from "@/lib/refund";
 
 interface Stop {
   name: string | null;
@@ -33,6 +34,13 @@ interface Line {
   label: string;
   amount: number;
 }
+interface Refund {
+  amount: number;
+  chargeAmount: number;
+  tier: string;
+  status: "pending" | "paid" | "waived";
+  reason: string | null;
+}
 interface Booking {
   id: string;
   reference: string;
@@ -48,6 +56,7 @@ interface Booking {
   stops: Stop[];
   passengers: Passenger[];
   history: StatusEvent[];
+  refund: Refund | null;
 }
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
@@ -86,7 +95,16 @@ export default function BookingDetailPage() {
   }, [load]);
 
   const cancel = async () => {
-    if (!confirm("Cancel this booking? This can't be undone.")) return;
+    let prompt = "Cancel this booking? This can't be undone.";
+    if (booking && booking.status === "Confirmed") {
+      const est = calculateRefund({
+        totalAmount: booking.totalAmount,
+        pickupAt: new Date(booking.startDateTime),
+        initiatedBy: "customer",
+      });
+      prompt += `\n\nBased on our cancellation policy you'd be refunded about ${inr(est.refundAmount)} of ${inr(booking.totalAmount)}.`;
+    }
+    if (!confirm(prompt)) return;
     setCancelling(true);
     setCancelError(null);
     try {
@@ -218,6 +236,27 @@ export default function BookingDetailPage() {
                 </div>
               )}
             </Card>
+
+            {booking.refund && (
+              <div className="mt-5 rounded-xl border border-line bg-surface px-4 py-4 text-sm">
+                <p className="font-semibold text-fg">
+                  Refund: {inr(booking.refund.amount)}{" "}
+                  <span className="font-normal text-muted">
+                    ({booking.refund.status})
+                  </span>
+                </p>
+                {booking.refund.reason && (
+                  <p className="mt-1 text-muted">{booking.refund.reason}</p>
+                )}
+                {booking.refund.status === "pending" ? (
+                  <p className="mt-1 text-muted">
+                    We&apos;ll process this and get in touch. Refunds go back the way you paid.
+                  </p>
+                ) : booking.refund.status === "paid" ? (
+                  <p className="mt-1 text-emerald-600 dark:text-emerald-400">Refund processed.</p>
+                ) : null}
+              </div>
+            )}
 
             {booking.status === "PendingPayment" && (
               <div className="mt-5 rounded-xl border border-accent-400/40 bg-accent-50 px-4 py-4 text-sm dark:bg-accent-950/20">

@@ -25,6 +25,14 @@ interface AdminBooking {
   dropAddress: string | null;
   passengerCount: number;
   customerNotes: string | null;
+  refund: {
+    amount: number;
+    chargeAmount: number;
+    tier: string;
+    status: "pending" | "paid" | "waived";
+    method: string | null;
+    reference: string | null;
+  } | null;
 }
 interface AdminUser {
   id: string;
@@ -45,10 +53,13 @@ const STATUS_FILTERS: (BookingStatus | "All")[] = [
 ];
 const cellSelect =
   "rounded-lg border border-line bg-surface py-1.5 pl-2.5 pr-7 text-xs font-semibold focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100 disabled:opacity-60";
+const cellInput =
+  "rounded-lg border border-line bg-surface px-2 py-1 text-xs focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
 
 export default function AdminBookingsPage() {
   const { isLoading, allowed } = useAdminSectionGuard("bookings");
-  const { items, loading, error, update } = useAdminResource<AdminBooking>("/api/admin/bookings");
+  const { items, loading, error, update, refetch } =
+    useAdminResource<AdminBooking>("/api/admin/bookings");
 
   const [filter, setFilter] = useState<BookingStatus | "All">("All");
   const [agents, setAgents] = useState<AdminUser[]>([]);
@@ -77,6 +88,26 @@ export default function AdminBookingsPage() {
     const res = await update(id, body);
     setBusyId(null);
     if (!res.ok) setRowError(res.error);
+  };
+
+  const settle = async (
+    id: string,
+    payload: { status: "paid" | "waived"; method?: string; reference?: string },
+  ) => {
+    setRowError(null);
+    setBusyId(id);
+    const res = await fetch(`/api/admin/bookings/${id}/refund`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    setBusyId(null);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setRowError(d.error ?? "Couldn't settle the refund.");
+    } else {
+      await refetch();
+    }
   };
 
   if (isLoading || !allowed) return <p className="text-sm text-muted">Loading…</p>;
@@ -165,10 +196,21 @@ export default function AdminBookingsPage() {
                               className={cellSelect}
                               value=""
                               disabled={busyId === b.id}
-                              onChange={(e) =>
-                                e.target.value &&
-                                act(b.id, { status: e.target.value, reason: "Changed by admin" })
-                              }
+                              onChange={(e) => {
+                                const to = e.target.value;
+                                if (!to) return;
+                                const operator =
+                                  to === "Cancelled" &&
+                                  (b.status === "Confirmed" || b.status === "Ongoing") &&
+                                  confirm(
+                                    "Full refund (Jagdamba-initiated)?\nOK = full refund · Cancel = cancellation policy applies",
+                                  );
+                                act(b.id, {
+                                  status: to,
+                                  reason: "Changed by admin",
+                                  refundInitiatedBy: operator ? "operator" : "customer",
+                                });
+                              }}
                             >
                               <option value="">Change…</option>
                               {nexts.map((n) => (
@@ -210,6 +252,38 @@ export default function AdminBookingsPage() {
                               <span className="sm:col-span-2">Notes: {b.customerNotes}</span>
                             )}
                           </div>
+                          {b.refund && (
+                            <div className="mt-3 border-t border-line-subtle pt-3">
+                              <p className="font-semibold text-fg">
+                                Refund: {inr(b.refund.amount)}{" "}
+                                <span className="font-normal">
+                                  (charge {inr(b.refund.chargeAmount)}, {b.refund.tier}) ·{" "}
+                                  <span
+                                    className={
+                                      b.refund.status === "pending"
+                                        ? "text-accent-600"
+                                        : "text-emerald-600"
+                                    }
+                                  >
+                                    {b.refund.status}
+                                  </span>
+                                </span>
+                              </p>
+                              {b.refund.status === "pending" && b.refund.amount > 0 ? (
+                                <RefundSettleForm
+                                  busy={busyId === b.id}
+                                  onSettle={(payload) => settle(b.id, payload)}
+                                />
+                              ) : (
+                                b.refund.method && (
+                                  <p className="mt-1">
+                                    {b.refund.method}
+                                    {b.refund.reference ? ` · ${b.refund.reference}` : ""}
+                                  </p>
+                                )
+                              )}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     )}
@@ -236,8 +310,58 @@ export default function AdminBookingsPage() {
       </Card>
       <p className="mt-3 text-xs text-faint">
         Status changes go through the same lifecycle rules as the rest of the app. Only an
-        assigned agent (or an admin) can advance a confirmed trip.
+        assigned agent (or an admin) can advance a confirmed trip. A cancelled paid booking
+        gets a refund record; settle it here before marking the booking Refunded.
       </p>
+    </div>
+  );
+}
+
+function RefundSettleForm({
+  busy,
+  onSettle,
+}: {
+  busy: boolean;
+  onSettle: (p: { status: "paid" | "waived"; method?: string; reference?: string }) => void;
+}) {
+  const [method, setMethod] = useState("");
+  const [reference, setReference] = useState("");
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <input
+        className={cellInput}
+        placeholder="Method (bank transfer, UPI…)"
+        value={method}
+        onChange={(e) => setMethod(e.target.value)}
+      />
+      <input
+        className={cellInput}
+        placeholder="Reference"
+        value={reference}
+        onChange={(e) => setReference(e.target.value)}
+      />
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() =>
+          onSettle({
+            status: "paid",
+            method: method || undefined,
+            reference: reference || undefined,
+          })
+        }
+        className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-60"
+      >
+        Mark paid
+      </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => onSettle({ status: "waived" })}
+        className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-muted disabled:opacity-60"
+      >
+        Waive
+      </button>
     </div>
   );
 }

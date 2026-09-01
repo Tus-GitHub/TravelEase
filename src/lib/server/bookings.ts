@@ -13,7 +13,14 @@ import {
   notifyBookingStatusChanged,
 } from "./notifications";
 import { validateCoupon, recordRedemption } from "./coupons";
+import {
+  createCancellationRefund,
+  getRefundForBooking,
+  refundIsClearForBooking,
+  type RefundView,
+} from "./refunds";
 import { canTransition, type BookingActor, type BookingStatus } from "@/lib/bookingStatus";
+import type { CancelInitiator } from "@/lib/refund";
 
 /**
  * Booking domain (plan.md §8, §15–18, §26, §33). One place owns the lifecycle:
@@ -57,11 +64,14 @@ export async function transitionBooking(input: {
   toStatus: BookingStatus;
   user: PublicUser;
   reason?: string;
+  /** Cancellation refund policy input (§7). Defaults to "customer" (policy
+   *  applies); pass "operator" for a Jagdamba-initiated full refund. */
+  refundInitiatedBy?: CancelInitiator;
 }): Promise<TransitionResult> {
   const pool = getPool();
   const row = (
     await pool.query(
-      `SELECT user_id, assigned_agent_user_id, status
+      `SELECT user_id, assigned_agent_user_id, status, total_amount, start_datetime
          FROM bookings WHERE booking_id = $1 AND is_deleted = false`,
       [input.bookingId],
     )
@@ -89,6 +99,19 @@ export async function transitionBooking(input: {
     };
   }
 
+  // A paid booking can't be marked Refunded until its refund record is settled.
+  if (input.toStatus === "Refunded" && !(await refundIsClearForBooking(input.bookingId))) {
+    return {
+      ok: false,
+      code: "invalid_transition",
+      message: "Settle the refund (mark it paid or waived) before marking this booking Refunded.",
+    };
+  }
+
+  // Cancelling a paid booking records what's owed back (§7).
+  const recordsRefund =
+    input.toStatus === "Cancelled" && (from === "Confirmed" || from === "Ongoing");
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -102,6 +125,15 @@ export async function transitionBooking(input: {
        VALUES ($1, $2, $3, $4, $5)`,
       [input.bookingId, from, input.toStatus, input.user.id, input.reason ?? null],
     );
+    if (recordsRefund) {
+      await createCancellationRefund(client, {
+        bookingId: input.bookingId,
+        totalAmount: Number(row.total_amount),
+        pickupAt: new Date(row.start_datetime),
+        initiatedBy: input.refundInitiatedBy ?? "customer",
+        actorId: input.user.id,
+      });
+    }
     await client.query("COMMIT");
   } catch (err) {
     await client.query("ROLLBACK");
@@ -170,6 +202,7 @@ export interface BookingDetail extends BookingSummary {
   stops: BookingStopView[];
   passengers: BookingPassengerView[];
   history: BookingStatusEvent[];
+  refund: RefundView | null;
 }
 
 const SUMMARY_COLS = `
@@ -235,7 +268,7 @@ export async function getBookingForUser(
   if (!b) return null;
   if (!actorFor(user, b)) return null;
 
-  const [stops, passengers, history] = await Promise.all([
+  const [stops, passengers, history, refund] = await Promise.all([
     pool.query(
       `SELECT bs.tourist_spot_id, bs.city_id, bs.stop_order, bs.custom_label, ts.name
          FROM booking_stops bs
@@ -253,6 +286,7 @@ export async function getBookingForUser(
         WHERE booking_id = $1 ORDER BY changed_at, booking_status_history_id`,
       [bookingId],
     ),
+    getRefundForBooking(bookingId),
   ]);
 
   return {
@@ -295,6 +329,7 @@ export async function getBookingForUser(
       reason: h.reason,
       changedAt: new Date(h.changed_at).toISOString(),
     })),
+    refund,
   };
 }
 

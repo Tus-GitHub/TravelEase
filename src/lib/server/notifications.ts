@@ -6,6 +6,7 @@ import {
   appOrigin,
   type BookingEmailInfo,
 } from "./email";
+import { getRefundForBooking } from "./refunds";
 import type { BookingStatus } from "@/lib/bookingStatus";
 
 /**
@@ -136,8 +137,14 @@ export async function notifyBookingStatusChanged(
 
     if (to === "Cancelled") {
       const subject = `Booking cancelled — ${row.booking_reference}`;
+      const refund = await getRefundForBooking(bookingId);
+      const refundNote = refund
+        ? refund.amount > 0
+          ? `A refund of ${inr(refund.amount)} is being processed.`
+          : "No refund is due under our cancellation policy."
+        : undefined;
       try {
-        await sendBookingCancellation(row.owner_email, info);
+        await sendBookingCancellation(row.owner_email, info, refundNote);
         await log(row, "booking.cancellation", subject);
       } catch (err) {
         console.error("notifyBookingStatusChanged: cancel send failed", err);

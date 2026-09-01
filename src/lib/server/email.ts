@@ -186,17 +186,21 @@ export async function sendBookingConfirmation(
 export async function sendBookingCancellation(
   to: string,
   b: BookingEmailInfo,
+  refundNote?: string,
 ): Promise<void> {
   await sendBookingEmail(
     to,
     `Booking cancelled — ${b.reference}`,
     "Your booking is cancelled",
-    "This booking has been cancelled. Any refund due follows our cancellation policy and will be processed separately.",
+    refundNote
+      ? `This booking has been cancelled. ${refundNote}`
+      : "This booking has been cancelled.",
     [
       { label: "Reference", value: b.reference },
       { label: "Trip", value: b.tripType },
       { label: "Was starting", value: b.startsAt },
       { label: "Booking total", value: b.total },
+      ...(refundNote ? [{ label: "Refund", value: refundNote }] : []),
     ],
     { label: "View booking", url: b.url },
   );
