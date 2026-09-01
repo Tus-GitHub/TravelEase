@@ -12,6 +12,7 @@ import {
   notifyBookingCreated,
   notifyBookingStatusChanged,
 } from "./notifications";
+import { validateCoupon, recordRedemption } from "./coupons";
 import { canTransition, type BookingActor, type BookingStatus } from "@/lib/bookingStatus";
 
 /**
@@ -317,6 +318,7 @@ export interface CreateBookingInput {
   durationDays?: number;
   nights?: number;
   customerNotes?: string;
+  couponCode?: string;
   stops?: { touristSpotId?: number; cityId?: number; customLabel?: string }[];
   passengers?: { name: string; age?: number; phone?: string; isPrimary?: boolean }[];
 }
@@ -434,7 +436,21 @@ export async function createBooking(
     passengers: passengerCount,
     packagePricePerPerson,
   };
-  const price = calculatePrice(trip, rule);
+  let price = calculatePrice(trip, rule);
+
+  // Coupon (chunk 2.3) — the discount is re-derived from the code + subtotal
+  // server-side; a client discount is never trusted (§27).
+  let couponId: number | null = null;
+  const couponCode = input.couponCode?.trim();
+  if (couponCode) {
+    const res = await validateCoupon(couponCode, price.subtotal, user.id);
+    if (!res.ok) return { ok: false, status: 400, message: res.reason };
+    couponId = res.coupon.couponId;
+    price = calculatePrice(
+      { ...trip, discountAmount: res.coupon.discountAmount },
+      rule,
+    );
+  }
 
   const passengers = (Array.isArray(input.passengers) ? input.passengers : [])
     .filter((p) => p && typeof p.name === "string" && p.name.trim().length > 0)
@@ -459,9 +475,9 @@ export async function createBooking(
               start_datetime, end_datetime, passenger_count, estimated_distance_km,
               estimated_hours, duration_days, status, price_breakdown, subtotal,
               discount_amount, tax_amount, total_amount, currency, customer_notes,
-              created_by, updated_by)
+              coupon_id, created_by, updated_by)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
-                   'PendingPayment',$17::jsonb,$18,$19,$20,$21,'INR',$22,$23,$23)
+                   'PendingPayment',$17::jsonb,$18,$19,$20,$21,'INR',$22,$23,$24,$24)
            RETURNING booking_id`,
           [
             reference(),
@@ -486,6 +502,7 @@ export async function createBooking(
             price.taxAmount,
             price.totalAmount,
             input.customerNotes?.trim() || null,
+            couponId,
             user.id,
           ],
         );
@@ -496,6 +513,10 @@ export async function createBooking(
       }
     }
     if (!bookingId) throw new Error("could not allocate a booking reference");
+
+    if (couponId && price.discountAmount > 0) {
+      await recordRedemption(client, couponId, bookingId, user.id, price.discountAmount);
+    }
 
     // Itinerary snapshot (plan.md §33): curated package -> copy its stops;
     // custom route -> the selected spots / custom labels.

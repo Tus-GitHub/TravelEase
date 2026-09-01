@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { calculatePrice, type BookingTypeCode, type TripInput } from "@/lib/server/pricing";
 import { resolveBookingTypeId, resolvePricingRule } from "@/lib/server/pricing-rules";
 import { getPool } from "@/lib/server/db";
+import { validateCoupon } from "@/lib/server/coupons";
+import { getUserIdForToken, SESSION_COOKIE } from "@/lib/server/session";
 
 /**
  * POST /api/quotes — a server-computed price for a prospective booking
@@ -91,5 +94,27 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ quote: calculatePrice(trip, rule) });
+  const quote = calculatePrice(trip, rule);
+
+  // Optional coupon preview (chunk 2.3). Per-user limit is checked only if we
+  // can identify the visitor; it's still enforced for real at booking time.
+  const couponCode =
+    typeof body.couponCode === "string" ? body.couponCode.trim() : "";
+  if (!couponCode) {
+    return NextResponse.json({ quote });
+  }
+
+  const userId = await getUserIdForToken(cookies().get(SESSION_COOKIE)?.value);
+  const applied = await validateCoupon(couponCode, quote.subtotal, userId);
+  if (!applied.ok) {
+    return NextResponse.json({ quote, couponError: applied.reason });
+  }
+
+  return NextResponse.json({
+    quote: calculatePrice(
+      { ...trip, discountAmount: applied.coupon.discountAmount },
+      rule,
+    ),
+    coupon: { code: applied.coupon.code, discountAmount: applied.coupon.discountAmount },
+  });
 }

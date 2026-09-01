@@ -17,7 +17,8 @@ export type AdminSection =
   | "vehicles"
   | "geography"
   | "packages"
-  | "bookings";
+  | "bookings"
+  | "coupons";
 
 /** "admin" is intentionally excluded — its access is fixed and non-editable. */
 export type PermissionRole = "agent" | "customer";
@@ -28,6 +29,7 @@ export const ADMIN_SECTION_LABELS: Record<AdminSection, string> = {
   geography: "Geography",
   packages: "Packages",
   bookings: "Bookings",
+  coupons: "Coupons",
 };
 
 export const ADMIN_SECTION_PATHS: Record<AdminSection, string> = {
@@ -36,6 +38,7 @@ export const ADMIN_SECTION_PATHS: Record<AdminSection, string> = {
   geography: "/admin/geography",
   packages: "/admin/packages",
   bookings: "/admin/bookings",
+  coupons: "/admin/coupons",
 };
 
 type PermissionMatrix = Record<PermissionRole, Record<AdminSection, boolean>>;
@@ -44,8 +47,14 @@ type PermissionMatrix = Record<PermissionRole, Record<AdminSection, boolean>>;
 // fallback if the fetch fails. `bookings` is off by default for both roles
 // (added in chunk 1.13 — admins always see it; an admin can grant it to agents).
 const DEFAULT_MATRIX: PermissionMatrix = {
-  agent: { users: false, vehicles: true, geography: true, packages: true, bookings: false },
-  customer: { users: false, vehicles: false, geography: false, packages: false, bookings: false },
+  agent: {
+    users: false, vehicles: true, geography: true, packages: true,
+    bookings: false, coupons: false,
+  },
+  customer: {
+    users: false, vehicles: false, geography: false, packages: false,
+    bookings: false, coupons: false,
+  },
 };
 
 function isPermissionRole(role: string): role is PermissionRole {

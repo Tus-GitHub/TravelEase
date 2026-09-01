@@ -1,7 +1,13 @@
 import { getPool } from "../db";
 
 export type PermissionRole = "agent" | "customer";
-export type AdminSection = "users" | "vehicles" | "geography" | "packages" | "bookings";
+export type AdminSection =
+  | "users"
+  | "vehicles"
+  | "geography"
+  | "packages"
+  | "bookings"
+  | "coupons";
 
 export const PERMISSION_ROLES: PermissionRole[] = ["agent", "customer"];
 export const ADMIN_SECTIONS: AdminSection[] = [
@@ -10,6 +16,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   "geography",
   "packages",
   "bookings",
+  "coupons",
 ];
 
 export type PermissionMatrix = Record<PermissionRole, Record<AdminSection, boolean>>;
@@ -23,7 +30,14 @@ export function isAdminSection(value: string): value is AdminSection {
 }
 
 function emptyMatrix(): PermissionMatrix {
-  const off = { users: false, vehicles: false, geography: false, packages: false, bookings: false };
+  const off = {
+    users: false,
+    vehicles: false,
+    geography: false,
+    packages: false,
+    bookings: false,
+    coupons: false,
+  };
   return { agent: { ...off }, customer: { ...off } };
 }
 

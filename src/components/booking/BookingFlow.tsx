@@ -70,6 +70,9 @@ export default function BookingFlow() {
   );
   const [nights, setNights] = useState(Number(params.get("nights")) || 0);
   const [notes, setNotes] = useState(params.get("notes") ?? "");
+  const [couponCode, setCouponCode] = useState(params.get("coupon") ?? "");
+  const [couponInfo, setCouponInfo] = useState<{ code: string; discountAmount: number } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   const [meta, setMeta] = useState<{
     title: string;
@@ -174,8 +177,9 @@ export default function BookingFlow() {
       if (days) body.days = days;
       if (nights) body.nights = nights;
     }
+    if (couponCode.trim()) body.couponCode = couponCode.trim();
     return body;
-  }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours]);
+  }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours, couponCode]);
 
   const quoteTimer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
@@ -191,6 +195,8 @@ export default function BookingFlow() {
         });
         const data = await res.json();
         setQuote(res.ok ? data.quote : null);
+        setCouponInfo(res.ok ? (data.coupon ?? null) : null);
+        setCouponError(res.ok ? (data.couponError ?? null) : null);
       } catch {
         setQuote(null);
       } finally {
@@ -240,6 +246,7 @@ export default function BookingFlow() {
       pickupAddress: pickupAddress || undefined,
       dropAddress: dropAddress || undefined,
       customerNotes: notes || undefined,
+      couponCode: couponCode.trim() || undefined,
     };
     if (bookingType === "package") {
       if (packageSlug) payload.packageSlug = packageSlug;
@@ -433,6 +440,27 @@ export default function BookingFlow() {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-semibold text-muted">Discount code (optional)</span>
+          <input
+            type="text"
+            className={`${fieldCls} uppercase`}
+            placeholder="e.g. WELCOME10"
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value)}
+          />
+          {couponInfo && (
+            <span className="mt-1 block text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              Code {couponInfo.code} applied — you save {inr(couponInfo.discountAmount)}.
+            </span>
+          )}
+          {couponError && (
+            <span className="mt-1 block text-xs font-medium text-red-600 dark:text-red-400">
+              {couponError}
+            </span>
+          )}
         </label>
 
         {error && (
