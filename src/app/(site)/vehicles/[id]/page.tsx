@@ -11,26 +11,40 @@ import StarRating from "@/components/common/StarRating";
 import VehicleCard from "@/components/cards/VehicleCard";
 import Magnetic from "@/components/motion/Magnetic";
 import Spotlight from "@/components/motion/Spotlight";
-import { vehicles } from "@/data/vehicles";
+import {
+  getPublicVehicle,
+  listPublicVehicles,
+  toCardVehicle,
+  VEHICLE_IMAGE_FALLBACK,
+} from "@/lib/server/catalogue";
 
-export function generateStaticParams() {
-  return vehicles.map((v) => ({ id: v.id }));
-}
+export const dynamic = "force-dynamic";
 
-export function generateMetadata({ params }: { params: { id: string } }): Metadata {
-  const vehicle = vehicles.find((v) => v.id === params.id);
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const vehicle = await getPublicVehicle(Number(params.id));
   return {
     title: vehicle ? `${vehicle.name} — TravelEase` : "Vehicle — TravelEase",
   };
 }
 
-export default function VehicleDetailPage({ params }: { params: { id: string } }) {
-  const vehicle = vehicles.find((v) => v.id === params.id);
-  if (!vehicle) notFound();
+export default async function VehicleDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const detail = await getPublicVehicle(Number(params.id));
+  if (!detail) notFound();
 
-  const similar = vehicles
-    .filter((v) => v.type === vehicle.type && v.id !== vehicle.id)
-    .slice(0, 3);
+  const vehicle = toCardVehicle(detail);
+  const gallery = detail.images.length ? detail.images : [VEHICLE_IMAGE_FALLBACK];
+  const similar = (await listPublicVehicles({ typeSlug: detail.typeSlug }))
+    .filter((v) => v.id !== detail.id)
+    .slice(0, 3)
+    .map(toCardVehicle);
   const priceLabel = `₹${vehicle.pricePerDay.toLocaleString("en-IN")}`;
 
   return (
@@ -44,34 +58,56 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
       </Link>
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-surface-hover shadow-card">
-          <Spotlight className="h-full w-full">
-            <Image
-              src={vehicle.imageUrl}
-              alt={vehicle.name}
-              fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover"
-              priority
-            />
-          </Spotlight>
-          <span className="absolute left-4 top-4 flex gap-2">
-            <Badge tone="primary">{vehicle.type}</Badge>
-            <Badge tone={vehicle.isAvailable ? "success" : "neutral"}>
-              {vehicle.isAvailable ? "Available" : "Booked"}
-            </Badge>
-          </span>
+        <div>
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-surface-hover shadow-card">
+            <Spotlight className="h-full w-full">
+              <Image
+                src={gallery[0]}
+                alt={vehicle.name}
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+                priority
+              />
+            </Spotlight>
+            <span className="absolute left-4 top-4 flex gap-2">
+              <Badge tone="primary">{vehicle.type}</Badge>
+              <Badge tone={vehicle.isAvailable ? "success" : "neutral"}>
+                {vehicle.isAvailable ? "Available" : "Booked"}
+              </Badge>
+            </span>
+          </div>
+          {gallery.length > 1 && (
+            <div className="mt-3 grid grid-cols-4 gap-3">
+              {gallery.slice(0, 4).map((src, i) => (
+                <div
+                  key={src}
+                  className="relative aspect-[4/3] overflow-hidden rounded-lg bg-surface-hover"
+                >
+                  <Image
+                    src={src}
+                    alt={`${vehicle.name} photo ${i + 2}`}
+                    fill
+                    sizes="120px"
+                    className="object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
           <h1 className="font-display text-display-sm text-fg">{vehicle.name}</h1>
           <div className="mt-2 flex items-center gap-3">
-            <StarRating rating={vehicle.rating} showValue />
+            <StarRating rating={vehicle.rating} showValue={vehicle.rating > 0} />
             <span className="text-sm text-muted">{vehicle.seatingCapacity} seater</span>
           </div>
 
           <div className="mt-5 flex items-end gap-1">
-            <span className="font-display text-3xl font-bold text-primary-900 dark:text-primary-300 ">{priceLabel}</span>
+            <span className="font-display text-3xl font-bold text-primary-900 dark:text-primary-300 ">
+              {priceLabel}
+            </span>
             <span className="pb-1 text-sm text-muted">/ day</span>
           </div>
 
@@ -110,7 +146,10 @@ export default function VehicleDetailPage({ params }: { params: { id: string } }
         <Spec label="Type" value={vehicle.type} />
         <Spec label="Seating" value={`${vehicle.seatingCapacity} passengers`} />
         <Spec label="Daily rate" value={priceLabel} />
-        <Spec label="Rating" value={`${vehicle.rating.toFixed(1)} / 5`} />
+        <Spec
+          label="Rating"
+          value={vehicle.rating > 0 ? `${vehicle.rating.toFixed(1)} / 5` : "Not yet rated"}
+        />
       </dl>
 
       {similar.length > 0 && (

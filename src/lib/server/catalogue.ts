@@ -1,4 +1,5 @@
 import { getPool } from "./db";
+import type { Vehicle } from "@/types";
 
 /**
  * Public read layer for the catalogue (plan.md §31). Separate from
@@ -6,6 +7,10 @@ import { getPool } from "./db";
  * images); these return only active, non-deleted rows with the fields the
  * public pages and the Package Builder need. Read-only, no auth.
  */
+
+/** Used when a vehicle has no image row yet. */
+export const VEHICLE_IMAGE_FALLBACK =
+  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80";
 
 // ─── Vehicles ────────────────────────────────────────────────────────────────
 
@@ -101,6 +106,35 @@ export async function listPublicVehicles(
     ` ORDER BY v.display_order, v.vehicle_id`;
   const result = await getPool().query(sql, params);
   return result.rows.map(toPublicVehicle);
+}
+
+export interface PublicVehicleType {
+  slug: string;
+  title: string;
+}
+
+export async function listPublicVehicleTypes(): Promise<PublicVehicleType[]> {
+  const r = await getPool().query(
+    `SELECT slug, title FROM vehicle_types
+      WHERE is_deleted = false AND is_active = true
+      ORDER BY display_order, vehicle_type_id`,
+  );
+  return r.rows.map((x) => ({ slug: x.slug, title: x.title }));
+}
+
+/** Adapt a PublicVehicle to the `@/types` Vehicle shape the cards render. */
+export function toCardVehicle(v: PublicVehicle): Vehicle {
+  return {
+    id: String(v.id),
+    name: v.name,
+    type: v.typeTitle,
+    imageUrl: v.imageUrl ?? VEHICLE_IMAGE_FALLBACK,
+    seatingCapacity: v.seatingCapacity,
+    features: v.features,
+    pricePerDay: v.pricePerDay,
+    rating: v.rating ?? 0,
+    isAvailable: v.isAvailable,
+  };
 }
 
 export async function getPublicVehicle(id: number): Promise<PublicVehicleDetail | null> {

@@ -4,10 +4,14 @@ import AnimateInView from "@/components/common/AnimateInView";
 import Button from "@/components/common/Button";
 import TiltCard from "@/components/motion/TiltCard";
 import VehicleCard from "@/components/cards/VehicleCard";
-import { vehicles } from "@/data/vehicles";
+import { listPublicVehicles, toCardVehicle } from "@/lib/server/catalogue";
 
-export default function FeaturedVehicles() {
-  const featured = vehicles.slice(0, 4);
+export default async function FeaturedVehicles() {
+  const featured = (await listPublicVehicles({ availableOnly: true }))
+    .slice(0, 4)
+    .map(toCardVehicle);
+
+  if (featured.length === 0) return null;
 
   return (
     <Section

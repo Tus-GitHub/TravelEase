@@ -7,19 +7,13 @@ import Grid from "@/components/common/Grid";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import VehicleCard from "@/components/cards/VehicleCard";
-import { vehicles } from "@/data/vehicles";
+import type { Vehicle } from "@/types";
 
-// Distinct vehicle `type` values present in the sample data.
-const VEHICLE_TYPES = Array.from(new Set(vehicles.map((v) => v.type)));
-
-// Homepage category cards / SearchForm pass a slug; map it to a real type.
-const CATEGORY_TO_TYPE: Record<string, string> = {
-  "tempo-traveller": "Tempo Traveller",
-  "luxury-cars": "Luxury Car",
-  "family-cars": "Family Car",
-  "group-travel": "Group Travel",
-  "airport-transfer": "", // no dedicated type in the sample fleet yet
-};
+interface VehiclesBrowserProps {
+  vehicles: Vehicle[];
+  /** Active vehicle types — `slug` matches the URL `?category=` / `?type=` param. */
+  types: { slug: string; title: string }[];
+}
 
 const SEAT_OPTIONS = [
   { label: "Any seats", value: 0 },
@@ -42,12 +36,17 @@ type Sort = "recommended" | "price-asc" | "price-desc" | "seats-desc";
 const controlBase =
   "w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg transition-[border-color,box-shadow] duration-200 hover:border-faint focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/60";
 
-export default function VehiclesBrowser() {
+export default function VehiclesBrowser({ vehicles, types }: VehiclesBrowserProps) {
   const params = useSearchParams();
   const categoryParam = params.get("category") ?? params.get("type") ?? "";
   const pickup = params.get("pickup");
   const drop = params.get("drop");
   const date = params.get("date");
+
+  const VEHICLE_TYPES = types.map((t) => t.title);
+  const CATEGORY_TO_TYPE: Record<string, string> = Object.fromEntries(
+    types.map((t) => [t.slug, t.title]),
+  );
 
   const [type, setType] = useState(CATEGORY_TO_TYPE[categoryParam] ?? "");
   const [query, setQuery] = useState("");
@@ -78,7 +77,7 @@ export default function VehiclesBrowser() {
           return b.rating - a.rating;
       }
     });
-  }, [type, query, minSeats, maxPrice, availableOnly, sort]);
+  }, [vehicles, type, query, minSeats, maxPrice, availableOnly, sort]);
 
   const isFiltered = Boolean(type || query || minSeats || maxPrice || availableOnly);
   const clearAll = () => {
