@@ -1,4 +1,5 @@
 import { getPool } from "./db";
+import { unavailableVehicleIds } from "./availability";
 import type { Vehicle, TravelPackage, PackageTag, Region } from "@/types";
 
 /**
@@ -47,6 +48,9 @@ export interface VehicleFilters {
   minSeats?: number;
   maxPrice?: number;
   availableOnly?: boolean;
+  /** When both are set, drop vehicles with an availability conflict in the window. */
+  availableFrom?: Date;
+  availableTo?: Date;
 }
 
 const PRIMARY_IMAGE_SUBQUERY = `
@@ -110,6 +114,18 @@ export async function listPublicVehicles(
     where.push(`v.base_price_per_day <= $${params.length}`);
   }
   if (filters.availableOnly) where.push(`v.is_available = true`);
+
+  if (
+    filters.availableFrom &&
+    filters.availableTo &&
+    filters.availableTo > filters.availableFrom
+  ) {
+    const busy = await unavailableVehicleIds(filters.availableFrom, filters.availableTo);
+    if (busy.length) {
+      params.push(busy);
+      where.push(`v.vehicle_id <> ALL($${params.length})`);
+    }
+  }
 
   const sql =
     VEHICLE_SELECT +

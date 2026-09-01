@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import FormField, { fieldBase } from "@/components/forms/FormField";
 import AdminTabs from "@/components/admin/AdminTabs";
 import RowActions from "@/components/admin/RowActions";
 import Toggle from "@/components/admin/Toggle";
+import VehicleAvailability from "@/components/admin/VehicleAvailability";
 import { ErrorNote, EmptyRow, LoadingRow } from "@/components/admin/tableBits";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
 import { useAdminResource } from "@/lib/admin/useAdminResource";
@@ -158,6 +159,7 @@ function VehicleTypesTab() {
 function VehiclesTab() {
   const types = useAdminResource<VehicleType>("/api/admin/vehicle-types");
   const r = useAdminResource<Vehicle>("/api/admin/vehicles");
+  const [availOpen, setAvailOpen] = useState<number | null>(null);
   const form = useCrudForm({
     empty: {
       vehicleTypeId: "",
@@ -298,8 +300,18 @@ function VehiclesTab() {
             </thead>
             <tbody className="divide-y divide-line-subtle">
               {r.items.map((v) => (
-                <tr key={v.id} className="hover:bg-surface-hover/60">
-                  <td className="px-5 py-3.5 font-medium text-fg">{v.name}</td>
+                <Fragment key={v.id}>
+                <tr className="hover:bg-surface-hover/60">
+                  <td className="px-5 py-3.5 font-medium text-fg">
+                    {v.name}
+                    <button
+                      type="button"
+                      onClick={() => setAvailOpen(availOpen === v.id ? null : v.id)}
+                      className="ml-2 text-xs font-normal text-primary-700 hover:underline dark:text-primary-300"
+                    >
+                      availability
+                    </button>
+                  </td>
                   <td className="px-5 py-3.5 text-muted">
                     {v.vehicleTypeTitle || typeTitle(v.vehicleTypeId)}
                   </td>
@@ -331,6 +343,14 @@ function VehiclesTab() {
                     />
                   </td>
                 </tr>
+                {availOpen === v.id && (
+                  <tr className="bg-surface-muted/50">
+                    <td colSpan={7} className="px-5 py-3">
+                      <VehicleAvailability vehicleId={v.id} />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
               <EmptyRow show={!r.loading && r.items.length === 0} cols={7} label="No vehicles yet." />
               <LoadingRow show={r.loading} cols={7} />

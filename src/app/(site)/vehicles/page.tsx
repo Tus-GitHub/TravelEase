@@ -16,9 +16,22 @@ export const metadata: Metadata = {
     "Chauffeur-driven tempo travellers, luxury cars, family cars and coaches for every kind of trip.",
 };
 
-export default async function VehiclesPage() {
+export default async function VehiclesPage({
+  searchParams,
+}: {
+  searchParams: { date?: string };
+}) {
+  const date = searchParams.date;
+  const dayFilter =
+    date && /^\d{4}-\d{2}-\d{2}$/.test(date)
+      ? {
+          availableFrom: new Date(`${date}T00:00:00`),
+          availableTo: new Date(new Date(`${date}T00:00:00`).getTime() + 86_400_000),
+        }
+      : {};
+
   const [rows, types] = await Promise.all([
-    listPublicVehicles(),
+    listPublicVehicles(dayFilter),
     listPublicVehicleTypes(),
   ]);
   const vehicles = rows.map(toCardVehicle);

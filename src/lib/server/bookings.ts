@@ -19,6 +19,12 @@ import {
   refundIsClearForBooking,
   type RefundView,
 } from "./refunds";
+import {
+  bookingWindow,
+  hasConflict,
+  addBlock,
+  releaseBookingBlock,
+} from "./availability";
 import { canTransition, type BookingActor, type BookingStatus } from "@/lib/bookingStatus";
 import type { CancelInitiator } from "@/lib/refund";
 
@@ -71,7 +77,8 @@ export async function transitionBooking(input: {
   const pool = getPool();
   const row = (
     await pool.query(
-      `SELECT user_id, assigned_agent_user_id, status, total_amount, start_datetime
+      `SELECT user_id, assigned_agent_user_id, status, total_amount, start_datetime,
+              vehicle_id, end_datetime, duration_days, estimated_hours
          FROM bookings WHERE booking_id = $1 AND is_deleted = false`,
       [input.bookingId],
     )
@@ -112,6 +119,29 @@ export async function transitionBooking(input: {
   const recordsRefund =
     input.toStatus === "Cancelled" && (from === "Confirmed" || from === "Ongoing");
 
+  // Availability (chunk 2.6) — a specific vehicle gets a 'booked' block on
+  // confirmation, released on cancel.
+  const win = bookingWindow({
+    startDateTime: new Date(row.start_datetime),
+    endDateTime: row.end_datetime ? new Date(row.end_datetime) : null,
+    durationDays: row.duration_days,
+    estimatedHours: row.estimated_hours != null ? Number(row.estimated_hours) : null,
+  });
+  const blocksVehicle =
+    input.toStatus === "Confirmed" && from === "PendingPayment" && row.vehicle_id != null;
+  const releasesVehicle =
+    input.toStatus === "Cancelled" &&
+    (from === "Confirmed" || from === "Ongoing") &&
+    row.vehicle_id != null;
+
+  if (blocksVehicle && (await hasConflict(row.vehicle_id, win.start, win.end, input.bookingId))) {
+    return {
+      ok: false,
+      code: "invalid_transition",
+      message: "That vehicle is already booked or blocked for this window.",
+    };
+  }
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -133,6 +163,19 @@ export async function transitionBooking(input: {
         initiatedBy: input.refundInitiatedBy ?? "customer",
         actorId: input.user.id,
       });
+    }
+    if (blocksVehicle) {
+      await addBlock(client, {
+        vehicleId: row.vehicle_id,
+        start: win.start,
+        end: win.end,
+        kind: "booked",
+        bookingId: input.bookingId,
+        actorId: input.user.id,
+      });
+    }
+    if (releasesVehicle) {
+      await releaseBookingBlock(client, input.bookingId, input.user.id);
     }
     await client.query("COMMIT");
   } catch (err) {
@@ -435,6 +478,23 @@ export async function createBooking(
   );
   if (!vt.rowCount) {
     return { ok: false, status: 400, message: "That vehicle type doesn't exist." };
+  }
+
+  // A specific requested vehicle must be free for the trip window (chunk 2.6).
+  if (typeof input.vehicleId === "number") {
+    const win = bookingWindow({
+      startDateTime: start,
+      endDateTime: input.endDateTime ? new Date(input.endDateTime) : null,
+      durationDays,
+      estimatedHours: input.estimatedHours,
+    });
+    if (await hasConflict(input.vehicleId, win.start, win.end)) {
+      return {
+        ok: false,
+        status: 409,
+        message: "That vehicle isn't available for those dates.",
+      };
+    }
   }
 
   // Custom itinerary — validate spot ids up front.
