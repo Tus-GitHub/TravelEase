@@ -11,8 +11,11 @@
     "migrate": "node --env-file=.env.local db/migrate-pg.js",
     "migrate:prod": "node --env-file=.env.local db/migrate-pg.js --production",
     "migrate:sqlserver-legacy": "node db/migrate.js",
+    "seed": "node --experimental-strip-types --env-file=.env.local db/seed-catalog.mjs",
+    "seed:prod": "node --experimental-strip-types --env-file=.env.local db/seed-catalog.mjs --production",
     "db:check": "node --env-file=.env.local db/db-check.js",
     "test:db": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/db-crud.test.ts",
+    "test:pricing": "node --experimental-strip-types db/tests/pricing.test.ts",
     "publish": "node db/publish.js"
   },
   "dependencies": {
