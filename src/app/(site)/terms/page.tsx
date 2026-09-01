@@ -3,7 +3,7 @@ import PolicyPage from "@/components/pages/PolicyPage";
 import { legalUpdated, termsIntro, termsSections } from "@/data/pages";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — TravelEase",
+  title: "Terms of Service — Jagdamba Travellers",
 };
 
 export default function TermsPage() {

@@ -141,7 +141,7 @@ export default function SignupPage() {
         Create your account
       </h1>
       <p className="mt-1.5 text-sm text-white/55">
-        One TravelEase account for every trip you book.
+        One Jagdamba Travellers account for every trip you book.
       </p>
 
       {notice && (

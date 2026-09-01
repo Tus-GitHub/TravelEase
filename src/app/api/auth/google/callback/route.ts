@@ -14,7 +14,7 @@ import { createSession, SESSION_COOKIE } from "@/lib/server/session";
 
 /**
  * Google OAuth callback (plan.md §21–22). Exchanges the code for an id_token,
- * validates its claims, then resolves a TravelEase user:
+ * validates its claims, then resolves a Jagdamba Travellers user:
  *   linked Google identity  ->  that user
  *   existing email          ->  link Google to it (and, if that account was
  *                               never verified, invalidate its password so a
@@ -120,7 +120,7 @@ export async function GET(request: Request) {
   const email = claims.email.trim().toLowerCase();
   const name = (claims.name ?? "").trim();
 
-  // 3. Resolve the TravelEase user.
+  // 3. Resolve the Jagdamba Travellers user.
   let userId = await findUserIdByProvider("google", googleId);
 
   if (!userId) {

@@ -33,7 +33,7 @@ export function appOrigin(): string {
 }
 
 function fromAddress(): string {
-  return process.env.EMAIL_FROM || "TravelEase <no-reply@travelease.local>";
+  return process.env.EMAIL_FROM || "Jagdamba Travellers <no-reply@jagdambatravellers.local>";
 }
 
 const esc = (s: string) =>
@@ -53,7 +53,7 @@ async function send(
   const html = `<!doctype html><html><body style="margin:0;background:#f4f5f7;padding:32px 12px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
     <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6e8eb">
-      <tr><td style="background:#0b1220;padding:20px 28px;color:#ffffff;font-weight:700;font-size:16px;letter-spacing:.02em">TravelEase</td></tr>
+      <tr><td style="background:#0b1220;padding:20px 28px;color:#ffffff;font-weight:700;font-size:16px;letter-spacing:.02em">Jagdamba Travellers</td></tr>
       <tr><td style="padding:28px">
         <h1 style="margin:0 0 12px;font-size:19px;color:#0b1220">${esc(heading)}</h1>
         <p style="margin:0 0 22px;font-size:14px;line-height:1.6;color:#4b5563">${esc(body)}</p>
@@ -79,9 +79,9 @@ export async function sendVerificationEmail(
 ): Promise<void> {
   await send(
     to,
-    "Verify your email — TravelEase",
+    "Verify your email — Jagdamba Travellers",
     "Confirm your email address",
-    `Hi ${name || "there"}, welcome to TravelEase. Confirm this address to activate your account. This link expires in 24 hours.`,
+    `Hi ${name || "there"}, welcome to Jagdamba Travellers. Confirm this address to activate your account. This link expires in 24 hours.`,
     { label: "Verify email address", url },
   );
 }
@@ -93,9 +93,9 @@ export async function sendPasswordResetEmail(
 ): Promise<void> {
   await send(
     to,
-    "Reset your password — TravelEase",
+    "Reset your password — Jagdamba Travellers",
     "Reset your password",
-    `Hi ${name || "there"}, we received a request to reset your TravelEase password. This link expires in 1 hour. If it wasn't you, ignore this email and your password stays the same.`,
+    `Hi ${name || "there"}, we received a request to reset your Jagdamba Travellers password. This link expires in 1 hour. If it wasn't you, ignore this email and your password stays the same.`,
     { label: "Choose a new password", url },
   );
 }

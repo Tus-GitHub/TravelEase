@@ -9,7 +9,7 @@ import {
 } from "@/data/pages";
 
 export const metadata: Metadata = {
-  title: "Cancellation & Refund Policy — TravelEase",
+  title: "Cancellation & Refund Policy — Jagdamba Travellers",
 };
 
 export default function CancellationPolicyPage() {

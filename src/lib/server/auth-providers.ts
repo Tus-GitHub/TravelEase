@@ -1,9 +1,9 @@
 import { getPool } from "./db";
 
 /**
- * External auth identities linked to a TravelEase user (plan.md §22). A thin
+ * External auth identities linked to a Jagdamba Travellers user (plan.md §22). A thin
  * layer over `user_auth_providers`; the actual user row still comes from
- * `users.ts`. TravelEase owns the User / Role / Session — a provider only
+ * `users.ts`. Jagdamba Travellers owns the User / Role / Session — a provider only
  * proves "this person controls that Google account".
  */
 export type AuthProvider = "google";

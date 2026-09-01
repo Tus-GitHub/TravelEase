@@ -11,7 +11,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Browse Vehicles — TravelEase",
+  title: "Browse Vehicles — Jagdamba Travellers",
   description:
     "Chauffeur-driven tempo travellers, luxury cars, family cars and coaches for every kind of trip.",
 };

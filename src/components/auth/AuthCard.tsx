@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 /**
  * The authentication surface — a refined translucent panel that reads as part
- * of the TravelEase design system: dark tinted glass, hairline border, a soft
+ * of the Jagdamba Travellers design system: dark tinted glass, hairline border, a soft
  * top highlight, deep shadow, generous padding. Not a floating glass rectangle;
  * not fully transparent. Its entrance is choreographed by <AuthIntro> as part
  * of the page's one coordinated sequence.

@@ -8,7 +8,7 @@ import SearchForm from "@/components/forms/SearchForm";
 import { bookingSteps, popularRoutes } from "@/data/pages";
 
 export const metadata: Metadata = {
-  title: "Book a Trip — TravelEase",
+  title: "Book a Trip — Jagdamba Travellers",
   description:
     "Search chauffeur-driven vehicles for airport transfers, outstation trips, hourly rentals and multi-day packages.",
 };

@@ -103,7 +103,7 @@ export default function LoginPage() {
         Welcome back
       </h1>
       <p className="mt-1.5 text-sm text-white/55">
-        Continue your journey with TravelEase.
+        Continue your journey with Jagdamba Travellers.
       </p>
 
       {notice && (

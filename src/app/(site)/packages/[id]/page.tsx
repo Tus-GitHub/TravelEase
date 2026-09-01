@@ -26,7 +26,7 @@ export async function generateMetadata({
   params: { id: string };
 }): Promise<Metadata> {
   const pkg = await getPublicPackage(params.id);
-  return { title: pkg ? `${pkg.name} — TravelEase` : "Package — TravelEase" };
+  return { title: pkg ? `${pkg.name} — Jagdamba Travellers` : "Package — Jagdamba Travellers" };
 }
 
 export default async function PackageDetailPage({

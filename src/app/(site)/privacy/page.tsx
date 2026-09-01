@@ -3,7 +3,7 @@ import PolicyPage from "@/components/pages/PolicyPage";
 import { legalUpdated, privacyIntro, privacySections } from "@/data/pages";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — TravelEase",
+  title: "Privacy Policy — Jagdamba Travellers",
 };
 
 export default function PrivacyPage() {

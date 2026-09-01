@@ -6,7 +6,7 @@ import { listPublicPackages, toCardPackage } from "@/lib/server/catalogue";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Travel Packages — TravelEase",
+  title: "Travel Packages — Jagdamba Travellers",
   description:
     "Curated multi-day trips across India — chauffeur-driven, all-inclusive, with a transparent per-person price.",
 };

@@ -13,7 +13,7 @@ import { getBookingForUser } from "@/lib/server/bookings";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Booking confirmed — TravelEase",
+  title: "Booking confirmed — Jagdamba Travellers",
 };
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
@@ -110,7 +110,7 @@ export default async function BookingConfirmPage({
         <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
           <p className="font-medium text-fg">What happens next</p>
           <p className="mt-1">
-            Your booking is <strong>pending payment</strong>. TravelEase will review it and
+            Your booking is <strong>pending payment</strong>. Jagdamba Travellers will review it and
             contact you to confirm the trip and arrange offline payment.
           </p>
         </div>

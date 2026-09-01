@@ -479,7 +479,7 @@ export default function BookingFlow() {
             </p>
           )}
           <p className="mt-4 text-xs text-faint">
-            The final price is confirmed by TravelEase when your booking is reviewed.
+            The final price is confirmed by Jagdamba Travellers when your booking is reviewed.
           </p>
           <p className="mt-3 text-xs text-faint">
             <Link href="/policy/cancellation" className="hover-underline">

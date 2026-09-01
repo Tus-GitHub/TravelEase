@@ -4,7 +4,7 @@ import Section from "@/components/common/Section";
 import BookingFlow from "@/components/booking/BookingFlow";
 
 export const metadata: Metadata = {
-  title: "Confirm your booking — TravelEase",
+  title: "Confirm your booking — Jagdamba Travellers",
 };
 
 export default function BookingNewPage() {

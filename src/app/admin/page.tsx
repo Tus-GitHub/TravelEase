@@ -43,7 +43,7 @@ export default function AdminDashboardPage() {
     <div>
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Dashboard</h1>
-        <p className="text-sm text-muted">Overview of TravelEase activity.</p>
+        <p className="text-sm text-muted">Overview of Jagdamba Travellers activity.</p>
       </header>
 
       {error && (

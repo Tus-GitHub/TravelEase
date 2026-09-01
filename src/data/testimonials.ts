@@ -16,7 +16,7 @@ export const testimonials: Testimonial[] = [
     location: "Mumbai, India",
     rating: 5,
     quote:
-      "The airport transfer was right on time and the fare was exactly what was quoted — no surprises. TravelEase has become my go-to for business trips.",
+      "The airport transfer was right on time and the fare was exactly what was quoted — no surprises. Jagdamba Travellers has become my go-to for business trips.",
   },
   {
     id: "rev-3",

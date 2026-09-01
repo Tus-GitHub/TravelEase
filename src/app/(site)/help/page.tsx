@@ -5,7 +5,7 @@ import Icon from "@/components/common/Icon";
 import { faqs } from "@/data/pages";
 
 export const metadata: Metadata = {
-  title: "Help Center — TravelEase",
+  title: "Help Center — Jagdamba Travellers",
   description: "Answers to common questions about booking, payments, cancellations, vehicles and drivers.",
 };
 

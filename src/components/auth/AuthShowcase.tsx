@@ -37,7 +37,7 @@ export default function AuthShowcase() {
       {/* foreground copy */}
       <div data-auth-el="headline" className="absolute inset-x-12 bottom-14 xl:inset-x-16">
         <p className="text-xs font-semibold uppercase tracking-[0.4em] text-white/50">
-          TravelEase — Members
+          Jagdamba Travellers — Members
         </p>
         <h2 className="mt-5 font-display text-[clamp(2.5rem,4.2vw,3.75rem)] font-extrabold leading-[0.98] tracking-tight">
           <RevealText text={"Your journey\nstarts here."} />

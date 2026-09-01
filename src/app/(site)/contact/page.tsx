@@ -3,8 +3,8 @@ import Section from "@/components/common/Section";
 import ContactForm from "@/components/pages/ContactForm";
 
 export const metadata: Metadata = {
-  title: "Contact TravelEase",
-  description: "Get in touch with the TravelEase team for booking help, billing questions or feedback.",
+  title: "Contact Jagdamba Travellers",
+  description: "Get in touch with the Jagdamba Travellers team for booking help, billing questions or feedback.",
 };
 
 export default function ContactPage() {

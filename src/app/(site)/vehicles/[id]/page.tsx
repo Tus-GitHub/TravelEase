@@ -27,7 +27,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const vehicle = await getPublicVehicle(Number(params.id));
   return {
-    title: vehicle ? `${vehicle.name} — TravelEase` : "Vehicle — TravelEase",
+    title: vehicle ? `${vehicle.name} — Jagdamba Travellers` : "Vehicle — Jagdamba Travellers",
   };
 }
 

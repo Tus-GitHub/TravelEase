@@ -7,9 +7,9 @@ import Testimonials from "@/components/sections/Testimonials";
 import { aboutIntro, aboutStats, aboutStory } from "@/data/pages";
 
 export const metadata: Metadata = {
-  title: "About TravelEase",
+  title: "About Jagdamba Travellers",
   description:
-    "Why TravelEase exists: chauffeur-driven trips across India with verified drivers and fully transparent fares.",
+    "Why Jagdamba Travellers exists: chauffeur-driven trips across India with verified drivers and fully transparent fares.",
 };
 
 export default function AboutPage() {

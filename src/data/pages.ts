@@ -3,8 +3,8 @@ import type { IconName } from "@/types";
 /** Content for the standalone marketing / support / legal pages. */
 
 export const aboutIntro = [
-  "TravelEase started with a simple frustration: booking a reliable car with a good driver for an intercity trip in India was harder than it should be. Prices were opaque, vehicles were hit-or-miss, and you never knew who would show up.",
-  "We set out to fix that. Every TravelEase trip is chauffeur-driven by a verified driver, in a maintained vehicle, at a fare you can see in full before you book — whether it's a 20-minute airport run or a five-day Rajasthan tour.",
+  "Jagdamba Travellers started with a simple frustration: booking a reliable car with a good driver for an intercity trip in India was harder than it should be. Prices were opaque, vehicles were hit-or-miss, and you never knew who would show up.",
+  "We set out to fix that. Every Jagdamba Travellers trip is chauffeur-driven by a verified driver, in a maintained vehicle, at a fare you can see in full before you book — whether it's a 20-minute airport run or a five-day Rajasthan tour.",
 ];
 
 export const aboutStats = [
@@ -18,7 +18,7 @@ export const aboutStory = [
   {
     year: "2023",
     title: "The first ten cars",
-    body: "TravelEase launched in Mumbai with a small owned fleet and a promise: no self-drive, no surprises.",
+    body: "Jagdamba Travellers launched in Mumbai with a small owned fleet and a promise: no self-drive, no surprises.",
   },
   {
     year: "2024",
@@ -103,7 +103,7 @@ export const faqs: { category: string; icon: IconName; items: { q: string; a: st
     items: [
       {
         q: "How do I pay?",
-        a: "Right now TravelEase is book now, pay offline — settle with the driver or against an invoice. Online payments are coming soon.",
+        a: "Right now Jagdamba Travellers is book now, pay offline — settle with the driver or against an invoice. Online payments are coming soon.",
       },
       {
         q: "Are tolls and driver allowance included?",
@@ -128,7 +128,7 @@ export const faqs: { category: string; icon: IconName; items: { q: string; a: st
         a: "Open the trip under Profile → Bookings and cancel from there, or contact support and we'll do it for you.",
       },
       {
-        q: "What if TravelEase cancels my trip?",
+        q: "What if Jagdamba Travellers cancels my trip?",
         a: "If we cancel for any reason, you receive a 100% refund.",
       },
     ],
@@ -139,7 +139,7 @@ export const faqs: { category: string; icon: IconName; items: { q: string; a: st
     items: [
       {
         q: "Are your vehicles self-drive?",
-        a: "No. Every TravelEase trip is chauffeur-driven — verified drivers only, never self-drive.",
+        a: "No. Every Jagdamba Travellers trip is chauffeur-driven — verified drivers only, never self-drive.",
       },
       {
         q: "Are the drivers verified?",
@@ -166,7 +166,7 @@ export const cancellationTiers: {
   { window: "More than 72 hours before pickup", refund: "Full refund", tone: "success" },
   { window: "24 – 72 hours before pickup", refund: "50% charge", tone: "accent" },
   { window: "Less than 24 hours before pickup", refund: "No refund", tone: "neutral" },
-  { window: "Cancelled by TravelEase", refund: "100% refund", tone: "success" },
+  { window: "Cancelled by Jagdamba Travellers", refund: "100% refund", tone: "success" },
 ];
 
 export const cancellationSections = [
@@ -187,7 +187,7 @@ export const cancellationSections = [
   {
     heading: "Trips we cancel",
     body: [
-      "If TravelEase cancels a confirmed trip — for a vehicle breakdown, driver unavailability or any operational reason — you receive a full refund, regardless of timing.",
+      "If Jagdamba Travellers cancels a confirmed trip — for a vehicle breakdown, driver unavailability or any operational reason — you receive a full refund, regardless of timing.",
       "We'll always try to arrange an equivalent replacement vehicle first.",
     ],
   },
@@ -201,7 +201,7 @@ export const cancellationSections = [
 ];
 
 export const termsIntro =
-  "These terms govern your use of the TravelEase website and booking services. By creating an account or placing a booking, you agree to them.";
+  "These terms govern your use of the Jagdamba Travellers website and booking services. By creating an account or placing a booking, you agree to them.";
 
 export const termsSections = [
   {
@@ -234,7 +234,7 @@ export const termsSections = [
   {
     heading: "Liability",
     body: [
-      "TravelEase arranges transport through its own fleet and vetted drivers and is not liable for delays caused by traffic, weather, road closures or events outside our reasonable control.",
+      "Jagdamba Travellers arranges transport through its own fleet and vetted drivers and is not liable for delays caused by traffic, weather, road closures or events outside our reasonable control.",
       "Our total liability for any claim relating to a trip is limited to the amount paid for that trip.",
     ],
   },
@@ -247,7 +247,7 @@ export const termsSections = [
 ];
 
 export const privacyIntro =
-  "This policy explains what information TravelEase collects, why, and what choices you have. It covers the website, the booking flow and your account.";
+  "This policy explains what information Jagdamba Travellers collects, why, and what choices you have. It covers the website, the booking flow and your account.";
 
 export const privacySections = [
   {

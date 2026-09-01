@@ -69,7 +69,7 @@ function schedule<T>(task: () => Promise<T>): Promise<T> {
 // ── Nominatim provider ───────────────────────────────────────────────────────
 const NOMINATIM = "https://nominatim.openstreetmap.org";
 const USER_AGENT =
-  process.env.GEOCODE_USER_AGENT ?? "TravelEase/1.0 (travel booking app)";
+  process.env.GEOCODE_USER_AGENT ?? "JagdambaTravellers/1.0 (travel booking app)";
 
 interface NominatimAddress {
   city?: string;

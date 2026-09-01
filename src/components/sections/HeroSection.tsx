@@ -119,7 +119,7 @@ export default function HeroSection() {
             data-hero="brand"
             className="text-xs font-semibold uppercase tracking-[0.4em] text-white/60"
           >
-            TravelEase
+            Jagdamba Travellers
           </p>
 
           <h1 className="mt-5 font-display text-display">
