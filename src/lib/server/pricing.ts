@@ -59,6 +59,8 @@ export interface PriceBreakdown {
   nightCharges: number;
   extraKmCharges: number;
   packageAmount: number;
+  /** Sum of the components above, before discount and tax. */
+  subtotal: number;
   discountAmount: number;
   taxAmount: number;
   totalAmount: number;
@@ -181,6 +183,7 @@ export function calculatePrice(
     nightCharges,
     extraKmCharges,
     packageAmount,
+    subtotal: money(subtotal),
     discountAmount,
     taxAmount,
     totalAmount,

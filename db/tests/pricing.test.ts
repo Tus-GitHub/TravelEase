@@ -57,6 +57,7 @@ function trip(over: Partial<TripInput> & { bookingType: TripInput["bookingType"]
   eq("hourly: base", r.baseAmount, 500);
   eq("hourly: vehicle (250×8)", r.vehicleAmount, 2000);
   eq("hourly: extra km (15×18)", r.extraKmCharges, 270);
+  eq("hourly: subtotal", r.subtotal, 2770);
   eq("hourly: tax (5% of 2770)", r.taxAmount, 138.5);
   eq("hourly: total", r.totalAmount, 2908.5);
   check("hourly: no driver line", r.driverAllowance === 0);
@@ -77,6 +78,7 @@ function trip(over: Partial<TripInput> & { bookingType: TripInput["bookingType"]
   eq("package: vehicle (4500×5)", r.vehicleAmount, 22500);
   eq("package: driver (500×5)", r.driverAllowance, 2500);
   eq("package: nights (300×4)", r.nightCharges, 1200);
+  eq("package: subtotal", r.subtotal, 26200);
   eq("package: tax (5% of 26200)", r.taxAmount, 1310);
   eq("package: total", r.totalAmount, 27510);
 }

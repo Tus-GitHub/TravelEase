@@ -1,0 +1,588 @@
+import { randomBytes } from "crypto";
+import { getPool } from "./db";
+import type { PublicUser } from "./users";
+import {
+  calculatePrice,
+  type BookingTypeCode,
+  type PriceBreakdown,
+  type TripInput,
+} from "./pricing";
+import { resolveBookingTypeId, resolvePricingRule } from "./pricing-rules";
+
+/**
+ * Booking domain (plan.md §8, §15–18, §26, §33). One place owns the lifecycle:
+ * `transitionBooking()` is the ONLY way a status changes after creation — never
+ * `UPDATE bookings SET status = …` from anywhere else. Every change writes a
+ * `booking_status_history` row.
+ */
+
+export type BookingStatus =
+  | "Draft"
+  | "PendingPayment"
+  | "Confirmed"
+  | "Ongoing"
+  | "Completed"
+  | "Cancelled"
+  | "Refunded";
+
+/** The acting user's relationship to a specific booking. */
+export type BookingActor = "customer" | "agent" | "admin" | "system";
+
+interface TransitionRule {
+  from: BookingStatus;
+  to: BookingStatus;
+  actors: BookingActor[];
+}
+
+// plan.md §8. "customer" = the booking's owner; "agent" = its assigned agent.
+const TRANSITIONS: TransitionRule[] = [
+  { from: "Draft", to: "PendingPayment", actors: ["customer", "agent", "admin", "system"] },
+  { from: "PendingPayment", to: "Confirmed", actors: ["agent", "admin"] },
+  { from: "PendingPayment", to: "Cancelled", actors: ["customer", "admin", "system"] },
+  { from: "Confirmed", to: "Ongoing", actors: ["agent", "admin", "system"] },
+  { from: "Ongoing", to: "Completed", actors: ["agent", "admin", "system"] },
+  { from: "Confirmed", to: "Cancelled", actors: ["customer", "agent", "admin"] },
+  { from: "Cancelled", to: "Refunded", actors: ["admin"] },
+];
+
+/** Pure: may `actor` move a booking `from` → `to`? */
+export function canTransition(
+  from: BookingStatus,
+  to: BookingStatus,
+  actor: BookingActor,
+): boolean {
+  return TRANSITIONS.some(
+    (t) => t.from === from && t.to === to && t.actors.includes(actor),
+  );
+}
+
+/** Pure: every status `actor` could move a `from` booking to. */
+export function allowedTransitions(
+  from: BookingStatus,
+  actor: BookingActor,
+): BookingStatus[] {
+  return TRANSITIONS.filter((t) => t.from === from && t.actors.includes(actor)).map(
+    (t) => t.to,
+  );
+}
+
+function actorFor(
+  user: PublicUser,
+  row: { user_id: string; assigned_agent_user_id: string | null },
+): BookingActor | null {
+  if (user.role === "admin") return "admin";
+  if (user.role === "agent" && row.assigned_agent_user_id === user.id) return "agent";
+  if (row.user_id === user.id) return "customer";
+  return null;
+}
+
+// ─── Transition ─────────────────────────────────────────────────────────────
+
+export type TransitionResult =
+  | { ok: true; status: BookingStatus }
+  | {
+      ok: false;
+      code: "not_found" | "forbidden" | "invalid_transition";
+      message: string;
+    };
+
+export async function transitionBooking(input: {
+  bookingId: string;
+  toStatus: BookingStatus;
+  user: PublicUser;
+  reason?: string;
+}): Promise<TransitionResult> {
+  const pool = getPool();
+  const row = (
+    await pool.query(
+      `SELECT user_id, assigned_agent_user_id, status
+         FROM bookings WHERE booking_id = $1 AND is_deleted = false`,
+      [input.bookingId],
+    )
+  ).rows[0];
+  if (!row) return { ok: false, code: "not_found", message: "Booking not found." };
+
+  const actor = actorFor(input.user, row);
+  if (!actor) {
+    return { ok: false, code: "forbidden", message: "You can't change this booking." };
+  }
+
+  const from = row.status as BookingStatus;
+  if (from === input.toStatus) {
+    return {
+      ok: false,
+      code: "invalid_transition",
+      message: `Booking is already ${from}.`,
+    };
+  }
+  if (!canTransition(from, input.toStatus, actor)) {
+    return {
+      ok: false,
+      code: "invalid_transition",
+      message: `A ${from} booking can't move to ${input.toStatus}.`,
+    };
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `UPDATE bookings SET status = $1, updated_by = $2 WHERE booking_id = $3`,
+      [input.toStatus, input.user.id, input.bookingId],
+    );
+    await client.query(
+      `INSERT INTO booking_status_history
+         (booking_id, from_status, to_status, changed_by_user_id, reason)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [input.bookingId, from, input.toStatus, input.user.id, input.reason ?? null],
+    );
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+  return { ok: true, status: input.toStatus };
+}
+
+// ─── Read (IDOR-aware, plan.md §26) ─────────────────────────────────────────
+
+export interface BookingStopView {
+  touristSpotId: number | null;
+  cityId: number | null;
+  stopOrder: number;
+  customLabel: string | null;
+  name: string | null;
+}
+export interface BookingPassengerView {
+  name: string;
+  age: number | null;
+  phone: string | null;
+  isPrimary: boolean;
+}
+export interface BookingStatusEvent {
+  fromStatus: BookingStatus | null;
+  toStatus: BookingStatus;
+  reason: string | null;
+  changedAt: string;
+}
+export interface BookingSummary {
+  id: string;
+  reference: string;
+  status: BookingStatus;
+  bookingTypeCode: string;
+  startDateTime: string;
+  totalAmount: number;
+  currency: string;
+  createdAt: string;
+}
+export interface BookingDetail extends BookingSummary {
+  userId: string;
+  vehicleId: number | null;
+  vehicleTypeId: number;
+  packageId: number | null;
+  pickupCityId: number | null;
+  dropCityId: number | null;
+  pickupAddress: string | null;
+  dropAddress: string | null;
+  endDateTime: string | null;
+  passengerCount: number;
+  estimatedDistanceKm: number | null;
+  estimatedHours: number | null;
+  durationDays: number | null;
+  priceBreakdown: PriceBreakdown | null;
+  subtotal: number;
+  discountAmount: number;
+  taxAmount: number;
+  assignedAgentUserId: string | null;
+  customerNotes: string | null;
+  stops: BookingStopView[];
+  passengers: BookingPassengerView[];
+  history: BookingStatusEvent[];
+}
+
+const SUMMARY_COLS = `
+  b.booking_id, b.booking_reference, b.status, bt.code AS booking_type_code,
+  b.start_datetime, b.total_amount, b.currency, b.created_at`;
+
+function toSummary(r: Record<string, unknown>): BookingSummary {
+  return {
+    id: r.booking_id as string,
+    reference: r.booking_reference as string,
+    status: r.status as BookingStatus,
+    bookingTypeCode: r.booking_type_code as string,
+    startDateTime: (r.start_datetime as Date).toISOString(),
+    totalAmount: Number(r.total_amount),
+    currency: r.currency as string,
+    createdAt: (r.created_at as Date).toISOString(),
+  };
+}
+
+export async function listBookingsForUser(user: PublicUser): Promise<BookingSummary[]> {
+  const pool = getPool();
+  let where = "b.is_deleted = false";
+  const params: unknown[] = [];
+  if (user.role === "admin") {
+    // all
+  } else if (user.role === "agent") {
+    params.push(user.id);
+    where += ` AND (b.assigned_agent_user_id = $1 OR b.user_id = $1)`;
+  } else {
+    params.push(user.id);
+    where += ` AND b.user_id = $1`;
+  }
+  const result = await pool.query(
+    `SELECT ${SUMMARY_COLS}
+       FROM bookings b
+       JOIN booking_types bt ON bt.booking_type_id = b.booking_type_id
+      WHERE ${where}
+      ORDER BY b.created_at DESC`,
+    params,
+  );
+  return result.rows.map(toSummary);
+}
+
+/** Returns null when the booking doesn't exist OR the user may not see it. */
+export async function getBookingForUser(
+  bookingId: string,
+  user: PublicUser,
+): Promise<BookingDetail | null> {
+  const pool = getPool();
+  const b = (
+    await pool.query(
+      `SELECT ${SUMMARY_COLS}, b.user_id, b.vehicle_id, b.vehicle_type_id, b.package_id,
+              b.pickup_city_id, b.drop_city_id, b.pickup_address, b.drop_address,
+              b.end_datetime, b.passenger_count, b.estimated_distance_km, b.estimated_hours,
+              b.duration_days, b.price_breakdown, b.subtotal, b.discount_amount, b.tax_amount,
+              b.assigned_agent_user_id, b.customer_notes
+         FROM bookings b
+         JOIN booking_types bt ON bt.booking_type_id = b.booking_type_id
+        WHERE b.booking_id = $1 AND b.is_deleted = false`,
+      [bookingId],
+    )
+  ).rows[0];
+  if (!b) return null;
+  if (!actorFor(user, b)) return null;
+
+  const [stops, passengers, history] = await Promise.all([
+    pool.query(
+      `SELECT bs.tourist_spot_id, bs.city_id, bs.stop_order, bs.custom_label, ts.name
+         FROM booking_stops bs
+         LEFT JOIN tourist_spots ts ON ts.tourist_spot_id = bs.tourist_spot_id
+        WHERE bs.booking_id = $1 ORDER BY bs.stop_order`,
+      [bookingId],
+    ),
+    pool.query(
+      `SELECT name, age, phone, is_primary FROM booking_passengers
+        WHERE booking_id = $1 ORDER BY is_primary DESC, booking_passenger_id`,
+      [bookingId],
+    ),
+    pool.query(
+      `SELECT from_status, to_status, reason, changed_at FROM booking_status_history
+        WHERE booking_id = $1 ORDER BY changed_at, booking_status_history_id`,
+      [bookingId],
+    ),
+  ]);
+
+  return {
+    ...toSummary(b),
+    userId: b.user_id,
+    vehicleId: b.vehicle_id,
+    vehicleTypeId: b.vehicle_type_id,
+    packageId: b.package_id,
+    pickupCityId: b.pickup_city_id,
+    dropCityId: b.drop_city_id,
+    pickupAddress: b.pickup_address,
+    dropAddress: b.drop_address,
+    endDateTime: b.end_datetime ? new Date(b.end_datetime).toISOString() : null,
+    passengerCount: b.passenger_count,
+    estimatedDistanceKm: b.estimated_distance_km != null ? Number(b.estimated_distance_km) : null,
+    estimatedHours: b.estimated_hours != null ? Number(b.estimated_hours) : null,
+    durationDays: b.duration_days,
+    priceBreakdown: (b.price_breakdown as PriceBreakdown) ?? null,
+    subtotal: Number(b.subtotal),
+    discountAmount: Number(b.discount_amount),
+    taxAmount: Number(b.tax_amount),
+    assignedAgentUserId: b.assigned_agent_user_id,
+    customerNotes: b.customer_notes,
+    stops: stops.rows.map((s) => ({
+      touristSpotId: s.tourist_spot_id,
+      cityId: s.city_id,
+      stopOrder: s.stop_order,
+      customLabel: s.custom_label,
+      name: s.name,
+    })),
+    passengers: passengers.rows.map((p) => ({
+      name: p.name,
+      age: p.age,
+      phone: p.phone,
+      isPrimary: p.is_primary,
+    })),
+    history: history.rows.map((h) => ({
+      fromStatus: h.from_status,
+      toStatus: h.to_status,
+      reason: h.reason,
+      changedAt: new Date(h.changed_at).toISOString(),
+    })),
+  };
+}
+
+// ─── Create (plan.md §6 recompute, §33 snapshot) ────────────────────────────
+
+export interface CreateBookingInput {
+  bookingType: BookingTypeCode;
+  vehicleId?: number | null;
+  vehicleTypeId?: number;
+  packageId?: number | null;
+  packageSlug?: string | null;
+  pickupCityId?: number | null;
+  dropCityId?: number | null;
+  pickupAddress?: string;
+  dropAddress?: string;
+  startDateTime: string;
+  endDateTime?: string | null;
+  passengerCount?: number;
+  estimatedDistanceKm?: number;
+  estimatedHours?: number;
+  durationDays?: number;
+  nights?: number;
+  customerNotes?: string;
+  stops?: { touristSpotId?: number; cityId?: number; customLabel?: string }[];
+  passengers?: { name: string; age?: number; phone?: string; isPrimary?: boolean }[];
+}
+
+export type CreateBookingResult =
+  | { ok: true; bookingId: string }
+  | { ok: false; status: number; message: string };
+
+const BOOKING_TYPE_CODES: BookingTypeCode[] = [
+  "point_to_point",
+  "hourly",
+  "outstation",
+  "package",
+  "airport_transfer",
+];
+
+function reference(): string {
+  return `TE-${randomBytes(5).toString("hex").toUpperCase().slice(0, 8)}`;
+}
+
+const posNum = (v: unknown): number | undefined =>
+  typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : undefined;
+
+export async function createBooking(
+  input: CreateBookingInput,
+  user: PublicUser,
+): Promise<CreateBookingResult> {
+  if (!BOOKING_TYPE_CODES.includes(input.bookingType)) {
+    return { ok: false, status: 400, message: "Unknown booking type." };
+  }
+  const start = new Date(input.startDateTime);
+  if (Number.isNaN(start.getTime())) {
+    return { ok: false, status: 400, message: "A valid start date/time is required." };
+  }
+  const passengerCount = Math.max(1, Math.floor(posNum(input.passengerCount) ?? 1));
+  const pool = getPool();
+
+  // Package (curated) — load server-side; its price/vehicle-type/duration win.
+  let packageId: number | null = null;
+  let packagePricePerPerson: number | undefined;
+  let vehicleTypeId = input.vehicleTypeId;
+  let durationDays = input.durationDays;
+  let packageStops: { tourist_spot_id: number; stop_order: number }[] = [];
+
+  if (input.bookingType === "package" && (input.packageId != null || input.packageSlug != null)) {
+    const asId = typeof input.packageId === "number" && Number.isInteger(input.packageId)
+      ? input.packageId
+      : null;
+    const pkg = (
+      await pool.query(
+        `SELECT package_id, vehicle_type_id, price_per_person, duration_days
+           FROM packages
+          WHERE is_deleted = false AND is_active = true
+            AND ($1::int IS NOT NULL AND package_id = $1 OR slug = $2)
+          LIMIT 1`,
+        [asId, input.packageSlug ?? null],
+      )
+    ).rows[0];
+    if (!pkg) return { ok: false, status: 404, message: "Package not found." };
+    packageId = pkg.package_id;
+    packagePricePerPerson = Number(pkg.price_per_person);
+    vehicleTypeId = vehicleTypeId ?? pkg.vehicle_type_id;
+    durationDays = durationDays ?? pkg.duration_days;
+    packageStops = (
+      await pool.query(
+        `SELECT tourist_spot_id, stop_order FROM package_stops
+          WHERE package_id = $1 AND is_deleted = false ORDER BY stop_order`,
+        [packageId],
+      )
+    ).rows;
+  }
+
+  if (!vehicleTypeId || !Number.isInteger(vehicleTypeId)) {
+    return { ok: false, status: 400, message: "A vehicle type is required." };
+  }
+  const vt = await pool.query(
+    `SELECT 1 FROM vehicle_types WHERE vehicle_type_id = $1 AND is_deleted = false`,
+    [vehicleTypeId],
+  );
+  if (!vt.rowCount) {
+    return { ok: false, status: 400, message: "That vehicle type doesn't exist." };
+  }
+
+  // Custom itinerary — validate spot ids up front.
+  const customStops = Array.isArray(input.stops) ? input.stops : [];
+  const spotIds = customStops
+    .map((s) => s.touristSpotId)
+    .filter((n): n is number => typeof n === "number" && Number.isInteger(n));
+  if (spotIds.length) {
+    const found = await pool.query(
+      `SELECT tourist_spot_id FROM tourist_spots
+        WHERE tourist_spot_id = ANY($1) AND is_deleted = false`,
+      [spotIds],
+    );
+    if (found.rowCount !== spotIds.length) {
+      return { ok: false, status: 400, message: "One or more stops are invalid." };
+    }
+  }
+
+  // Recompute price server-side (plan.md §6) — never trust a client total.
+  const bookingTypeId = await resolveBookingTypeId(input.bookingType);
+  if (bookingTypeId == null) {
+    return { ok: false, status: 500, message: "Booking type is not configured." };
+  }
+  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId);
+  if (!rule) {
+    return { ok: false, status: 422, message: "No pricing is configured for this trip yet." };
+  }
+  const trip: TripInput = {
+    bookingType: input.bookingType,
+    distanceKm: posNum(input.estimatedDistanceKm),
+    hours: posNum(input.estimatedHours),
+    days: posNum(durationDays),
+    nights: posNum(input.nights),
+    passengers: passengerCount,
+    packagePricePerPerson,
+  };
+  const price = calculatePrice(trip, rule);
+
+  const passengers = (Array.isArray(input.passengers) ? input.passengers : [])
+    .filter((p) => p && typeof p.name === "string" && p.name.trim().length > 0)
+    .slice(0, 50);
+  if (passengers.length === 0) {
+    passengers.push({ name: user.name, phone: user.phone, isPrimary: true });
+  } else if (!passengers.some((p) => p.isPrimary)) {
+    passengers[0].isPrimary = true;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    let bookingId: string | null = null;
+    for (let attempt = 0; attempt < 5 && !bookingId; attempt++) {
+      try {
+        const res = await client.query(
+          `INSERT INTO bookings
+             (booking_reference, user_id, booking_type_id, vehicle_id, vehicle_type_id,
+              package_id, pickup_city_id, drop_city_id, pickup_address, drop_address,
+              start_datetime, end_datetime, passenger_count, estimated_distance_km,
+              estimated_hours, duration_days, status, price_breakdown, subtotal,
+              discount_amount, tax_amount, total_amount, currency, customer_notes,
+              created_by, updated_by)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
+                   'PendingPayment',$17::jsonb,$18,$19,$20,$21,'INR',$22,$23,$23)
+           RETURNING booking_id`,
+          [
+            reference(),
+            user.id,
+            bookingTypeId,
+            typeof input.vehicleId === "number" ? input.vehicleId : null,
+            vehicleTypeId,
+            packageId,
+            typeof input.pickupCityId === "number" ? input.pickupCityId : null,
+            typeof input.dropCityId === "number" ? input.dropCityId : null,
+            input.pickupAddress?.trim() || null,
+            input.dropAddress?.trim() || null,
+            start.toISOString(),
+            input.endDateTime ? new Date(input.endDateTime).toISOString() : null,
+            passengerCount,
+            posNum(input.estimatedDistanceKm) ?? null,
+            posNum(input.estimatedHours) ?? null,
+            posNum(durationDays) ?? null,
+            JSON.stringify(price),
+            price.subtotal,
+            price.discountAmount,
+            price.taxAmount,
+            price.totalAmount,
+            input.customerNotes?.trim() || null,
+            user.id,
+          ],
+        );
+        bookingId = res.rows[0].booking_id;
+      } catch (err) {
+        if ((err as { code?: string }).code === "23505") continue; // reference clash — retry
+        throw err;
+      }
+    }
+    if (!bookingId) throw new Error("could not allocate a booking reference");
+
+    // Itinerary snapshot (plan.md §33): curated package -> copy its stops;
+    // custom route -> the selected spots / custom labels.
+    const snapshot = packageStops.length
+      ? packageStops.map((s) => ({
+          touristSpotId: s.tourist_spot_id,
+          cityId: null as number | null,
+          customLabel: null as string | null,
+          order: s.stop_order,
+        }))
+      : customStops.map((s, i) => ({
+          touristSpotId: typeof s.touristSpotId === "number" ? s.touristSpotId : null,
+          cityId: typeof s.cityId === "number" ? s.cityId : null,
+          customLabel: s.customLabel?.trim() || null,
+          order: i + 1,
+        }));
+    for (const s of snapshot) {
+      await client.query(
+        `INSERT INTO booking_stops
+           (booking_id, tourist_spot_id, city_id, stop_order, custom_label, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [bookingId, s.touristSpotId, s.cityId, s.order, s.customLabel, user.id],
+      );
+    }
+
+    for (const p of passengers) {
+      await client.query(
+        `INSERT INTO booking_passengers
+           (booking_id, name, age, phone, is_primary, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          bookingId,
+          p.name.trim(),
+          typeof p.age === "number" ? p.age : null,
+          p.phone?.trim() || null,
+          p.isPrimary === true,
+          user.id,
+        ],
+      );
+    }
+
+    // Initial history row. Creation is the one place a status is set without
+    // transitionBooking(); it still records the Draft -> PendingPayment step.
+    await client.query(
+      `INSERT INTO booking_status_history
+         (booking_id, from_status, to_status, changed_by_user_id, reason)
+       VALUES ($1, 'Draft', 'PendingPayment', $2, 'Booking submitted')`,
+      [bookingId, user.id],
+    );
+
+    await client.query("COMMIT");
+    return { ok: true, bookingId };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
