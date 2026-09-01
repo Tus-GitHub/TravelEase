@@ -19,6 +19,7 @@ const sectionNavItems: {
   section: AdminSection | null;
 }[] = [
   { href: "/admin", label: "Dashboard", icon: "grid", section: null },
+  { href: "/admin/bookings", label: "Bookings", icon: "calendar", section: "bookings" },
   { href: "/admin/users", label: "Users", icon: "users", section: "users" },
   { href: "/admin/vehicles", label: "Fleet", icon: "car", section: "vehicles" },
   { href: "/admin/geography", label: "Geography", icon: "map-pin", section: "geography" },

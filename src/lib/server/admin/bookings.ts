@@ -1,0 +1,138 @@
+import { getPool } from "../db";
+import type { PublicUser } from "../users";
+import {
+  transitionBooking,
+  type BookingStatus,
+  type TransitionResult,
+} from "../bookings";
+
+/**
+ * Admin view of bookings (plan.md §36 chunk 1.13). Status changes still go
+ * through `transitionBooking()` in `../bookings` — this module only adds the
+ * admin-only reads and agent assignment.
+ */
+
+export interface AdminBookingRow {
+  id: string;
+  reference: string;
+  status: BookingStatus;
+  bookingTypeCode: string;
+  startDateTime: string;
+  totalAmount: number;
+  currency: string;
+  createdAt: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  assignedAgentUserId: string | null;
+  assignedAgentName: string | null;
+  vehicleTypeTitle: string | null;
+  packageName: string | null;
+  pickupAddress: string | null;
+  dropAddress: string | null;
+  passengerCount: number;
+  customerNotes: string | null;
+}
+
+const ADMIN_SELECT = `
+  SELECT b.booking_id, b.booking_reference, b.status, bt.code AS booking_type_code,
+         b.start_datetime, b.total_amount, b.currency, b.created_at,
+         cu.name AS customer_name, cu.email AS customer_email, cu.phone AS customer_phone,
+         b.assigned_agent_user_id, ag.name AS agent_name,
+         vt.title AS vehicle_type_title, p.name AS package_name,
+         b.pickup_address, b.drop_address, b.passenger_count, b.customer_notes
+  FROM bookings b
+  JOIN booking_types bt ON bt.booking_type_id = b.booking_type_id
+  JOIN users cu ON cu.user_id = b.user_id
+  LEFT JOIN users ag ON ag.user_id = b.assigned_agent_user_id
+  LEFT JOIN vehicle_types vt ON vt.vehicle_type_id = b.vehicle_type_id
+  LEFT JOIN packages p ON p.package_id = b.package_id
+  WHERE b.is_deleted = false`;
+
+function toRow(r: Record<string, unknown>): AdminBookingRow {
+  return {
+    id: r.booking_id as string,
+    reference: r.booking_reference as string,
+    status: r.status as BookingStatus,
+    bookingTypeCode: r.booking_type_code as string,
+    startDateTime: (r.start_datetime as Date).toISOString(),
+    totalAmount: Number(r.total_amount),
+    currency: r.currency as string,
+    createdAt: (r.created_at as Date).toISOString(),
+    customerName: r.customer_name as string,
+    customerEmail: r.customer_email as string,
+    customerPhone: r.customer_phone as string,
+    assignedAgentUserId: (r.assigned_agent_user_id as string) ?? null,
+    assignedAgentName: (r.agent_name as string) ?? null,
+    vehicleTypeTitle: (r.vehicle_type_title as string) ?? null,
+    packageName: (r.package_name as string) ?? null,
+    pickupAddress: (r.pickup_address as string) ?? null,
+    dropAddress: (r.drop_address as string) ?? null,
+    passengerCount: r.passenger_count as number,
+    customerNotes: (r.customer_notes as string) ?? null,
+  };
+}
+
+export async function listAdminBookings(status?: string): Promise<AdminBookingRow[]> {
+  const params: unknown[] = [];
+  let sql = ADMIN_SELECT;
+  if (status) {
+    params.push(status);
+    sql += ` AND b.status = $1`;
+  }
+  sql += ` ORDER BY b.created_at DESC`;
+  const result = await getPool().query(sql, params);
+  return result.rows.map(toRow);
+}
+
+export async function getAdminBooking(id: string): Promise<AdminBookingRow | null> {
+  const result = await getPool().query(`${ADMIN_SELECT} AND b.booking_id = $1`, [id]);
+  return result.rows[0] ? toRow(result.rows[0]) : null;
+}
+
+/** Admin status change — delegates to the state machine with the admin actor. */
+export function adminTransition(
+  bookingId: string,
+  toStatus: BookingStatus,
+  admin: PublicUser,
+  reason?: string,
+): Promise<TransitionResult> {
+  return transitionBooking({ bookingId, toStatus, user: admin, reason });
+}
+
+export type AssignResult =
+  | { ok: true }
+  | { ok: false; status: number; message: string };
+
+/** Assign (or clear, with null) the agent on a booking. Admin only. */
+export async function assignBookingAgent(
+  bookingId: string,
+  agentUserId: string | null,
+  actorId: string,
+): Promise<AssignResult> {
+  const pool = getPool();
+  const booking = await pool.query(
+    `SELECT 1 FROM bookings WHERE booking_id = $1 AND is_deleted = false`,
+    [bookingId],
+  );
+  if (!booking.rowCount) {
+    return { ok: false, status: 404, message: "Booking not found." };
+  }
+
+  if (agentUserId !== null) {
+    const agent = await pool.query(
+      `SELECT 1 FROM users u JOIN roles r ON r.role_id = u.role_id
+        WHERE u.user_id = $1 AND u.is_deleted = false AND r.name = 'agent'`,
+      [agentUserId],
+    );
+    if (!agent.rowCount) {
+      return { ok: false, status: 400, message: "That user isn't an agent." };
+    }
+  }
+
+  await pool.query(
+    `UPDATE bookings SET assigned_agent_user_id = $1, updated_by = $2 WHERE booking_id = $3`,
+    [agentUserId, actorId, bookingId],
+  );
+  return { ok: true };
+}

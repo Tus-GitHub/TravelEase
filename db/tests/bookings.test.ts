@@ -8,7 +8,7 @@ import {
   canTransition,
   allowedTransitions,
   type BookingStatus,
-} from "../../src/lib/server/bookings.ts";
+} from "../../src/lib/bookingStatus.ts";
 
 let passed = 0;
 let failed = 0;

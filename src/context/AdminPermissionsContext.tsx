@@ -12,7 +12,12 @@ import {
 /** The only sections that are individually grantable — Dashboard is always
  * visible to anyone let into /admin at all, so it never needs a toggle and
  * can never leave a role with zero accessible pages. */
-export type AdminSection = "users" | "vehicles" | "geography" | "packages";
+export type AdminSection =
+  | "users"
+  | "vehicles"
+  | "geography"
+  | "packages"
+  | "bookings";
 
 /** "admin" is intentionally excluded — its access is fixed and non-editable. */
 export type PermissionRole = "agent" | "customer";
@@ -22,6 +27,7 @@ export const ADMIN_SECTION_LABELS: Record<AdminSection, string> = {
   vehicles: "Vehicles",
   geography: "Geography",
   packages: "Packages",
+  bookings: "Bookings",
 };
 
 export const ADMIN_SECTION_PATHS: Record<AdminSection, string> = {
@@ -29,15 +35,17 @@ export const ADMIN_SECTION_PATHS: Record<AdminSection, string> = {
   vehicles: "/admin/vehicles",
   geography: "/admin/geography",
   packages: "/admin/packages",
+  bookings: "/admin/bookings",
 };
 
 type PermissionMatrix = Record<PermissionRole, Record<AdminSection, boolean>>;
 
 // Mirrors the migration 011 defaults; used until the real matrix loads and as a
-// fallback if the fetch fails.
+// fallback if the fetch fails. `bookings` is off by default for both roles
+// (added in chunk 1.13 — admins always see it; an admin can grant it to agents).
 const DEFAULT_MATRIX: PermissionMatrix = {
-  agent: { users: false, vehicles: true, geography: true, packages: true },
-  customer: { users: false, vehicles: false, geography: false, packages: false },
+  agent: { users: false, vehicles: true, geography: true, packages: true, bookings: false },
+  customer: { users: false, vehicles: false, geography: false, packages: false, bookings: false },
 };
 
 function isPermissionRole(role: string): role is PermissionRole {
