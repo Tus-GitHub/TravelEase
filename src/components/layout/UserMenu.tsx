@@ -71,6 +71,15 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
           Profile Settings
         </Link>
 
+        <Link
+          href="/profile/bookings"
+          onClick={() => setIsOpen(false)}
+          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-primary-50 hover:text-primary-900"
+        >
+          <Icon name="calendar" className="h-4 w-4" />
+          My Bookings
+        </Link>
+
         <button
           type="button"
           onClick={() => {
