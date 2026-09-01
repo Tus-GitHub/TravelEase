@@ -1,4 +1,5 @@
 import nodemailer, { type Transporter } from "nodemailer";
+import { site } from "@/data/site";
 
 /**
  * Transactional email (plan.md §23). One thin service module: route handlers
@@ -176,8 +177,8 @@ export async function sendBookingConfirmation(
     to,
     `Booking received — ${b.reference}`,
     "We've got your booking",
-    "Thanks for booking with Jagdamba Travellers. It's pending payment — we'll review it and contact you to confirm the trip and arrange payment.",
-    rows,
+    `Thanks for booking with Jagdamba Travellers. To confirm your trip, call ${site.contact.phone} and quote your reference ${b.reference} to pay — we'll confirm the booking as soon as payment is received.`,
+    [...rows, { label: "Pay by phone", value: site.contact.phone }],
     { label: "View booking", url: b.url },
   );
 }

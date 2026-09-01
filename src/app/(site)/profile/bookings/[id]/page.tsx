@@ -10,6 +10,7 @@ import Icon from "@/components/common/Icon";
 import Skeleton from "@/components/common/Skeleton";
 import BookingStatusBadge from "@/components/booking/BookingStatusBadge";
 import { useAuth } from "@/context/AuthContext";
+import { site } from "@/data/site";
 
 interface Stop {
   name: string | null;
@@ -217,6 +218,23 @@ export default function BookingDetailPage() {
                 </div>
               )}
             </Card>
+
+            {booking.status === "PendingPayment" && (
+              <div className="mt-5 rounded-xl border border-accent-400/40 bg-accent-50 px-4 py-4 text-sm dark:bg-accent-950/20">
+                <p className="font-semibold text-fg">Pay by phone to confirm</p>
+                <p className="mt-1 text-muted">
+                  Call{" "}
+                  <a
+                    href={`tel:${site.contact.phone.replace(/\s+/g, "")}`}
+                    className="font-semibold text-accent-700 hover:underline dark:text-accent-300"
+                  >
+                    {site.contact.phone}
+                  </a>{" "}
+                  and quote{" "}
+                  <strong className="text-fg">{booking.reference}</strong>.
+                </p>
+              </div>
+            )}
 
             <Card padded hover={false} className="mt-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-faint">History</p>

@@ -9,6 +9,7 @@ import Icon from "@/components/common/Icon";
 import { getUserIdForToken, SESSION_COOKIE } from "@/lib/server/session";
 import { findUserById, toPublicUser } from "@/lib/server/users";
 import { getBookingForUser } from "@/lib/server/bookings";
+import { site } from "@/data/site";
 
 export const dynamic = "force-dynamic";
 
@@ -107,13 +108,27 @@ export default async function BookingConfirmPage({
           )}
         </Card>
 
-        <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
-          <p className="font-medium text-fg">What happens next</p>
-          <p className="mt-1">
-            Your booking is <strong>pending payment</strong>. Jagdamba Travellers will review it and
-            contact you to confirm the trip and arrange offline payment.
-          </p>
-        </div>
+        {booking.status === "PendingPayment" ? (
+          <div className="mt-6 rounded-xl border border-accent-400/40 bg-accent-50 px-4 py-4 text-sm dark:bg-accent-950/20">
+            <p className="font-semibold text-fg">Pay by phone to confirm your trip</p>
+            <p className="mt-1 text-muted">
+              Call{" "}
+              <a
+                href={`tel:${site.contact.phone.replace(/\s+/g, "")}`}
+                className="font-semibold text-accent-700 hover:underline dark:text-accent-300"
+              >
+                {site.contact.phone}
+              </a>{" "}
+              and quote your reference{" "}
+              <strong className="text-fg">{booking.reference}</strong>. We&apos;ll
+              confirm your booking as soon as payment is received.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
+            <p className="font-medium text-fg">Your booking is {booking.status}.</p>
+          </div>
+        )}
 
         <div className="mt-6 flex flex-wrap gap-3">
           <Button href="/profile/bookings" variant="accent">
