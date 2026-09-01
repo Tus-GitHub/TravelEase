@@ -8,6 +8,10 @@ import {
   type TripInput,
 } from "./pricing";
 import { resolveBookingTypeId, resolvePricingRule } from "./pricing-rules";
+import {
+  notifyBookingCreated,
+  notifyBookingStatusChanged,
+} from "./notifications";
 import { canTransition, type BookingActor, type BookingStatus } from "@/lib/bookingStatus";
 
 /**
@@ -104,6 +108,10 @@ export async function transitionBooking(input: {
   } finally {
     client.release();
   }
+
+  // Notify the booking owner (chunk 2.2) — never throws, never blocks the result.
+  await notifyBookingStatusChanged(input.bookingId, from, input.toStatus);
+
   return { ok: true, status: input.toStatus };
 }
 
@@ -438,10 +446,10 @@ export async function createBooking(
   }
 
   const client = await pool.connect();
+  let bookingId: string | null = null;
   try {
     await client.query("BEGIN");
 
-    let bookingId: string | null = null;
     for (let attempt = 0; attempt < 5 && !bookingId; attempt++) {
       try {
         const res = await client.query(
@@ -539,11 +547,17 @@ export async function createBooking(
     );
 
     await client.query("COMMIT");
-    return { ok: true, bookingId };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
   } finally {
     client.release();
   }
+
+  if (!bookingId) throw new Error("booking id was not assigned");
+
+  // Confirmation email (chunk 2.2) — non-blocking, never throws.
+  await notifyBookingCreated(bookingId);
+
+  return { ok: true, bookingId };
 }

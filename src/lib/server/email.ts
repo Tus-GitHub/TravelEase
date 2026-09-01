@@ -99,3 +99,124 @@ export async function sendPasswordResetEmail(
     { label: "Choose a new password", url },
   );
 }
+
+// ─── Booking emails (plan.md §23, chunk 2.2) ────────────────────────────────
+
+/** Branded email with a labelled details block + a CTA. */
+async function sendBookingEmail(
+  to: string,
+  subject: string,
+  heading: string,
+  intro: string,
+  rows: { label: string; value: string }[],
+  cta: { label: string; url: string },
+): Promise<void> {
+  const text = [
+    heading,
+    "",
+    intro,
+    "",
+    ...rows.map((r) => `${r.label}: ${r.value}`),
+    "",
+    `${cta.label}: ${cta.url}`,
+  ].join("\n");
+
+  const rowsHtml = rows
+    .map(
+      (r) =>
+        `<tr><td style="padding:6px 0;font-size:13px;color:#9ca3af">${esc(r.label)}</td>` +
+        `<td style="padding:6px 0;font-size:13px;color:#0b1220;text-align:right;font-weight:600">${esc(r.value)}</td></tr>`,
+    )
+    .join("");
+
+  const html = `<!doctype html><html><body style="margin:0;background:#f4f5f7;padding:32px 12px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+    <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6e8eb">
+      <tr><td style="background:#0b1220;padding:20px 28px;color:#ffffff;font-weight:700;font-size:16px;letter-spacing:.02em">Jagdamba Travellers</td></tr>
+      <tr><td style="padding:28px">
+        <h1 style="margin:0 0 12px;font-size:19px;color:#0b1220">${esc(heading)}</h1>
+        <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#4b5563">${esc(intro)}</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e6e8eb;border-bottom:1px solid #e6e8eb;margin:0 0 22px">${rowsHtml}</table>
+        <a href="${cta.url}" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:10px">${esc(cta.label)}</a>
+        <p style="margin:22px 0 0;font-size:12px;color:#9ca3af">Questions? Just reply to this email.</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+
+  await getTransporter().sendMail({ from: fromAddress(), to, subject, text, html });
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[email] "${subject}" -> ${to}`);
+  }
+}
+
+export interface BookingEmailInfo {
+  reference: string;
+  tripType: string; // human label, e.g. "Multi-day package"
+  startsAt: string; // preformatted, e.g. "20 Dec 2026, 7:00 am"
+  passengers: number;
+  total: string; // preformatted, e.g. "₹27,510"
+  itinerary?: string; // "Jaipur → Jodhpur → Udaipur", optional
+  url: string; // link to the booking
+}
+
+export async function sendBookingConfirmation(
+  to: string,
+  b: BookingEmailInfo,
+): Promise<void> {
+  const rows = [
+    { label: "Reference", value: b.reference },
+    { label: "Trip", value: b.tripType },
+    { label: "Starts", value: b.startsAt },
+    { label: "Passengers", value: String(b.passengers) },
+    ...(b.itinerary ? [{ label: "Itinerary", value: b.itinerary }] : []),
+    { label: "Total", value: b.total },
+  ];
+  await sendBookingEmail(
+    to,
+    `Booking received — ${b.reference}`,
+    "We've got your booking",
+    "Thanks for booking with Jagdamba Travellers. It's pending payment — we'll review it and contact you to confirm the trip and arrange payment.",
+    rows,
+    { label: "View booking", url: b.url },
+  );
+}
+
+export async function sendBookingCancellation(
+  to: string,
+  b: BookingEmailInfo,
+): Promise<void> {
+  await sendBookingEmail(
+    to,
+    `Booking cancelled — ${b.reference}`,
+    "Your booking is cancelled",
+    "This booking has been cancelled. Any refund due follows our cancellation policy and will be processed separately.",
+    [
+      { label: "Reference", value: b.reference },
+      { label: "Trip", value: b.tripType },
+      { label: "Was starting", value: b.startsAt },
+      { label: "Booking total", value: b.total },
+    ],
+    { label: "View booking", url: b.url },
+  );
+}
+
+export async function sendBookingStatusUpdate(
+  to: string,
+  b: BookingEmailInfo,
+  statusLabel: string,
+): Promise<void> {
+  await sendBookingEmail(
+    to,
+    `Booking ${statusLabel.toLowerCase()} — ${b.reference}`,
+    `Your booking is now ${statusLabel.toLowerCase()}`,
+    `An update on your trip with Jagdamba Travellers — the booking status is now "${statusLabel}".`,
+    [
+      { label: "Reference", value: b.reference },
+      { label: "Trip", value: b.tripType },
+      { label: "Starts", value: b.startsAt },
+      { label: "Status", value: statusLabel },
+    ],
+    { label: "View booking", url: b.url },
+  );
+}
