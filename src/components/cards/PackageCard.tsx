@@ -149,7 +149,7 @@ export default function PackageCard({ pkg }: PackageCardProps) {
             size="md"
             fullWidth
             iconRight="arrow-right"
-            href={`/booking?package=${pkg.id}`}
+            href={`/booking/new?package=${pkg.id}`}
           >
             Book This Package
           </Button>

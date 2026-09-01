@@ -8,12 +8,22 @@ import HowItWorks from "@/components/sections/HowItWorks";
 import PackageBuilder from "@/components/sections/PackageBuilder";
 import WhyChooseUs from "@/components/sections/WhyChooseUs";
 import Testimonials from "@/components/sections/Testimonials";
-import { listPublicPackages, toCardPackage } from "@/lib/server/catalogue";
+import {
+  listPublicPackages,
+  listPublicRegions,
+  toCardPackage,
+  toBuilderRegion,
+} from "@/lib/server/catalogue";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const packages = (await listPublicPackages()).map(toCardPackage);
+  const [pkgRows, regionRows] = await Promise.all([
+    listPublicPackages(),
+    listPublicRegions(),
+  ]);
+  const packages = pkgRows.map(toCardPackage);
+  const regions = regionRows.map(toBuilderRegion);
 
   return (
     <main>
@@ -24,7 +34,7 @@ export default async function HomePage() {
       <FeaturedVehicles />
       <PackageShowcase packages={packages} />
       <HowItWorks />
-      <PackageBuilder />
+      <PackageBuilder regions={regions} packages={packages} />
       <WhyChooseUs />
       <Testimonials />
     </main>

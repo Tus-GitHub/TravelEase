@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import Section from "@/components/common/Section";
 import Button from "@/components/common/Button";
@@ -10,9 +11,12 @@ import Badge from "@/components/common/Badge";
 import AnimateInView from "@/components/common/AnimateInView";
 import PackageCard from "@/components/cards/PackageCard";
 import MapSpotSelector from "@/components/ui/MapSpotSelector";
-import { regions } from "@/data/regions";
-import { travelPackages } from "@/data/packages";
-import type { Region, TouristSpot } from "@/types";
+import type { Region, TouristSpot, TravelPackage } from "@/types";
+
+interface PackageBuilderProps {
+  regions: Region[];
+  packages: TravelPackage[];
+}
 
 // ─── Tab modes ────────────────────────────────────────────────────────────────
 
@@ -63,11 +67,17 @@ function TabSwitcher({
 
 // ─── Curated packages grid ────────────────────────────────────────────────────
 
-function ChoosePackage({ onBuildOwn }: { onBuildOwn: () => void }) {
+function ChoosePackage({
+  packages,
+  onBuildOwn,
+}: {
+  packages: TravelPackage[];
+  onBuildOwn: () => void;
+}) {
   return (
     <div>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {travelPackages.map((pkg, i) => (
+        {packages.map((pkg, i) => (
           <AnimateInView key={pkg.id} delay={i * 0.08}>
             <PackageCard pkg={pkg} />
           </AnimateInView>
@@ -151,9 +161,11 @@ function StepIndicator({ current }: { current: number }) {
 // ─── Step 1: Region picker ────────────────────────────────────────────────────
 
 function RegionPicker({
+  regions,
   selected,
   onSelect,
 }: {
+  regions: Region[];
   selected: Region | null;
   onSelect: (r: Region) => void;
 }) {
@@ -376,10 +388,12 @@ function PackageSummary({
   region,
   spots,
   onReset,
+  onBook,
 }: {
   region: Region;
   spots: TouristSpot[];
   onReset: () => void;
+  onBook: (vehicleSlug: string) => void;
 }) {
   const [vehicle, setVehicle] = useState(vehicleOptions[0].value);
 
@@ -500,6 +514,7 @@ function PackageSummary({
                 size="lg"
                 fullWidth
                 iconRight="arrow-right"
+                onClick={() => onBook(vehicle)}
               >
                 Book This Package
               </Button>
@@ -509,7 +524,7 @@ function PackageSummary({
             </div>
 
             <p className="mt-4 text-center text-xs text-faint">
-              Pricing shown after selecting travel dates in the next step
+              Choose your travel dates and see the full price on the next step.
             </p>
           </div>
         </div>
@@ -528,12 +543,26 @@ const stepVariants = {
 
 // ─── Main PackageBuilder section ──────────────────────────────────────────────
 
-export default function PackageBuilder() {
+export default function PackageBuilder({ regions, packages }: PackageBuilderProps) {
+  const router = useRouter();
   const [mode, setMode]               = useState<Mode>("packages");
   const [step, setStep]               = useState(1);
   const [region, setRegion]           = useState<Region | null>(null);
   const [selectedSpots, setSelectedSpots] = useState<TouristSpot[]>([]);
   const [orderedSpots, setOrderedSpots]   = useState<TouristSpot[]>([]);
+
+  // Build Your Own -> the booking flow. Spot ids are the real tourist_spot_ids
+  // (as strings); /booking/new parses them back and snapshots them as stops.
+  const bookCustomPackage = (vehicleSlug: string) => {
+    if (!region || orderedSpots.length === 0) return;
+    const params = new URLSearchParams({
+      type: "package",
+      spots: orderedSpots.map((s) => s.id).join(","),
+      vehicleType: vehicleSlug,
+      regionName: region.name,
+    });
+    router.push(`/booking/new?${params.toString()}`);
+  };
 
   const handleRegionSelect = (r: Region) => {
     setRegion(r);
@@ -583,7 +612,10 @@ export default function PackageBuilder() {
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
           >
-            <ChoosePackage onBuildOwn={() => setMode("custom")} />
+            <ChoosePackage
+              packages={packages}
+              onBuildOwn={() => setMode("custom")}
+            />
           </motion.div>
         ) : (
           <motion.div
@@ -606,7 +638,11 @@ export default function PackageBuilder() {
                   exit="exit"
                   transition={{ duration: 0.25, ease: "easeInOut" }}
                 >
-                  <RegionPicker selected={region} onSelect={handleRegionSelect} />
+                  <RegionPicker
+                    regions={regions}
+                    selected={region}
+                    onSelect={handleRegionSelect}
+                  />
                   <div className="mt-10 flex justify-center">
                     <Button
                       variant="primary"
@@ -702,6 +738,7 @@ export default function PackageBuilder() {
                     region={region}
                     spots={orderedSpots}
                     onReset={reset}
+                    onBook={bookCustomPackage}
                   />
                 </motion.div>
               )}

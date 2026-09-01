@@ -112,7 +112,7 @@ export default async function PackageDetailPage({
           <div className="mt-7 flex flex-wrap gap-3">
             <Magnetic>
               <Button
-                href={`/booking?package=${pkg.slug}`}
+                href={`/booking/new?package=${pkg.slug}`}
                 variant="accent"
                 size="lg"
                 iconRight="arrow-right"

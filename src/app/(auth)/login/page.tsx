@@ -87,7 +87,11 @@ export default function LoginPage() {
       setResendState("idle");
       return;
     }
-    router.push("/");
+    // §34 — return the visitor to where they were (e.g. mid-booking). Relative
+    // paths only, to avoid an open redirect.
+    const raw = new URLSearchParams(window.location.search).get("redirect");
+    const dest = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+    router.push(dest);
   };
 
   return (

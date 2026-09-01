@@ -38,3 +38,6 @@ next-env.d.ts
 # internal project docs (kept local — changelog contains credentials, plan is internal)
 /MEMORY.md
 /plan.md
+
+# generated per test run
+/db/tests/DB_TEST_REPORT.md

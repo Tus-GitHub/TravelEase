@@ -122,7 +122,7 @@ export default async function VehicleDetailPage({
           <div className="mt-7 flex flex-wrap gap-3">
             <Magnetic>
               <Button
-                href={`/booking?vehicle=${vehicle.id}`}
+                href={`/booking/new?vehicle=${vehicle.id}`}
                 variant="accent"
                 size="lg"
                 iconRight="arrow-right"

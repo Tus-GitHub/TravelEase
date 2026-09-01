@@ -1,5 +1,5 @@
 import { getPool } from "./db";
-import type { Vehicle, TravelPackage, PackageTag } from "@/types";
+import type { Vehicle, TravelPackage, PackageTag, Region } from "@/types";
 
 /**
  * Public read layer for the catalogue (plan.md §31). Separate from
@@ -120,17 +120,18 @@ export async function listPublicVehicles(
 }
 
 export interface PublicVehicleType {
+  id: number;
   slug: string;
   title: string;
 }
 
 export async function listPublicVehicleTypes(): Promise<PublicVehicleType[]> {
   const r = await getPool().query(
-    `SELECT slug, title FROM vehicle_types
+    `SELECT vehicle_type_id, slug, title FROM vehicle_types
       WHERE is_deleted = false AND is_active = true
       ORDER BY display_order, vehicle_type_id`,
   );
-  return r.rows.map((x) => ({ slug: x.slug, title: x.title }));
+  return r.rows.map((x) => ({ id: x.vehicle_type_id, slug: x.slug, title: x.title }));
 }
 
 /** Adapt a PublicVehicle to the `@/types` Vehicle shape the cards render. */
@@ -352,6 +353,27 @@ export interface PublicRegion {
   state: string;
   imageUrl: string | null;
   spots: PublicRegionSpot[];
+}
+
+/**
+ * Adapt a PublicRegion to the `@/types` Region shape the Package Builder uses
+ * (string ids, non-null strings). `Number(spot.id)` recovers the real
+ * tourist_spot_id when a custom itinerary is submitted.
+ */
+export function toBuilderRegion(r: PublicRegion): Region {
+  return {
+    id: String(r.id),
+    name: r.name,
+    state: r.state,
+    imageUrl: r.imageUrl ?? PACKAGE_IMAGE_FALLBACK,
+    spots: r.spots.map((s) => ({
+      id: String(s.id),
+      name: s.name,
+      tag: s.tag ?? "",
+      description: s.description ?? "",
+      imageUrl: s.imageUrl ?? PACKAGE_IMAGE_FALLBACK,
+    })),
+  };
 }
 
 export async function listPublicRegions(): Promise<PublicRegion[]> {

@@ -71,7 +71,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
           </div>
           <Magnetic strength={0.25} radius={70}>
             <Button
-              href={`/booking?vehicle=${vehicle.id}`}
+              href={`/booking/new?vehicle=${vehicle.id}`}
               variant="accent"
               size="sm"
               iconRight="arrow-right"
