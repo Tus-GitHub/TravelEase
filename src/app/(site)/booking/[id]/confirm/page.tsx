@@ -9,7 +9,7 @@ import Icon from "@/components/common/Icon";
 import { getUserIdForToken, SESSION_COOKIE } from "@/lib/server/session";
 import { findUserById, toPublicUser } from "@/lib/server/users";
 import { getBookingForUser } from "@/lib/server/bookings";
-import { site } from "@/data/site";
+import { getSiteSettings } from "@/lib/server/site-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +36,7 @@ export default async function BookingConfirmPage({
   const booking = await getBookingForUser(params.id, toPublicUser(row));
   if (!booking) notFound();
 
+  const { contact } = await getSiteSettings();
   const bd = booking.priceBreakdown;
   const start = new Date(booking.startDateTime).toLocaleString("en-IN", {
     dateStyle: "medium",
@@ -131,10 +132,10 @@ export default async function BookingConfirmPage({
             <p className="mt-1 text-muted">
               Call{" "}
               <a
-                href={`tel:${site.contact.phone.replace(/\s+/g, "")}`}
+                href={`tel:${contact.phone.replace(/\s+/g, "")}`}
                 className="font-semibold text-accent-700 hover:underline dark:text-accent-300"
               >
-                {site.contact.phone}
+                {contact.phone}
               </a>{" "}
               and quote your reference{" "}
               <strong className="text-fg">{booking.reference}</strong>. We&apos;ll

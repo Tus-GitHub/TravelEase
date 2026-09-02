@@ -5,17 +5,18 @@ import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import FormField, { fieldBase } from "@/components/forms/FormField";
-import { site } from "@/data/site";
+import { useSiteContact } from "@/context/SiteContactContext";
 import { contactReasons, supportHours } from "@/data/pages";
 import type { IconName } from "@/types";
 
-const details: { icon: IconName; label: string; value: string; href?: string }[] = [
-  { icon: "phone", label: "Phone", value: site.contact.phone, href: `tel:${site.contact.phone.replace(/\s/g, "")}` },
-  { icon: "mail", label: "Email", value: site.contact.email, href: `mailto:${site.contact.email}` },
-  { icon: "location", label: "Office", value: site.contact.address },
-];
-
 export default function ContactForm() {
+  const contact = useSiteContact();
+  const details: { icon: IconName; label: string; value: string; href?: string }[] = [
+    { icon: "phone", label: "Phone", value: contact.phone, href: `tel:${contact.phone.replace(/\s/g, "")}` },
+    { icon: "mail", label: "Email", value: contact.email, href: `mailto:${contact.email}` },
+    { icon: "location", label: "Office", value: contact.address },
+  ];
+
   const [form, setForm] = useState({
     name: "",
     email: "",

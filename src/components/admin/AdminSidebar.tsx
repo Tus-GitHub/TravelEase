@@ -28,6 +28,7 @@ const sectionNavItems: {
   { href: "/admin/vehicles", label: "Fleet", icon: "car", section: "vehicles" },
   { href: "/admin/geography", label: "Geography", icon: "map-pin", section: "geography" },
   { href: "/admin/packages", label: "Packages", icon: "tag", section: "packages" },
+  { href: "/admin/settings", label: "Site settings", icon: "headset", section: "settings" },
 ];
 
 export default function AdminSidebar({ user }: { user: AuthUser }) {

@@ -1,5 +1,5 @@
 import nodemailer, { type Transporter } from "nodemailer";
-import { site } from "@/data/site";
+import { getSiteSettings } from "./site-settings";
 
 /**
  * Transactional email (plan.md §23). One thin service module: route handlers
@@ -174,6 +174,7 @@ export async function sendBookingConfirmation(
   to: string,
   b: BookingEmailInfo,
 ): Promise<void> {
+  const { contact } = await getSiteSettings();
   const rows = [
     { label: "Reference", value: b.reference },
     { label: "Trip", value: b.tripType },
@@ -186,8 +187,8 @@ export async function sendBookingConfirmation(
     to,
     `Booking received — ${b.reference}`,
     "We've got your booking",
-    `Thanks for booking with Jagdamba Travellers. To confirm your trip, call ${site.contact.phone} and quote your reference ${b.reference} to pay — we'll confirm the booking as soon as payment is received.`,
-    [...rows, ...driverRows(b), { label: "Pay by phone", value: site.contact.phone }],
+    `Thanks for booking with Jagdamba Travellers. To confirm your trip, call ${contact.phone} and quote your reference ${b.reference} to pay — we'll confirm the booking as soon as payment is received.`,
+    [...rows, ...driverRows(b), { label: "Pay by phone", value: contact.phone }],
     { label: "View booking", url: b.url },
   );
 }

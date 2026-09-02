@@ -3,6 +3,7 @@ import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider, themeInitScript } from "@/context/ThemeContext";
+import { SiteContactProvider } from "@/context/SiteContactContext";
 import { site } from "@/data/site";
 
 const inter = Inter({
@@ -39,7 +40,9 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <SiteContactProvider>{children}</SiteContactProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

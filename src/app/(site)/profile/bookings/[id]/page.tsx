@@ -10,7 +10,7 @@ import Icon from "@/components/common/Icon";
 import Skeleton from "@/components/common/Skeleton";
 import BookingStatusBadge from "@/components/booking/BookingStatusBadge";
 import { useAuth } from "@/context/AuthContext";
-import { site } from "@/data/site";
+import { useSiteContact } from "@/context/SiteContactContext";
 import { calculateRefund } from "@/lib/refund";
 
 interface Stop {
@@ -75,6 +75,7 @@ export default function BookingDetailPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { user, isLoading } = useAuth();
+  const contact = useSiteContact();
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "notfound" | "error">("loading");
@@ -295,10 +296,10 @@ export default function BookingDetailPage() {
                 <p className="mt-1 text-muted">
                   Call{" "}
                   <a
-                    href={`tel:${site.contact.phone.replace(/\s+/g, "")}`}
+                    href={`tel:${contact.phone.replace(/\s+/g, "")}`}
                     className="font-semibold text-accent-700 hover:underline dark:text-accent-300"
                   >
-                    {site.contact.phone}
+                    {contact.phone}
                   </a>{" "}
                   and quote{" "}
                   <strong className="text-fg">{booking.reference}</strong>.

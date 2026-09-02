@@ -1,17 +1,21 @@
+"use client";
+
 import Link from "next/link";
 import Logo from "@/components/common/Logo";
 import Icon from "@/components/common/Icon";
 import { site } from "@/data/site";
+import { useSiteContact } from "@/context/SiteContactContext";
 import { footerLinkGroups, socialLinks } from "@/data/navigation";
 import type { IconName } from "@/types";
 
-const contactItems: { icon: IconName; value: string; href?: string }[] = [
-  { icon: "phone", value: site.contact.phone, href: `tel:${site.contact.phone}` },
-  { icon: "mail", value: site.contact.email, href: `mailto:${site.contact.email}` },
-  { icon: "location", value: site.contact.address },
-];
-
 export default function Footer() {
+  const contact = useSiteContact();
+  const contactItems: { icon: IconName; value: string; href?: string }[] = [
+    { icon: "phone", value: contact.phone, href: `tel:${contact.phone.replace(/\s+/g, "")}` },
+    { icon: "mail", value: contact.email, href: `mailto:${contact.email}` },
+    { icon: "location", value: contact.address },
+  ];
+
   return (
     <footer className="bg-primary-950 text-white/55">
       <div className="section-container py-16">
