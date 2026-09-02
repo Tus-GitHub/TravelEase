@@ -41,6 +41,13 @@ interface Refund {
   status: "pending" | "paid" | "waived";
   reason: string | null;
 }
+interface Review {
+  id: string;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  isPublished: boolean;
+}
 interface Booking {
   id: string;
   reference: string;
@@ -57,6 +64,7 @@ interface Booking {
   passengers: Passenger[];
   history: StatusEvent[];
   refund: Refund | null;
+  review: Review | null;
 }
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
@@ -317,10 +325,106 @@ export default function BookingDetailPage() {
                 </p>
               </div>
             )}
+
+            {booking.status === "Completed" && (
+              <ReviewForm
+                bookingId={booking.id}
+                existing={booking.review}
+                onSaved={load}
+              />
+            )}
           </>
         ) : null}
       </div>
     </Section>
+  );
+}
+
+function ReviewForm({
+  bookingId,
+  existing,
+  onSaved,
+}: {
+  bookingId: string;
+  existing: Review | null;
+  onSaved: () => void;
+}) {
+  const [rating, setRating] = useState(existing?.rating ?? 0);
+  const [title, setTitle] = useState(existing?.title ?? "");
+  const [body, setBody] = useState(existing?.body ?? "");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const submit = async () => {
+    if (rating < 1) {
+      setErr("Pick a star rating.");
+      return;
+    }
+    setBusy(true);
+    setErr(null);
+    const res = await fetch("/api/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId, rating, title, body }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setErr(d.error ?? "Couldn't save your review.");
+    } else {
+      setDone(true);
+      onSaved();
+    }
+  };
+
+  return (
+    <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-4">
+      <p className="font-semibold text-fg">
+        {existing ? "Your review" : "How was your trip?"}
+      </p>
+      <div className="mt-2 flex gap-1">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => setRating(n)}
+            aria-label={`${n} star${n > 1 ? "s" : ""}`}
+            className={`text-2xl leading-none ${
+              n <= rating ? "text-accent-500" : "text-line"
+            }`}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+      <input
+        className="mt-3 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
+        placeholder="Title (optional)"
+        maxLength={120}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+      <textarea
+        className="mt-2 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
+        rows={3}
+        placeholder="Tell other travellers about your trip"
+        maxLength={2000}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+      />
+      {err && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{err}</p>}
+      {done && (
+        <p className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
+          Thanks — your review is saved.
+        </p>
+      )}
+      <div className="mt-3">
+        <Button variant="accent" size="sm" onClick={submit} loading={busy}>
+          {existing ? "Update review" : "Post review"}
+        </Button>
+      </div>
+    </div>
   );
 }
 

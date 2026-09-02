@@ -17,6 +17,8 @@ import {
   toCardPackage,
   PACKAGE_IMAGE_FALLBACK,
 } from "@/lib/server/catalogue";
+import { listReviewsForPackage } from "@/lib/server/reviews";
+import ReviewList from "@/components/reviews/ReviewList";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +40,11 @@ export default async function PackageDetailPage({
   if (!pkg) notFound();
 
   const nights = pkg.stops.reduce((sum, s) => sum + s.nightsHere, 0);
-  const similar = (await listPublicPackages())
+  const [allPkgs, reviews] = await Promise.all([
+    listPublicPackages(),
+    listReviewsForPackage(pkg.id),
+  ]);
+  const similar = allPkgs
     .filter((p) => p.regionId === pkg.regionId && p.id !== pkg.id)
     .slice(0, 3)
     .map(toCardPackage);
@@ -155,6 +161,8 @@ export default async function PackageDetailPage({
           </ol>
         </div>
       )}
+
+      <ReviewList reviews={reviews} />
 
       {similar.length > 0 && (
         <div className="mt-14">

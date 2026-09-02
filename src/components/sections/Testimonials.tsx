@@ -3,8 +3,13 @@ import Grid from "@/components/common/Grid";
 import AnimateInView from "@/components/common/AnimateInView";
 import TestimonialCard from "@/components/cards/TestimonialCard";
 import { testimonials } from "@/data/testimonials";
+import { listPublishedReviews, toTestimonial } from "@/lib/server/reviews";
 
-export default function Testimonials() {
+export default async function Testimonials() {
+  const real = (await listPublishedReviews(8)).map(toTestimonial);
+  // Fall back to the seeded testimonials until real reviews come in.
+  const items = real.length >= 3 ? real.slice(0, 4) : testimonials;
+
   return (
     <Section
       id="reviews"
@@ -14,7 +19,7 @@ export default function Testimonials() {
       subtitle="Real stories from people who booked their journeys with us."
     >
       <Grid cols={{ base: 1, sm: 2, lg: 4 }}>
-        {testimonials.map((testimonial, i) => (
+        {items.map((testimonial, i) => (
           <AnimateInView key={testimonial.id} delay={i * 0.1}>
             <TestimonialCard testimonial={testimonial} />
           </AnimateInView>

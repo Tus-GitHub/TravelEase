@@ -17,6 +17,8 @@ import {
   toCardVehicle,
   VEHICLE_IMAGE_FALLBACK,
 } from "@/lib/server/catalogue";
+import { listReviewsForVehicle } from "@/lib/server/reviews";
+import ReviewList from "@/components/reviews/ReviewList";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +43,11 @@ export default async function VehicleDetailPage({
 
   const vehicle = toCardVehicle(detail);
   const gallery = detail.images.length ? detail.images : [VEHICLE_IMAGE_FALLBACK];
-  const similar = (await listPublicVehicles({ typeSlug: detail.typeSlug }))
+  const [similarRows, reviews] = await Promise.all([
+    listPublicVehicles({ typeSlug: detail.typeSlug }),
+    listReviewsForVehicle(detail.id),
+  ]);
+  const similar = similarRows
     .filter((v) => v.id !== detail.id)
     .slice(0, 3)
     .map(toCardVehicle);
@@ -151,6 +157,8 @@ export default async function VehicleDetailPage({
           value={vehicle.rating > 0 ? `${vehicle.rating.toFixed(1)} / 5` : "Not yet rated"}
         />
       </dl>
+
+      <ReviewList reviews={reviews} />
 
       {similar.length > 0 && (
         <div className="mt-14">

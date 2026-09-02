@@ -25,6 +25,7 @@ import {
   addBlock,
   releaseBookingBlock,
 } from "./availability";
+import { getReviewForBooking, type ReviewView } from "./reviews";
 import { canTransition, type BookingActor, type BookingStatus } from "@/lib/bookingStatus";
 import type { CancelInitiator } from "@/lib/refund";
 
@@ -246,6 +247,7 @@ export interface BookingDetail extends BookingSummary {
   passengers: BookingPassengerView[];
   history: BookingStatusEvent[];
   refund: RefundView | null;
+  review: ReviewView | null;
 }
 
 const SUMMARY_COLS = `
@@ -311,7 +313,7 @@ export async function getBookingForUser(
   if (!b) return null;
   if (!actorFor(user, b)) return null;
 
-  const [stops, passengers, history, refund] = await Promise.all([
+  const [stops, passengers, history, refund, review] = await Promise.all([
     pool.query(
       `SELECT bs.tourist_spot_id, bs.city_id, bs.stop_order, bs.custom_label, ts.name
          FROM booking_stops bs
@@ -330,6 +332,7 @@ export async function getBookingForUser(
       [bookingId],
     ),
     getRefundForBooking(bookingId),
+    getReviewForBooking(bookingId),
   ]);
 
   return {
@@ -373,6 +376,7 @@ export async function getBookingForUser(
       changedAt: new Date(h.changed_at).toISOString(),
     })),
     refund,
+    review,
   };
 }
 

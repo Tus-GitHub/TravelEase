@@ -18,7 +18,8 @@ export type AdminSection =
   | "geography"
   | "packages"
   | "bookings"
-  | "coupons";
+  | "coupons"
+  | "reviews";
 
 /** "admin" is intentionally excluded — its access is fixed and non-editable. */
 export type PermissionRole = "agent" | "customer";
@@ -30,6 +31,7 @@ export const ADMIN_SECTION_LABELS: Record<AdminSection, string> = {
   packages: "Packages",
   bookings: "Bookings",
   coupons: "Coupons",
+  reviews: "Reviews",
 };
 
 export const ADMIN_SECTION_PATHS: Record<AdminSection, string> = {
@@ -39,6 +41,7 @@ export const ADMIN_SECTION_PATHS: Record<AdminSection, string> = {
   packages: "/admin/packages",
   bookings: "/admin/bookings",
   coupons: "/admin/coupons",
+  reviews: "/admin/reviews",
 };
 
 type PermissionMatrix = Record<PermissionRole, Record<AdminSection, boolean>>;
@@ -49,11 +52,11 @@ type PermissionMatrix = Record<PermissionRole, Record<AdminSection, boolean>>;
 const DEFAULT_MATRIX: PermissionMatrix = {
   agent: {
     users: false, vehicles: true, geography: true, packages: true,
-    bookings: false, coupons: false,
+    bookings: false, coupons: false, reviews: false,
   },
   customer: {
     users: false, vehicles: false, geography: false, packages: false,
-    bookings: false, coupons: false,
+    bookings: false, coupons: false, reviews: false,
   },
 };
 
