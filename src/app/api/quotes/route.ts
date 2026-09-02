@@ -4,6 +4,7 @@ import { calculatePrice, type BookingTypeCode, type TripInput } from "@/lib/serv
 import { resolveBookingTypeId, resolvePricingRule } from "@/lib/server/pricing-rules";
 import { getPool } from "@/lib/server/db";
 import { validateCoupon } from "@/lib/server/coupons";
+import { resolveSeason } from "@/lib/server/seasonal-pricing";
 import { getUserIdForToken, SESSION_COOKIE } from "@/lib/server/session";
 
 /**
@@ -92,6 +93,18 @@ export async function POST(request: Request) {
       { error: "No pricing is configured for this trip yet." },
       { status: 422 },
     );
+  }
+
+  // Seasonal multiplier for the trip start date, if the client sent one (2.8).
+  if (typeof body.startDate === "string") {
+    const day = new Date(body.startDate);
+    if (!Number.isNaN(day.getTime())) {
+      const season = await resolveSeason(day, bookingTypeId, vehicleTypeId);
+      if (season) {
+        trip.seasonalMultiplier = season.multiplier;
+        trip.seasonalLabel = season.name;
+      }
+    }
   }
 
   const quote = calculatePrice(trip, rule);

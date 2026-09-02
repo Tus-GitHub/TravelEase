@@ -43,8 +43,11 @@ export interface TripInput {
   passengers?: number;
   /** Set when a curated package is sold per person — overrides the per-day math. */
   packagePricePerPerson?: number;
-  /** Coupons etc. (Phase 2). Clamped to the subtotal. */
+  /** Coupons etc. (Phase 2). Clamped to the adjusted subtotal. */
   discountAmount?: number;
+  /** Seasonal pricing (2.8). 1.25 = +25% on the subtotal, before discount/tax. */
+  seasonalMultiplier?: number;
+  seasonalLabel?: string;
 }
 
 export interface PriceLine {
@@ -59,8 +62,10 @@ export interface PriceBreakdown {
   nightCharges: number;
   extraKmCharges: number;
   packageAmount: number;
-  /** Sum of the components above, before discount and tax. */
+  /** Sum of the components above, before seasonal adjustment, discount and tax. */
   subtotal: number;
+  /** Seasonal surcharge/discount on the subtotal (2.8). Can be negative. */
+  seasonalAdjustment: number;
   discountAmount: number;
   taxAmount: number;
   totalAmount: number;
@@ -142,16 +147,27 @@ export function calculatePrice(
   extraKmCharges = money(extraKmCharges);
   packageAmount = money(packageAmount);
 
-  const subtotal =
+  const subtotal = money(
     baseAmount +
-    vehicleAmount +
-    driverAllowance +
-    nightCharges +
-    extraKmCharges +
-    packageAmount;
+      vehicleAmount +
+      driverAllowance +
+      nightCharges +
+      extraKmCharges +
+      packageAmount,
+  );
 
-  const discountAmount = money(Math.min(num(trip.discountAmount), subtotal));
-  const taxable = subtotal - discountAmount;
+  // Seasonal multiplier on the subtotal, before discount + tax.
+  const mult =
+    typeof trip.seasonalMultiplier === "number" &&
+    Number.isFinite(trip.seasonalMultiplier) &&
+    trip.seasonalMultiplier > 0
+      ? trip.seasonalMultiplier
+      : 1;
+  const seasonalAdjustment = money(subtotal * (mult - 1));
+  const adjustedSubtotal = subtotal + seasonalAdjustment;
+
+  const discountAmount = money(Math.min(num(trip.discountAmount), adjustedSubtotal));
+  const taxable = adjustedSubtotal - discountAmount;
   const taxPercent = Math.min(Math.max(num(rule.taxPercent), 0), 100);
   const taxAmount = money((taxable * taxPercent) / 100);
   const totalAmount = money(taxable + taxAmount);
@@ -171,6 +187,13 @@ export function calculatePrice(
     breakdown.push({ label: "Night charges", amount: nightCharges });
   if (extraKmCharges)
     breakdown.push({ label: "Extra distance", amount: extraKmCharges });
+  if (seasonalAdjustment)
+    breakdown.push({
+      label: trip.seasonalLabel
+        ? `Seasonal adjustment (${trip.seasonalLabel})`
+        : "Seasonal adjustment",
+      amount: seasonalAdjustment,
+    });
   if (discountAmount)
     breakdown.push({ label: "Discount", amount: -discountAmount });
   if (taxAmount)
@@ -183,7 +206,8 @@ export function calculatePrice(
     nightCharges,
     extraKmCharges,
     packageAmount,
-    subtotal: money(subtotal),
+    subtotal,
+    seasonalAdjustment,
     discountAmount,
     taxAmount,
     totalAmount,

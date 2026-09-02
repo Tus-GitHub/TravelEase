@@ -174,6 +174,38 @@ function trip(over: Partial<TripInput> & { bookingType: TripInput["bookingType"]
   eq("base still applies", r.baseAmount, 100);
 }
 
+// ── 9b. Seasonal multiplier (2.8) ──────────────────────────────────────────
+{
+  // package worked example (subtotal 26200) at 1.25x, then 5% GST
+  const r = calculatePrice(
+    trip({ bookingType: "package", days: 5, nights: 4, seasonalMultiplier: 1.25, seasonalLabel: "Diwali" }),
+    rule({ perDayRate: 4500, driverAllowancePerDay: 500, nightCharge: 300, taxPercent: 5 }),
+  );
+  eq("seasonal: subtotal unchanged", r.subtotal, 26200);
+  eq("seasonal: adjustment (+25% of 26200)", r.seasonalAdjustment, 6550);
+  eq("seasonal: tax (5% of 32750)", r.taxAmount, 1637.5);
+  eq("seasonal: total", r.totalAmount, 34387.5);
+  check(
+    "seasonal: labelled line present",
+    r.breakdown.some((l) => l.label === "Seasonal adjustment (Diwali)" && l.amount === 6550),
+  );
+}
+{
+  const r = calculatePrice(
+    trip({ bookingType: "airport_transfer", seasonalMultiplier: 1 }),
+    rule({ flatRate: 1200, taxPercent: 5 }),
+  );
+  eq("multiplier 1 -> no adjustment", r.seasonalAdjustment, 0);
+  eq("multiplier 1 -> total unchanged", r.totalAmount, 1260);
+}
+{
+  const r = calculatePrice(
+    trip({ bookingType: "package", days: 5, nights: 4, seasonalMultiplier: 0.8 }),
+    rule({ perDayRate: 4500, driverAllowancePerDay: 500, nightCharge: 300, taxPercent: 5 }),
+  );
+  eq("off-peak -0.2 -> negative adjustment", r.seasonalAdjustment, -5240);
+}
+
 // ── 10. Deterministic ───────────────────────────────────────────────────
 {
   const args = () =>

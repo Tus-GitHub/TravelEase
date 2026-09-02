@@ -178,8 +178,9 @@ export default function BookingFlow() {
       if (nights) body.nights = nights;
     }
     if (couponCode.trim()) body.couponCode = couponCode.trim();
+    if (startDate) body.startDate = new Date(startDate).toISOString();
     return body;
-  }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours, couponCode]);
+  }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours, couponCode, startDate]);
 
   const quoteTimer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {

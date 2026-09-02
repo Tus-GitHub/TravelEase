@@ -22,6 +22,7 @@ const sectionNavItems: {
   { href: "/admin/bookings", label: "Bookings", icon: "calendar", section: "bookings" },
   { href: "/admin/coupons", label: "Coupons", icon: "tag", section: "coupons" },
   { href: "/admin/reviews", label: "Reviews", icon: "star", section: "reviews" },
+  { href: "/admin/seasonal-pricing", label: "Seasonal", icon: "calendar", section: "seasonal" },
   { href: "/admin/users", label: "Users", icon: "users", section: "users" },
   { href: "/admin/vehicles", label: "Fleet", icon: "car", section: "vehicles" },
   { href: "/admin/geography", label: "Geography", icon: "map-pin", section: "geography" },

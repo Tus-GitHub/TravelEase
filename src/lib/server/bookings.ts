@@ -26,6 +26,7 @@ import {
   releaseBookingBlock,
 } from "./availability";
 import { getReviewForBooking, type ReviewView } from "./reviews";
+import { resolveSeason } from "./seasonal-pricing";
 import { canTransition, type BookingActor, type BookingStatus } from "@/lib/bookingStatus";
 import type { CancelInitiator } from "@/lib/refund";
 
@@ -526,6 +527,10 @@ export async function createBooking(
   if (!rule) {
     return { ok: false, status: 422, message: "No pricing is configured for this trip yet." };
   }
+
+  // Seasonal multiplier for the trip start date (chunk 2.8).
+  const season = await resolveSeason(start, bookingTypeId, vehicleTypeId ?? null);
+
   const trip: TripInput = {
     bookingType: input.bookingType,
     distanceKm: posNum(input.estimatedDistanceKm),
@@ -534,6 +539,8 @@ export async function createBooking(
     nights: posNum(input.nights),
     passengers: passengerCount,
     packagePricePerPerson,
+    seasonalMultiplier: season?.multiplier,
+    seasonalLabel: season?.name,
   };
   let price = calculatePrice(trip, rule);
 
