@@ -159,7 +159,16 @@ export interface BookingEmailInfo {
   total: string; // preformatted, e.g. "₹27,510"
   itinerary?: string; // "Jaipur → Jodhpur → Udaipur", optional
   url: string; // link to the booking
+  driver?: { name: string; phone: string }; // set only once the trip is Confirmed+
 }
+
+const driverRows = (b: BookingEmailInfo) =>
+  b.driver
+    ? [
+        { label: "Driver", value: b.driver.name },
+        { label: "Driver phone", value: b.driver.phone },
+      ]
+    : [];
 
 export async function sendBookingConfirmation(
   to: string,
@@ -178,7 +187,27 @@ export async function sendBookingConfirmation(
     `Booking received — ${b.reference}`,
     "We've got your booking",
     `Thanks for booking with Jagdamba Travellers. To confirm your trip, call ${site.contact.phone} and quote your reference ${b.reference} to pay — we'll confirm the booking as soon as payment is received.`,
-    [...rows, { label: "Pay by phone", value: site.contact.phone }],
+    [...rows, ...driverRows(b), { label: "Pay by phone", value: site.contact.phone }],
+    { label: "View booking", url: b.url },
+  );
+}
+
+/** Sent when a driver is assigned to an already-confirmed booking (chunk 2.9). */
+export async function sendDriverAssigned(
+  to: string,
+  b: BookingEmailInfo,
+): Promise<void> {
+  await sendBookingEmail(
+    to,
+    `Your driver for ${b.reference}`,
+    "Your driver is assigned",
+    "Here are the details for the driver who'll be taking care of your trip. They may call you before pickup.",
+    [
+      { label: "Reference", value: b.reference },
+      { label: "Trip", value: b.tripType },
+      { label: "Starts", value: b.startsAt },
+      ...driverRows(b),
+    ],
     { label: "View booking", url: b.url },
   );
 }
@@ -221,6 +250,7 @@ export async function sendBookingStatusUpdate(
       { label: "Trip", value: b.tripType },
       { label: "Starts", value: b.startsAt },
       { label: "Status", value: statusLabel },
+      ...driverRows(b),
     ],
     { label: "View booking", url: b.url },
   );

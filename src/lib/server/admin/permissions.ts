@@ -9,7 +9,8 @@ export type AdminSection =
   | "bookings"
   | "coupons"
   | "reviews"
-  | "seasonal";
+  | "seasonal"
+  | "drivers";
 
 export const PERMISSION_ROLES: PermissionRole[] = ["agent", "customer"];
 export const ADMIN_SECTIONS: AdminSection[] = [
@@ -21,6 +22,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   "coupons",
   "reviews",
   "seasonal",
+  "drivers",
 ];
 
 export type PermissionMatrix = Record<PermissionRole, Record<AdminSection, boolean>>;
@@ -43,6 +45,7 @@ function emptyMatrix(): PermissionMatrix {
     coupons: false,
     reviews: false,
     seasonal: false,
+    drivers: false,
   };
   return { agent: { ...off }, customer: { ...off } };
 }

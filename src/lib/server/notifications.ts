@@ -3,6 +3,7 @@ import {
   sendBookingConfirmation,
   sendBookingCancellation,
   sendBookingStatusUpdate,
+  sendDriverAssigned,
   appOrigin,
   type BookingEmailInfo,
 } from "./email";
@@ -19,7 +20,11 @@ import type { BookingStatus } from "@/lib/bookingStatus";
 type NotificationKind =
   | "booking.confirmation"
   | "booking.cancellation"
-  | "booking.status";
+  | "booking.status"
+  | "booking.driver";
+
+// The customer only sees driver details once the trip is locked in.
+const DRIVER_VISIBLE: BookingStatus[] = ["Confirmed", "Ongoing", "Completed"];
 
 const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 const when = (d: Date) =>
@@ -37,6 +42,7 @@ const STATUS_LABELS: Partial<Record<BookingStatus, string>> = {
 interface BookingRow {
   booking_id: string;
   booking_reference: string;
+  status: BookingStatus;
   start_datetime: Date;
   total_amount: string;
   passenger_count: number;
@@ -44,13 +50,16 @@ interface BookingRow {
   owner_user_id: string;
   owner_email: string;
   itinerary: string | null;
+  driver_name: string | null;
+  driver_phone: string | null;
 }
 
 async function loadBookingRow(bookingId: string): Promise<BookingRow | null> {
   const result = await getPool().query(
-    `SELECT b.booking_id, b.booking_reference, b.start_datetime, b.total_amount,
+    `SELECT b.booking_id, b.booking_reference, b.status, b.start_datetime, b.total_amount,
             b.passenger_count, bt.code AS type_code,
             u.user_id AS owner_user_id, u.email AS owner_email,
+            dr.name AS driver_name, dr.phone AS driver_phone,
             (SELECT string_agg(COALESCE(ts.name, bs.custom_label, 'Stop'), ' → '
                                ORDER BY bs.stop_order)
                FROM booking_stops bs
@@ -59,6 +68,7 @@ async function loadBookingRow(bookingId: string): Promise<BookingRow | null> {
        FROM bookings b
        JOIN booking_types bt ON bt.booking_type_id = b.booking_type_id
        JOIN users u ON u.user_id = b.user_id
+       LEFT JOIN drivers dr ON dr.driver_id = b.driver_id
       WHERE b.booking_id = $1`,
     [bookingId],
   );
@@ -74,6 +84,10 @@ function toEmailInfo(row: BookingRow): BookingEmailInfo {
     total: inr(Number(row.total_amount)),
     itinerary: row.itinerary ?? undefined,
     url: `${appOrigin()}/profile/bookings/${row.booking_id}`,
+    driver:
+      row.driver_name && DRIVER_VISIBLE.includes(row.status)
+        ? { name: row.driver_name, phone: row.driver_phone ?? "" }
+        : undefined,
   };
 }
 
@@ -119,6 +133,28 @@ export async function notifyBookingCreated(bookingId: string): Promise<void> {
     }
   } catch (err) {
     console.error("notifyBookingCreated: unexpected", err);
+  }
+}
+
+/**
+ * Fired when an admin assigns a driver to a booking that's already Confirmed or
+ * later (chunk 2.9). A no-op if the booking isn't at a stage where the customer
+ * should see the driver, or has no driver.
+ */
+export async function notifyDriverAssigned(bookingId: string): Promise<void> {
+  try {
+    const row = await loadBookingRow(bookingId);
+    if (!row || !row.driver_name || !DRIVER_VISIBLE.includes(row.status)) return;
+    const subject = `Your driver for ${row.booking_reference}`;
+    try {
+      await sendDriverAssigned(row.owner_email, toEmailInfo(row));
+      await log(row, "booking.driver", subject);
+    } catch (err) {
+      console.error("notifyDriverAssigned: send failed", err);
+      await log(row, "booking.driver", subject, String(err));
+    }
+  } catch (err) {
+    console.error("notifyDriverAssigned: unexpected", err);
   }
 }
 

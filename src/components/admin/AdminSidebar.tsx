@@ -20,6 +20,7 @@ const sectionNavItems: {
 }[] = [
   { href: "/admin", label: "Dashboard", icon: "grid", section: null },
   { href: "/admin/bookings", label: "Bookings", icon: "calendar", section: "bookings" },
+  { href: "/admin/drivers", label: "Drivers", icon: "user", section: "drivers" },
   { href: "/admin/coupons", label: "Coupons", icon: "tag", section: "coupons" },
   { href: "/admin/reviews", label: "Reviews", icon: "star", section: "reviews" },
   { href: "/admin/seasonal-pricing", label: "Seasonal", icon: "calendar", section: "seasonal" },

@@ -5,6 +5,7 @@ import {
   type BookingStatus,
   type TransitionResult,
 } from "../bookings";
+import { notifyDriverAssigned } from "../notifications";
 
 /**
  * Admin view of bookings (plan.md §36 chunk 1.13). Status changes still go
@@ -40,6 +41,9 @@ export interface AdminBookingRow {
     method: string | null;
     reference: string | null;
   } | null;
+  driverId: number | null;
+  driverName: string | null;
+  driverPhone: string | null;
 }
 
 const ADMIN_SELECT = `
@@ -51,7 +55,8 @@ const ADMIN_SELECT = `
          b.pickup_address, b.drop_address, b.passenger_count, b.customer_notes,
          rf.amount AS refund_amount, rf.charge_amount AS refund_charge,
          rf.tier AS refund_tier, rf.status AS refund_status,
-         rf.method AS refund_method, rf.reference AS refund_reference
+         rf.method AS refund_method, rf.reference AS refund_reference,
+         b.driver_id, dr.name AS driver_name, dr.phone AS driver_phone
   FROM bookings b
   JOIN booking_types bt ON bt.booking_type_id = b.booking_type_id
   JOIN users cu ON cu.user_id = b.user_id
@@ -59,6 +64,7 @@ const ADMIN_SELECT = `
   LEFT JOIN vehicle_types vt ON vt.vehicle_type_id = b.vehicle_type_id
   LEFT JOIN packages p ON p.package_id = b.package_id
   LEFT JOIN refunds rf ON rf.booking_id = b.booking_id
+  LEFT JOIN drivers dr ON dr.driver_id = b.driver_id
   WHERE b.is_deleted = false`;
 
 function toRow(r: Record<string, unknown>): AdminBookingRow {
@@ -93,7 +99,48 @@ function toRow(r: Record<string, unknown>): AdminBookingRow {
             reference: (r.refund_reference as string) ?? null,
           }
         : null,
+    driverId: (r.driver_id as number) ?? null,
+    driverName: (r.driver_name as string) ?? null,
+    driverPhone: (r.driver_phone as string) ?? null,
   };
+}
+
+/** Assign (or clear, with null) the driver on a booking. Admin only. */
+export async function assignBookingDriver(
+  bookingId: string,
+  driverId: number | null,
+  actorId: string,
+): Promise<AssignResult> {
+  const pool = getPool();
+  const b = await pool.query(
+    `SELECT status FROM bookings WHERE booking_id = $1 AND is_deleted = false`,
+    [bookingId],
+  );
+  if (!b.rowCount) return { ok: false, status: 404, message: "Booking not found." };
+
+  if (driverId !== null) {
+    const d = await pool.query(
+      `SELECT 1 FROM drivers WHERE driver_id = $1 AND is_deleted = false AND is_active = true`,
+      [driverId],
+    );
+    if (!d.rowCount) {
+      return { ok: false, status: 400, message: "That driver doesn't exist or is inactive." };
+    }
+  }
+
+  await pool.query(
+    `UPDATE bookings SET driver_id = $1, updated_by = $2 WHERE booking_id = $3`,
+    [driverId, actorId, bookingId],
+  );
+
+  // Tell the customer once the trip is Confirmed or later.
+  if (
+    driverId !== null &&
+    ["Confirmed", "Ongoing"].includes(b.rows[0].status as string)
+  ) {
+    await notifyDriverAssigned(bookingId);
+  }
+  return { ok: true };
 }
 
 export async function listAdminBookings(status?: string): Promise<AdminBookingRow[]> {

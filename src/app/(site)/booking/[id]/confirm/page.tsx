@@ -108,6 +108,23 @@ export default async function BookingConfirmPage({
           )}
         </Card>
 
+        {booking.driver && (
+          <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-4 text-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-faint">Your driver</p>
+            <p className="mt-1.5 font-semibold text-fg">{booking.driver.name}</p>
+            {booking.driver.phone && (
+              <p className="mt-0.5">
+                <a
+                  href={`tel:${booking.driver.phone.replace(/\s+/g, "")}`}
+                  className="font-medium text-primary-700 hover:underline dark:text-primary-300"
+                >
+                  {booking.driver.phone}
+                </a>
+              </p>
+            )}
+          </div>
+        )}
+
         {booking.status === "PendingPayment" ? (
           <div className="mt-6 rounded-xl border border-accent-400/40 bg-accent-50 px-4 py-4 text-sm dark:bg-accent-950/20">
             <p className="font-semibold text-fg">Pay by phone to confirm your trip</p>

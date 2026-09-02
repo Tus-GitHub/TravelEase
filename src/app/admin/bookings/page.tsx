@@ -33,12 +33,21 @@ interface AdminBooking {
     method: string | null;
     reference: string | null;
   } | null;
+  driverId: number | null;
+  driverName: string | null;
+  driverPhone: string | null;
 }
 interface AdminUser {
   id: string;
   name: string;
   email: string;
   role: string;
+}
+interface AdminDriver {
+  id: number;
+  name: string;
+  phone: string;
+  isActive: boolean;
 }
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
@@ -63,6 +72,7 @@ export default function AdminBookingsPage() {
 
   const [filter, setFilter] = useState<BookingStatus | "All">("All");
   const [agents, setAgents] = useState<AdminUser[]>([]);
+  const [drivers, setDrivers] = useState<AdminDriver[]>([]);
   const [rowError, setRowError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -75,6 +85,12 @@ export default function AdminBookingsPage() {
         setAgents((d.items ?? []).filter((u) => u.role === "agent")),
       )
       .catch(() => setAgents([]));
+    fetch("/api/admin/drivers")
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((d: { items: AdminDriver[] }) =>
+        setDrivers((d.items ?? []).filter((x) => x.isActive)),
+      )
+      .catch(() => setDrivers([]));
   }, [allowed]);
 
   const rows = useMemo(
@@ -159,6 +175,7 @@ export default function AdminBookingsPage() {
                 <th className="px-4 py-3">Total</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Agent</th>
+                <th className="px-4 py-3">Driver</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line-subtle">
@@ -239,10 +256,35 @@ export default function AdminBookingsPage() {
                           ))}
                         </select>
                       </td>
+                      <td className="px-4 py-3">
+                        <select
+                          className={cellSelect}
+                          value={b.driverId ?? ""}
+                          disabled={busyId === b.id}
+                          onChange={(e) =>
+                            act(b.id, {
+                              driverId: e.target.value ? Number(e.target.value) : null,
+                            })
+                          }
+                        >
+                          <option value="">No driver</option>
+                          {b.driverId != null &&
+                            !drivers.some((d) => d.id === b.driverId) && (
+                              <option value={b.driverId}>
+                                {b.driverName ?? `#${b.driverId}`} (inactive)
+                              </option>
+                            )}
+                          {drivers.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
                     </tr>
                     {expanded === b.id && (
                       <tr className="bg-surface-muted/50">
-                        <td colSpan={7} className="px-4 py-3 text-xs text-muted">
+                        <td colSpan={8} className="px-4 py-3 text-xs text-muted">
                           <div className="grid gap-1 sm:grid-cols-2">
                             <span>Phone: {b.customerPhone || "—"}</span>
                             <span>Passengers: {b.passengerCount}</span>
@@ -292,14 +334,14 @@ export default function AdminBookingsPage() {
               })}
               {!loading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-faint">
+                  <td colSpan={8} className="px-4 py-10 text-center text-faint">
                     No bookings{filter !== "All" ? ` with status ${filter}` : ""} yet.
                   </td>
                 </tr>
               )}
               {loading && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-faint">
+                  <td colSpan={8} className="px-4 py-10 text-center text-faint">
                     Loading…
                   </td>
                 </tr>

@@ -65,6 +65,7 @@ interface Booking {
   history: StatusEvent[];
   refund: Refund | null;
   review: Review | null;
+  driver: { name: string; phone: string | null } | null;
 }
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
@@ -263,6 +264,28 @@ export default function BookingDetailPage() {
                 ) : booking.refund.status === "paid" ? (
                   <p className="mt-1 text-emerald-600 dark:text-emerald-400">Refund processed.</p>
                 ) : null}
+              </div>
+            )}
+
+            {booking.driver && (
+              <div className="mt-5 rounded-xl border border-line bg-surface px-4 py-4 text-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-faint">
+                  Your driver
+                </p>
+                <p className="mt-1.5 font-semibold text-fg">{booking.driver.name}</p>
+                {booking.driver.phone && (
+                  <p className="mt-0.5 text-muted">
+                    <a
+                      href={`tel:${booking.driver.phone.replace(/\s+/g, "")}`}
+                      className="font-medium text-primary-700 hover:underline dark:text-primary-300"
+                    >
+                      {booking.driver.phone}
+                    </a>
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-faint">
+                  They may call you before pickup. Contact us if anything changes.
+                </p>
               </div>
             )}
 

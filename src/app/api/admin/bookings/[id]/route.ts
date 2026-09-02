@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/server/auth-guard";
 import {
   adminTransition,
   assignBookingAgent,
+  assignBookingDriver,
   getAdminBooking,
 } from "@/lib/server/admin/bookings";
 import type { BookingStatus } from "@/lib/server/bookings";
@@ -52,6 +53,7 @@ export async function PATCH(
     status?: unknown;
     reason?: unknown;
     assignedAgentUserId?: unknown;
+    driverId?: unknown;
     refundInitiatedBy?: unknown;
   };
   try {
@@ -88,6 +90,20 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid agent id." }, { status: 400 });
     }
     const result = await assignBookingAgent(params.id, agentId, auth.user.id);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.message }, { status: result.status });
+    }
+  } else if ("driverId" in body) {
+    const driverId =
+      body.driverId === null || body.driverId === ""
+        ? null
+        : typeof body.driverId === "number" && Number.isInteger(body.driverId)
+          ? body.driverId
+          : undefined;
+    if (driverId === undefined) {
+      return NextResponse.json({ error: "Invalid driver id." }, { status: 400 });
+    }
+    const result = await assignBookingDriver(params.id, driverId, auth.user.id);
     if (!result.ok) {
       return NextResponse.json({ error: result.message }, { status: result.status });
     }
