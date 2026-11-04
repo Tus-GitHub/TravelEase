@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Section from "@/components/common/Section";
+import Section from "@/components/account/AccountSection";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
@@ -46,7 +46,7 @@ export default function ProfileBookingsPage() {
 
   return (
     <Section bg="gray" eyebrow="Your account" title="My bookings">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-4xl">
         <Link
           href="/profile"
           className="hover-underline mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 dark:text-primary-300"
@@ -104,7 +104,7 @@ export default function ProfileBookingsPage() {
                         <p className="font-display text-lg font-bold text-primary-900 dark:text-primary-300">
                           {inr(b.totalAmount)}
                         </p>
-                        <span className="text-xs text-accent-600">View details →</span>
+                        <span className="mt-2 inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-xs font-semibold text-fg">View details →</span>
                       </div>
                     </div>
                   </Card>

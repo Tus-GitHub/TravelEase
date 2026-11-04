@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import Section from "@/components/common/Section";
+import AccountEditor from "@/components/account/AccountEditor";
+import Section from "@/components/account/AccountSection";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
@@ -119,7 +120,7 @@ function SupportInner() {
 
   return (
     <Section bg="gray" eyebrow="Your account" title="Help & support">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-4xl">
         <Link
           href="/profile"
           className="hover-underline mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 dark:text-primary-300"
@@ -139,9 +140,8 @@ function SupportInner() {
           )}
         </div>
 
-        {showForm && (
-          <Card padded hover={false} className="mb-6">
-            <h2 className="text-base font-bold text-fg">New support ticket</h2>
+        {showForm && user && (
+          <AccountEditor title="New support ticket" description="Tell us how we can help with your journey." busy={busy} onClose={() => setShowForm(false)}>
             <div className="mt-4 flex flex-col gap-4">
               <label className="block">
                 <span className="mb-1.5 block text-xs font-semibold text-muted">Subject</span>
@@ -212,7 +212,7 @@ function SupportInner() {
                 </Button>
               </div>
             </div>
-          </Card>
+          </AccountEditor>
         )}
 
         {isLoading || !user || (!tickets && !failed) ? (

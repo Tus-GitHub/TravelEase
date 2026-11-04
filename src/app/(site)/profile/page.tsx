@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import AccountEditor from "@/components/account/AccountEditor";
+import ActionDialog from "@/components/common/ActionDialog";
+import EditButton from "@/components/common/EditButton";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import Section from "@/components/common/Section";
+import Section from "@/components/account/AccountSection";
 import Card from "@/components/common/Card";
 import Avatar from "@/components/common/Avatar";
 import Badge from "@/components/common/Badge";
@@ -63,6 +66,7 @@ type PatchResult =
   | { ok: false; error: string };
 
 async function patchProfile(payload: Record<string, unknown>): Promise<PatchResult> {
+  try {
   const res = await fetch("/api/profile", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -71,12 +75,14 @@ async function patchProfile(payload: Record<string, unknown>): Promise<PatchResu
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { ok: false, error: data.error ?? "Something went wrong. Please try again." };
   return { ok: true, user: data.user, profile: data.profile ?? null };
+  } catch { return { ok: false, error: "Could not reach the server. Please try again." }; }
 }
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, isLoading, logout, deleteAccount, refreshUser } = useAuth();
 
+  const [loggingOut, setLoggingOut] = useState(false);
   const [account, setAccount] = useState<AccountData | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -115,7 +121,7 @@ export default function ProfilePage() {
   // Network / server error loading the profile — recoverable, not a dead end.
   if (loaded && loadError && !account) {
     return (
-      <Section bg="gray" eyebrow="Account" title="Profile Settings">
+      <Section bg="gray" eyebrow="Account" title="My account">
         <Card padded hover={false} className="mx-auto max-w-md text-center">
           <p className="text-sm text-muted">
             We couldn&apos;t load your profile. Check your connection and try again.
@@ -139,8 +145,8 @@ export default function ProfilePage() {
 
   if (isLoading || !user || !loaded || !account) {
     return (
-      <Section bg="gray" eyebrow="Account" title="Profile Settings">
-        <div className="mx-auto w-full max-w-3xl space-y-6">
+      <Section bg="gray" eyebrow="Account" title="My account">
+        <div className="mx-auto w-full max-w-4xl space-y-6">
           <div className="rounded-2xl border border-line-subtle bg-surface p-6">
             <div className="flex items-center gap-4">
               <Skeleton className="h-16 w-16 rounded-full" />
@@ -176,10 +182,10 @@ export default function ProfilePage() {
     <Section
       bg="gray"
       eyebrow="Account"
-      title="Profile Settings"
+      title="My account"
       subtitle="Manage your details and travel preferences."
     >
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <Card padded hover={false}>
           <div className="flex flex-wrap items-center gap-4">
             <Avatar name={account.name} className="h-16 w-16 text-lg" />
@@ -196,15 +202,14 @@ export default function ProfilePage() {
               variant="outline"
               size="sm"
               iconLeft="logout"
-              onClick={() => {
-                logout();
-                router.push("/");
-              }}
+              onClick={() => setLoggingOut(true)}
             >
               Logout
             </Button>
           </div>
         </Card>
+
+        {loggingOut && <ActionDialog title="Log out of your account?" description="Your bookings and saved trips will be here when you return." confirmLabel="Log out" onConfirm={async () => { await logout(); router.push("/"); }} onClose={() => setLoggingOut(false)} />}
 
         <AccountCard
           account={account}
@@ -252,7 +257,8 @@ export default function ProfilePage() {
         <DangerZoneCard
           isCustomer={isCustomer}
           onDeleted={async () => {
-            await deleteAccount();
+            const result = await deleteAccount();
+            if (!result.ok) throw new Error(result.error);
             router.replace("/");
           }}
         />
@@ -280,6 +286,7 @@ function DangerZoneCard({
   };
 
   const del = async () => {
+    if (busy) return;
     if (text.trim() !== "DELETE") {
       setError('Type "DELETE" exactly to confirm.');
       return;
@@ -288,9 +295,9 @@ function DangerZoneCard({
     setError(null);
     try {
       await onDeleted();
-    } catch {
+    } catch (error) {
       setBusy(false);
-      setError("Something went wrong. Please try again.");
+      setError(error instanceof Error ? error.message : "Something went wrong. Please try again.");
     }
   };
 
@@ -304,6 +311,7 @@ function DangerZoneCard({
       </p>
 
       {confirming ? (
+        <AccountEditor title="Delete your account?" description="This permanently deletes your account and profile data. This cannot be undone." busy={busy} onClose={reset}>
         <div className="mt-4 flex flex-col gap-3">
           <FormField label='Type "DELETE" to confirm' icon="trash">
             <input
@@ -319,7 +327,7 @@ function DangerZoneCard({
             />
           </FormField>
           {error && (
-            <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+            <p role="alert" className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
               {error}
             </p>
           )}
@@ -337,6 +345,7 @@ function DangerZoneCard({
             </Button>
           </div>
         </div>
+        </AccountEditor>
       ) : (
         <div className="mt-4">
           <Button variant="danger" size="sm" iconLeft="trash" onClick={() => setConfirming(true)}>
@@ -364,9 +373,7 @@ function CardHeader({
         {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
       </div>
       {onEdit && (
-        <Button variant="ghost" size="sm" onClick={onEdit}>
-          Edit
-        </Button>
+        <EditButton name={title.toLowerCase()} onClick={onEdit} />
       )}
     </div>
   );
@@ -387,7 +394,7 @@ function ReadField({ icon, label, value }: { icon: IconName; label: string; valu
 function ErrorNote({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <p className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">{message}</p>
+    <p role="alert" className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">{message}</p>
   );
 }
 
@@ -435,9 +442,10 @@ function AccountCard({
   return (
     <Card padded hover={false}>
       <CardHeader title="Account details" onEdit={editing ? undefined : start} />
-      <ErrorNote message={error} />
 
       {editing ? (
+        <AccountEditor title="Edit account details" busy={saving} onClose={() => setEditing(false)}>
+        <ErrorNote message={error} />
         <div className="mt-4 flex flex-col gap-4">
           <FormField label="Full name" icon="user">
             <input
@@ -477,6 +485,7 @@ function AccountCard({
             </Button>
           </div>
         </div>
+        </AccountEditor>
       ) : (
         <dl className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
           <ReadField icon="user" label="Full name" value={account.name} />
@@ -539,9 +548,10 @@ function AddressCard({
         subtitle="Used for pickups and booking details."
         onEdit={editing ? undefined : start}
       />
-      <ErrorNote message={error} />
 
       {editing ? (
+        <AccountEditor title="Edit your address" busy={saving} onClose={() => setEditing(false)}>
+        <ErrorNote message={error} />
         <div className="mt-4 flex flex-col gap-4">
           <FormField label="Address line 1" icon="map-pin">
             <input
@@ -629,6 +639,7 @@ function AddressCard({
             </Button>
           </div>
         </div>
+        </AccountEditor>
       ) : (
         <>
           {hasAddress ? (
@@ -666,6 +677,7 @@ function PreferencesCard({
   profile: ProfileData;
   onSaved: (next: ProfileData) => void;
 }) {
+  const [editing, setEditing] = useState(false);
   const [tags, setTags] = useState<string[]>(profile.preferredTags);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -694,6 +706,7 @@ function PreferencesCard({
       return;
     }
     if (result.profile) onSaved(result.profile);
+    setEditing(false);
     setSavedNote(true);
     setTimeout(() => setSavedNote(false), 2500);
   };
@@ -701,9 +714,13 @@ function PreferencesCard({
   return (
     <Card padded hover={false}>
       <CardHeader
+        onEdit={() => { setTags(profile.preferredTags); setError(null); setEditing(true); }}
         title="Travel preferences"
         subtitle="We’ll use these to suggest destinations you’ll love."
       />
+      <div className="mt-4 flex flex-wrap gap-2">{profile.preferredTags.length ? profile.preferredTags.map(tag => <span key={tag} className="rounded-full border border-accent-400/30 bg-accent-50 px-3 py-1.5 text-xs font-semibold text-accent-800 dark:bg-accent-950/30 dark:text-accent-300">{tag}</span>) : <p className="text-sm text-muted">Choose the places and experiences you enjoy.</p>}</div>
+      {savedNote && <p role="status" className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">Preferences saved.</p>}
+      {editing && <AccountEditor title="Edit travel preferences" description="Choose what you love. We'll use these to suggest destinations." busy={saving} onClose={() => setEditing(false)}>
       <ErrorNote message={error} />
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -733,6 +750,7 @@ function PreferencesCard({
         </Button>
         {savedNote && <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Saved</span>}
       </div>
+      </AccountEditor>}
     </Card>
   );
 }

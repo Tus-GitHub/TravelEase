@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ActionDialog from "@/components/common/ActionDialog";
+import EditButton from "@/components/common/EditButton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Section from "@/components/common/Section";
+import Section from "@/components/account/AccountSection";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
@@ -45,6 +47,7 @@ export default function ProfileSavedPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
   const [items, setItems] = useState<SavedItinerary[] | null>(null);
+  const [action, setAction] = useState<{ kind: "edit" | "remove"; trip: SavedItinerary } | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -63,30 +66,25 @@ export default function ProfileSavedPage() {
     };
   }, [user]);
 
-  const remove = async (id: string) => {
-    if (!confirm("Remove this saved trip?")) return;
-    setItems((cur) => cur?.filter((i) => i.id !== id) ?? cur);
-    await fetch(`/api/saved-itineraries/${id}`, { method: "DELETE" });
-  };
-
-  const rename = async (id: string, current: string) => {
-    const next = prompt("Rename this saved trip", current)?.trim();
-    if (!next || next === current) return;
-    const res = await fetch(`/api/saved-itineraries/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: next }),
+  const saveAction = async (values: Record<string, string>) => {
+    if (!action) return { ok: false, error: "Select a trip first." };
+    const removing = action.kind === "remove";
+    const title = values.title?.trim();
+    if (!removing && (!title || title.length > 120)) return { ok: false, error: "Use a trip name between 1 and 120 characters." };
+    const res = await fetch(`/api/saved-itineraries/${action.trip.id}`, {
+      method: removing ? "DELETE" : "PATCH",
+      headers: removing ? undefined : { "Content-Type": "application/json" },
+      body: removing ? undefined : JSON.stringify({ title }),
     });
-    if (res.ok) {
-      setItems((cur) =>
-        cur?.map((i) => (i.id === id ? { ...i, title: next.slice(0, 120) } : i)) ?? cur,
-      );
-    }
+    if (!res.ok) { const data = await res.json().catch(() => ({})); return { ok: false, error: data.error || "Could not update your saved trip." }; }
+    setItems(current => current?.flatMap(trip => trip.id !== action.trip.id ? [trip] : removing ? [] : [{ ...trip, title: title! }]) ?? current);
+    return { ok: true };
   };
 
   return (
     <Section bg="gray" eyebrow="Your account" title="Saved trips">
-      <div className="mx-auto max-w-3xl">
+      {action && <ActionDialog title={action.kind === "edit" ? "Edit saved trip" : "Remove saved trip?"} description={action.kind === "edit" ? action.trip.title : `${action.trip.title} will be removed from your saved trips. Existing bookings will not change.`} danger={action.kind === "remove"} confirmLabel={action.kind === "remove" ? "Remove trip" : "Save changes"} fields={action.kind === "edit" ? [{ name: "title", label: "Trip name", value: action.trip.title, required: true }] : []} onConfirm={saveAction} onClose={() => setAction(null)} />}
+      <div className="mx-auto max-w-4xl">
         <Link
           href="/profile"
           className="hover-underline mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 dark:text-primary-300"
@@ -169,19 +167,13 @@ export default function ProfileSavedPage() {
                         Book this trip
                       </Button>
                       <div className="flex gap-3 text-xs">
+                        <EditButton name={it.title} onClick={() => setAction({ kind: "edit", trip: it })} />
                         <button
                           type="button"
-                          onClick={() => rename(it.id, it.title)}
-                          className="hover-underline text-muted"
+                          onClick={() => setAction({ kind: "remove", trip: it })}
+                          className="inline-flex items-center gap-2 rounded-xl px-3 py-2 font-medium text-muted transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-300"
                         >
-                          Rename
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => remove(it.id)}
-                          className="hover-underline text-red-600 dark:text-red-400"
-                        >
-                          Remove
+                          <Icon name="trash" className="h-4 w-4" />Remove
                         </button>
                       </div>
                     </div>

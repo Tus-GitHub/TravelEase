@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import Section from "@/components/common/Section";
+import ActionDialog from "@/components/common/ActionDialog";
+import AccountEditor from "@/components/account/AccountEditor";
+import EditButton from "@/components/common/EditButton";
+import Section from "@/components/account/AccountSection";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
@@ -81,8 +84,7 @@ export default function BookingDetailPage() {
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "notfound" | "error">("loading");
-  const [cancelling, setCancelling] = useState(false);
-  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) router.replace(`/login?redirect=/profile/bookings/${id}`);
@@ -107,40 +109,20 @@ export default function BookingDetailPage() {
   }, [load]);
 
   const cancel = async () => {
-    let prompt = "Cancel this booking? This can't be undone.";
-    if (booking && booking.status === "Confirmed") {
-      const est = calculateRefund({
-        totalAmount: booking.totalAmount,
-        pickupAt: new Date(booking.startDateTime),
-        initiatedBy: "customer",
-      });
-      prompt += `\n\nBased on our cancellation policy you'd be refunded about ${inr(est.refundAmount)} of ${inr(booking.totalAmount)}.`;
-    }
-    if (!confirm(prompt)) return;
-    setCancelling(true);
-    setCancelError(null);
-    try {
-      const res = await fetch(`/api/bookings/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Cancelled", reason: "Cancelled by customer" }),
-      });
-      const d = await res.json();
-      if (!res.ok) {
-        setCancelError(d.error ?? "Couldn't cancel the booking.");
-      } else {
-        setBooking(d.booking);
-      }
-    } catch {
-      setCancelError("Couldn't reach the server.");
-    } finally {
-      setCancelling(false);
-    }
+    const res = await fetch(`/api/bookings/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "Cancelled", reason: "Cancelled by customer" }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { ok: false, error: data.error || "Could not cancel the booking." };
+    setBooking(data.booking);
+    return { ok: true };
   };
 
   return (
     <Section bg="gray">
-      <div className="mx-auto max-w-2xl">
+      {confirmCancel && booking && <ActionDialog title={`Cancel booking ${booking.reference}?`} description={`This cannot be undone.${booking.status === "Confirmed" ? ` Your estimated refund is ${inr(calculateRefund({ totalAmount: booking.totalAmount, pickupAt: new Date(booking.startDateTime), initiatedBy: "customer" }).refundAmount)} of ${inr(booking.totalAmount)} under our cancellation policy. The final amount is calculated when cancellation is confirmed.` : " This booking has not been confirmed yet."}`} danger confirmLabel="Cancel booking" onConfirm={cancel} onClose={() => setConfirmCancel(false)} />}
+      <div className="mx-auto max-w-4xl">
         <Link
           href="/profile/bookings"
           className="hover-underline mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 dark:text-primary-300"
@@ -344,14 +326,10 @@ export default function BookingDetailPage() {
 
             {CANCELLABLE.has(booking.status) && (
               <div className="mt-6">
-                {cancelError && (
-                  <p className="mb-2 text-sm text-red-600 dark:text-red-400">{cancelError}</p>
-                )}
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={cancel}
-                  loading={cancelling}
+                  onClick={() => setConfirmCancel(true)}
                 >
                   Cancel booking
                 </Button>
@@ -388,6 +366,7 @@ function ReviewForm({
   existing: Review | null;
   onSaved: () => void;
 }) {
+  const [editing, setEditing] = useState(false);
   const [rating, setRating] = useState(existing?.rating ?? 0);
   const [title, setTitle] = useState(existing?.title ?? "");
   const [body, setBody] = useState(existing?.body ?? "");
@@ -402,6 +381,7 @@ function ReviewForm({
     }
     setBusy(true);
     setErr(null);
+    try {
     const res = await fetch("/api/reviews", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -413,8 +393,10 @@ function ReviewForm({
       setErr(d.error ?? "Couldn't save your review.");
     } else {
       setDone(true);
+      setEditing(false);
       onSaved();
     }
+    } catch { setErr("Could not reach the server. Please try again."); } finally { setBusy(false); }
   };
 
   return (
@@ -422,12 +404,18 @@ function ReviewForm({
       <p className="font-semibold text-fg">
         {existing ? "Your review" : "How was your trip?"}
       </p>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted">{existing ? `${existing.rating} / 5 - ${existing.title || "Thanks for sharing your experience."}` : "Share your experience with other travellers."}</p>
+        <EditButton name="your review" onClick={() => { setRating(existing?.rating ?? 0); setTitle(existing?.title ?? ""); setBody(existing?.body ?? ""); setErr(null); setEditing(true); }} />
+      </div>
+      {editing && <AccountEditor title={existing ? "Edit your review" : "Review your trip"} description="Tell us about your journey with Jagdamba Travellers." busy={busy} onClose={() => setEditing(false)}>
       <div className="mt-2 flex gap-1">
         {[1, 2, 3, 4, 5].map((n) => (
           <button
             key={n}
             type="button"
             onClick={() => setRating(n)}
+            aria-pressed={rating === n}
             aria-label={`${n} star${n > 1 ? "s" : ""}`}
             className={`text-2xl leading-none ${
               n <= rating ? "text-accent-500" : "text-line"
@@ -439,6 +427,7 @@ function ReviewForm({
       </div>
       <input
         className="mt-3 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
+        aria-label="Review title"
         placeholder="Title (optional)"
         maxLength={120}
         value={title}
@@ -447,6 +436,7 @@ function ReviewForm({
       <textarea
         className="mt-2 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
         rows={3}
+        aria-label="Your review"
         placeholder="Tell other travellers about your trip"
         maxLength={2000}
         value={body}
@@ -463,6 +453,7 @@ function ReviewForm({
           {existing ? "Update review" : "Post review"}
         </Button>
       </div>
+      </AccountEditor>}
     </div>
   );
 }
