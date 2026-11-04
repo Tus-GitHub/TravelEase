@@ -749,6 +749,13 @@ t("ST8", "SupportTickets", "a staff reply moves it to pending and logs a notific
   const c = await support.createTicket(u, { subject: "Need help", message: "please advise" });
   ok(c.ok, "setup create");
   const id = c.ok ? c.ticket.id : "";
+  // Production requests have distinct transaction timestamps. This harness
+  // shares one outer transaction, so now() is frozen; model the earlier request
+  // explicitly rather than relying on random UUID ordering for tied timestamps.
+  await client.query(
+    "UPDATE support_ticket_messages SET created_at = now() - interval '1 second' WHERE support_ticket_id = $1",
+    [id],
+  );
   const smtp = process.env.SMTP_HOST;
   delete process.env.SMTP_HOST; // force the transporter to fail so no real email is sent
   try {
