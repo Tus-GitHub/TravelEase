@@ -82,6 +82,10 @@
 }
 
 @layer components {
+  .admin-dialog::backdrop {
+    background: rgb(9 12 20 / 0.65);
+    backdrop-filter: blur(5px);
+  }
   /* Both admin menus sit on the same navy surface in light and dark mode. */
   .admin-sidebar-scroll {
     scrollbar-width: thin;

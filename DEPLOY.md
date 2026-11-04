@@ -53,9 +53,11 @@ The running code requires that migration. Local development uses the development
 database; keep the production connection scoped to Production in Vercel.
 
 After creating a driver, vehicle, package, region or tourist spot, choose
-**Manage photo(s)** under its name. Upload JPEG/PNG/WebP up to 3 MB. Vehicles
+**Edit → Photos** in its row. Upload JPEG/PNG/WebP up to 3 MB. Vehicles
 support ten photos and a selectable cover; other records have one replaceable
-image. Photos are public, so do not upload licence/identity documents here.
+image. Select multiple vehicle photos, review previews, then choose Upload.
+Photo changes save immediately, independently of the Details form. Photos are
+public, so do not upload licence/identity documents here.
 Incoming images are resized to at most 2000×2000 and converted to WebP.
 
 Uploads use signed server requests. Removing/replacing a photo detaches its

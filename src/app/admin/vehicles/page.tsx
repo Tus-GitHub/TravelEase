@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import Card from "@/components/common/Card";
-import ImageManager from "@/components/admin/ImageManager";
+import AdminEditor from "@/components/admin/AdminEditor";
 import Button from "@/components/common/Button";
 import FormField, { fieldBase } from "@/components/forms/FormField";
 import AdminTabs from "@/components/admin/AdminTabs";
@@ -196,7 +196,7 @@ function VehiclesTab() {
       {r.error && <ErrorNote message={r.error} />}
 
       {form.open && (
-        <Card padded hover={false} className="mb-6">
+        <AdminEditor title={form.editingId == null ? "Add vehicle" : `Edit ${form.draft.name}`} onClose={form.cancel} busy={form.saving} image={form.editingId == null ? undefined : { kind: "vehicles", id: form.editingId, name: form.draft.name }}>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -282,7 +282,7 @@ function VehiclesTab() {
               </Button>
             </div>
           </form>
-        </Card>
+        </AdminEditor>
       )}
 
       <Card hover={false} className="overflow-hidden">
@@ -305,7 +305,6 @@ function VehiclesTab() {
                 <tr className="hover:bg-surface-hover/60">
                   <td className="px-5 py-3.5 font-medium text-fg">
                     {v.name}
-                    <ImageManager kind="vehicles" id={v.id} name={v.name} />
                     <button
                       type="button"
                       onClick={() => setAvailOpen(availOpen === v.id ? null : v.id)}
@@ -330,7 +329,7 @@ function VehiclesTab() {
                     />
                   </td>
                   <td className="px-5 py-3.5 text-right">
-                    <RowActions
+                    <RowActions name={v.name}
                       onEdit={() =>
                         form.startEdit(v.id, {
                           vehicleTypeId: String(v.vehicleTypeId),
@@ -397,7 +396,7 @@ export default function AdminVehiclesPage() {
     <div>
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Fleet</h1>
-        <p className="text-sm text-muted">Manage vehicle types and the vehicles fleet.</p>
+        <p className="text-sm text-muted">Manage your fleet. Choose Edit to update vehicle details, photos and the main image.</p>
       </header>
 
       <AdminTabs

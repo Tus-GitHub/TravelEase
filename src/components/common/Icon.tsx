@@ -8,6 +8,9 @@ import type { IconName } from "@/types";
  * All paths assume a 24x24 viewBox and inherit `currentColor`.
  */
 const paths: Record<IconName, React.ReactNode> = {
+  pencil: <path strokeLinecap="round" strokeLinejoin="round" d="m16 3 5 5M4 20l4-1L21 6a2.1 2.1 0 00-3-3L5 16l-1 4z" />,
+  image: <path strokeLinecap="round" strokeLinejoin="round" d="M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm-1 13 5-5 5 5 3-3 5 5M15 7h.01" />,
+  upload: <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V3m-5 5 5-5 5 5M4 16v4a1 1 0 001 1h14a1 1 0 001-1v-4" />,
   bus: (
     <path
       strokeLinecap="round"

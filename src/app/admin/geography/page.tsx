@@ -6,7 +6,8 @@ import Button from "@/components/common/Button";
 import FormField, { fieldBase } from "@/components/forms/FormField";
 import AdminTabs from "@/components/admin/AdminTabs";
 import RowActions from "@/components/admin/RowActions";
-import ImageManager from "@/components/admin/ImageManager";
+import AdminEditor from "@/components/admin/AdminEditor";
+import type { ImageKind } from "@/lib/image-upload";
 import Toggle from "@/components/admin/Toggle";
 import { ErrorNote, EmptyRow, LoadingRow } from "@/components/admin/tableBits";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
@@ -60,7 +61,7 @@ function RegionsTab() {
       {r.error && <ErrorNote message={r.error} />}
 
       {form.open && (
-        <FormCard onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
+        <FormCard title={form.editingId == null ? "Add region" : `Edit ${form.draft.name}`} image={form.editingId == null ? undefined : { kind: "regions", id: form.editingId, name: form.draft.name }} onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
           <FormField label="Name" icon="map-pin">
             <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Coorg" />
           </FormField>
@@ -73,13 +74,13 @@ function RegionsTab() {
       <TableCard headers={["Region", "State", "Active", "Actions"]}>
         {r.items.map((row) => (
           <tr key={row.id} className="hover:bg-surface-hover/60">
-              <td className="px-5 py-3.5 font-medium text-fg">{row.name}<ImageManager kind="regions" id={row.id} name={row.name} /></td>
+              <td className="px-5 py-3.5 font-medium text-fg">{row.name}</td>
             <td className="px-5 py-3.5 text-muted">{row.state}</td>
             <td className="px-5 py-3.5">
               <Toggle on={row.isActive} onChange={(next) => r.update(row.id, { isActive: next })} label="Toggle active" />
             </td>
             <td className="px-5 py-3.5 text-right">
-              <RowActions
+              <RowActions name={row.name}
                 onEdit={() => form.startEdit(row.id, { name: row.name, state: row.state })}
                 onDelete={() => r.remove(row.id)}
               />
@@ -217,7 +218,7 @@ function SpotsTab() {
       {r.error && <ErrorNote message={r.error} />}
 
       {form.open && (
-        <FormCard onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
+        <FormCard title={form.editingId == null ? "Add tourist spot" : `Edit ${form.draft.name}`} image={form.editingId == null ? undefined : { kind: "tourist-spots", id: form.editingId, name: form.draft.name }} onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
           <FormField label="City" icon="location">
             <select required value={form.draft.cityId} onChange={(e) => form.patch({ cityId: e.target.value })} className={`${fieldBase} appearance-none`}>
               <option value="" disabled>Select city</option>
@@ -241,11 +242,11 @@ function SpotsTab() {
       <TableCard headers={["Spot", "City", "Tag", "Actions"]}>
         {r.items.map((row) => (
           <tr key={row.id} className="hover:bg-surface-hover/60">
-              <td className="px-5 py-3.5 font-medium text-fg">{row.name}<ImageManager kind="tourist-spots" id={row.id} name={row.name} /></td>
+              <td className="px-5 py-3.5 font-medium text-fg">{row.name}</td>
             <td className="px-5 py-3.5 text-muted">{row.cityName || cityName(row.cityId)}</td>
             <td className="px-5 py-3.5 text-muted">{row.tag || "—"}</td>
             <td className="px-5 py-3.5 text-right">
-              <RowActions
+              <RowActions name={row.name}
                 onEdit={() =>
                   form.startEdit(row.id, {
                     cityId: String(row.cityId),
@@ -340,6 +341,8 @@ function SectionHead({
 }
 
 function FormCard({
+  title = "City details",
+  image,
   children,
   onSubmit,
   error,
@@ -347,6 +350,8 @@ function FormCard({
   editing,
   onCancel,
 }: {
+  title?: string;
+  image?: { kind: ImageKind; id: number; name: string };
   children: React.ReactNode;
   onSubmit: () => void;
   error: string | null;
@@ -355,7 +360,7 @@ function FormCard({
   onCancel: () => void;
 }) {
   return (
-    <Card padded hover={false} className="mb-6">
+    <AdminEditor title={title} image={image} onClose={onCancel} busy={saving}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -378,7 +383,7 @@ function FormCard({
           </Button>
         </div>
       </form>
-    </Card>
+    </AdminEditor>
   );
 }
 

@@ -42,15 +42,14 @@ export function useCrudForm<Draft>(opts: {
   const submit = async () => {
     setSaving(true);
     setError(null);
-    const res =
-      editingId == null ? await opts.onCreate(draft) : await opts.onUpdate(editingId, draft);
-    setSaving(false);
-    if (!res.ok) {
-      setError(res.error);
-      return;
-    }
-    setOpen(false);
-    setEditingId(null);
+    try {
+      const res = editingId == null ? await opts.onCreate(draft) : await opts.onUpdate(editingId, draft);
+      if (!res.ok) { setError(res.error); return; }
+      setOpen(false);
+      setEditingId(null);
+    } catch {
+      setError("Unable to save changes. Please try again.");
+    } finally { setSaving(false); }
   };
 
   const patch = (fields: Partial<Draft>) => setDraft((d) => ({ ...d, ...fields }));

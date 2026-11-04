@@ -6,7 +6,7 @@ import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import FormField, { fieldBase } from "@/components/forms/FormField";
 import RowActions from "@/components/admin/RowActions";
-import ImageManager from "@/components/admin/ImageManager";
+import AdminEditor from "@/components/admin/AdminEditor";
 import { ErrorNote, EmptyRow, LoadingRow } from "@/components/admin/tableBits";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
 import { useAdminResource } from "@/lib/admin/useAdminResource";
@@ -133,7 +133,7 @@ export default function AdminPackagesPage() {
       {stopError && <ErrorNote message={stopError} />}
 
       {form.open && (
-        <Card padded hover={false} className="mb-6">
+        <AdminEditor title={form.editingId == null ? "Add package" : `Edit ${form.draft.name}`} onClose={form.cancel} busy={form.saving} image={form.editingId == null ? undefined : { kind: "packages", id: form.editingId, name: form.draft.name }}>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -185,7 +185,7 @@ export default function AdminPackagesPage() {
               </Button>
             </div>
           </form>
-        </Card>
+        </AdminEditor>
       )}
 
       <Card hover={false} className="overflow-hidden">
@@ -268,7 +268,7 @@ function PackageRows({
   return (
     <>
       <tr className="hover:bg-surface-hover/60">
-        <td className="px-5 py-3.5 font-medium text-fg">{pkg.name}<ImageManager kind="packages" id={pkg.id} name={pkg.name} /></td>
+        <td className="px-5 py-3.5 font-medium text-fg">{pkg.name}</td>
         <td className="px-5 py-3.5 text-muted">{regionName}</td>
         <td className="px-5 py-3.5 text-muted">{typeTitle}</td>
         <td className="px-5 py-3.5 text-muted">{pkg.durationDays}</td>
@@ -284,7 +284,7 @@ function PackageRows({
           </button>
         </td>
         <td className="px-5 py-3.5 text-right">
-          <RowActions onEdit={onEdit} onDelete={onDelete} />
+          <RowActions name={pkg.name} onEdit={onEdit} onDelete={onDelete} />
         </td>
       </tr>
       {expanded && (

@@ -6,6 +6,9 @@
 
 /** Name of an icon registered in the central Icon registry (`components/common/Icon.tsx`). */
 export type IconName =
+  | "pencil"
+  | "image"
+  | "upload"
   | "bus"
   | "car"
   | "family"
