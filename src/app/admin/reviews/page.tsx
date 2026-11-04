@@ -1,5 +1,9 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { useState } from "react";
+import AdminActionDialog from "@/components/admin/AdminActionDialog";
+import RowActions from "@/components/admin/RowActions";
 import Card from "@/components/common/Card";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
 import { useAdminResource } from "@/lib/admin/useAdminResource";
@@ -16,6 +20,7 @@ interface Review {
 }
 
 export default function AdminReviewsPage() {
+  const [editing, setEditing] = useState<Review | null>(null);
   const { isLoading, allowed } = useAdminSectionGuard("reviews");
   const { items, loading, update, remove } =
     useAdminResource<Review>("/api/admin/reviews");
@@ -24,12 +29,13 @@ export default function AdminReviewsPage() {
 
   return (
     <div>
-      <header className="mb-6">
+      {editing && <AdminActionDialog title={`Review by ${editing.authorName}`} description={`${editing.bookingReference} - ${editing.title || "Customer feedback"}`} fields={[{ name: "visibility", label: "Visibility", value: editing.isPublished ? "published" : "hidden", options: [{ value: "published", label: "Published" }, { value: "hidden", label: "Hidden" }] }]} onConfirm={v => update(editing.id, { isPublished: v.visibility === "published" })} onClose={() => setEditing(null)} />}
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Reviews</h1>
         <p className="text-sm text-muted">
           {items.length} total · {items.filter((r) => r.isPublished).length} published
         </p>
-      </header>
+      </AdminPageHeader>
 
       <Card hover={false} className="overflow-hidden">
         <div className="overflow-x-auto">
@@ -73,13 +79,7 @@ export default function AdminReviewsPage() {
                     </button>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => confirm("Delete this review?") && remove(r.id)}
-                      className="text-xs font-medium text-red-600 hover:underline dark:text-red-400"
-                    >
-                      Delete
-                    </button>
+                    <RowActions name={`${r.authorName} review`} onDelete={() => remove(r.id)} onEdit={() => setEditing(r)} />
                   </td>
                 </tr>
               ))}

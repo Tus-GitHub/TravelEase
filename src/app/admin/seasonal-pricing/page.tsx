@@ -1,6 +1,9 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useState } from "react";
+import AdminEditor from "@/components/admin/AdminEditor";
+import RowActions from "@/components/admin/RowActions";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
@@ -20,7 +23,7 @@ interface Season {
 
 const num = (v: string) => (v.trim() === "" ? undefined : Number(v));
 const fieldCls =
-  "w-full rounded-lg border border-line bg-surface px-2.5 py-1.5 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
+  "w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
 const BLANK = { name: "", startsOn: "", endsOn: "", multiplier: "1.25", priority: "0" };
 
 export default function AdminSeasonalPricingPage() {
@@ -28,6 +31,8 @@ export default function AdminSeasonalPricingPage() {
   const { items, loading, create, update, remove } =
     useAdminResource<Season>("/api/admin/seasonal-pricing");
   const [form, setForm] = useState(BLANK);
+  const [editing, setEditing] = useState<Season | null>(null);
+  const [open, setOpen] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -37,29 +42,32 @@ export default function AdminSeasonalPricingPage() {
     e.preventDefault();
     setBusy(true);
     setErr(null);
-    const res = await create({
+    try {
+    const body = {
       name: form.name,
       startsOn: form.startsOn,
       endsOn: form.endsOn,
       multiplier: num(form.multiplier),
       priority: num(form.priority) ?? 0,
-    });
-    setBusy(false);
+    };
+    const res = editing ? await update(editing.id, body) : await create(body);
     if (!res.ok) setErr(res.error);
-    else setForm(BLANK);
+    else { setForm(BLANK); setOpen(false); }
+    } catch { setErr("Could not save. Please try again."); } finally { setBusy(false); }
   };
 
   return (
     <div>
-      <header className="mb-6">
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Seasonal pricing</h1>
         <p className="text-sm text-muted">
           A multiplier on the pre-tax subtotal for trips starting in the window. 1.25 = +25%.
         </p>
-      </header>
+      </AdminPageHeader>
 
-      <Card padded hover={false} className="mb-6">
-        <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mb-5 flex justify-end"><Button variant="accent" size="sm" onClick={() => { setEditing(null); setForm(BLANK); setErr(null); setOpen(true); }}>Add season</Button></div>
+      {open && <AdminEditor title={editing ? `Edit ${editing.name}` : "Add season"} onClose={() => setOpen(false)} busy={busy}>
+        <form onSubmit={submit}><fieldset disabled={busy} className="grid gap-5 sm:grid-cols-2">
           <label className="block lg:col-span-2">
             <span className="mb-1 block text-xs font-semibold text-muted">Name</span>
             <input
@@ -112,12 +120,12 @@ export default function AdminSeasonalPricingPage() {
           </label>
           <div className="flex items-end">
             <Button type="submit" variant="accent" size="sm" fullWidth loading={busy}>
-              Add season
+              {editing ? "Save changes" : "Add season"}
             </Button>
           </div>
-        </form>
+        </fieldset></form>
         {err && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{err}</p>}
-      </Card>
+      </AdminEditor>}
 
       <Card hover={false} className="overflow-hidden">
         <div className="overflow-x-auto">
@@ -158,13 +166,7 @@ export default function AdminSeasonalPricingPage() {
                     </button>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => confirm(`Delete "${s.name}"?`) && remove(s.id)}
-                      className="text-xs font-medium text-red-600 hover:underline dark:text-red-400"
-                    >
-                      Delete
-                    </button>
+                    <RowActions name={s.name} onDelete={() => remove(s.id)} onEdit={() => { setEditing(s); setForm({ name: s.name, startsOn: s.startsOn.slice(0, 10), endsOn: s.endsOn.slice(0, 10), multiplier: String(s.multiplier), priority: String(s.priority) }); setErr(null); setOpen(true); }} />
                   </td>
                 </tr>
               ))}

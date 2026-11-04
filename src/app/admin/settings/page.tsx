@@ -1,6 +1,9 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useEffect, useState } from "react";
+import AdminEditor from "@/components/admin/AdminEditor";
+import EditButton from "@/components/admin/EditButton";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
@@ -19,6 +22,7 @@ const fieldCls =
 export default function AdminSettingsPage() {
   const { isLoading, allowed } = useAdminSectionGuard("settings");
 
+  const [open, setOpen] = useState(false);
   const [data, setData] = useState<SiteSettings | null>(null);
   const [form, setForm] = useState({
     contactPhone: "",
@@ -64,6 +68,7 @@ export default function AdminSettingsPage() {
         setMsg({ kind: "err", text: d.error ?? "Couldn't save." });
       } else {
         setData(d.item);
+        setOpen(false);
         setMsg({ kind: "ok", text: "Saved. Live within a minute." });
       }
     } catch {
@@ -96,12 +101,12 @@ export default function AdminSettingsPage() {
 
   return (
     <div>
-      <header className="mb-6">
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Site settings</h1>
         <p className="text-sm text-muted">
           Contact details customers see. Leave a field blank to use the built-in default.
         </p>
-      </header>
+      </AdminPageHeader>
 
       {state === "error" ? (
         <Card padded hover={false}>
@@ -110,7 +115,13 @@ export default function AdminSettingsPage() {
       ) : state === "loading" ? (
         <p className="text-sm text-muted">Loading…</p>
       ) : (
-        <Card padded hover={false} className="max-w-xl">
+        <>
+        <Card padded hover={false} className="max-w-3xl">
+          <div className="mb-5 flex items-center justify-between gap-4"><h2 className="font-display text-lg font-bold text-fg">Business details</h2><EditButton name="site settings" onClick={() => { if (data) setForm({ contactPhone: data.contactPhone, contactEmail: data.contactEmail, contactAddress: data.contactAddress, vendorCommissionPct: data.vendorCommissionPct }); setMsg(null); setOpen(true); }} /></div>
+          <dl className="grid gap-5 sm:grid-cols-2">{fields.map(f => <div key={f.key}><dt className="text-xs font-semibold text-muted">{f.label}</dt><dd className="mt-1 break-words text-sm text-fg">{data?.[f.key] || (data?.defaults as Record<string, string> | undefined)?.[f.key] || "Not set"}</dd></div>)}</dl>
+          {msg?.kind === "ok" && <p role="status" className="mt-4 text-sm text-emerald-600 dark:text-emerald-400">{msg.text}</p>}
+        </Card>
+        {open && <AdminEditor title="Edit site settings" onClose={() => setOpen(false)} busy={busy}>
           <form onSubmit={save} className="flex flex-col gap-5">
             {fields.map((f) => {
               const dflt = (data?.defaults as Record<string, string | undefined> | undefined)?.[f.key];
@@ -150,7 +161,8 @@ export default function AdminSettingsPage() {
               </Button>
             </div>
           </form>
-        </Card>
+        </AdminEditor>}
+        </>
       )}
     </div>
   );

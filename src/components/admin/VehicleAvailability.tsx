@@ -1,5 +1,7 @@
 "use client";
 
+import RowActions from "./RowActions";
+import Button from "@/components/common/Button";
 import { useCallback, useEffect, useState } from "react";
 
 interface Block {
@@ -67,8 +69,10 @@ export default function VehicleAvailability({ vehicleId }: { vehicleId: number }
   };
 
   const remove = async (id: number) => {
-    await fetch(`/api/admin/vehicle-availability/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/vehicle-availability/${id}`, { method: "DELETE" });
+    if (!res.ok) { const data = await res.json().catch(() => ({})); return { ok: false, error: data.error || "Could not remove this window." }; }
     load();
+    return { ok: true };
   };
 
   return (
@@ -87,13 +91,7 @@ export default function VehicleAvailability({ vehicleId }: { vehicleId: number }
                 {b.note ? ` · ${b.note}` : ""}
               </span>
               {b.kind !== "booked" ? (
-                <button
-                  type="button"
-                  onClick={() => remove(b.id)}
-                  className="text-red-600 hover:underline dark:text-red-400"
-                >
-                  remove
-                </button>
+                <RowActions name={`${b.kind} window`} onDelete={() => remove(b.id)} />
               ) : (
                 <span className="text-faint">(from a booking)</span>
               )}
@@ -103,9 +101,9 @@ export default function VehicleAvailability({ vehicleId }: { vehicleId: number }
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <input type="date" className={input} value={from} onChange={(e) => setFrom(e.target.value)} />
+        <input aria-label="Start date" type="date" className={input} value={from} onChange={(e) => setFrom(e.target.value)} />
         <span className="text-faint">→</span>
-        <input type="date" className={input} value={to} onChange={(e) => setTo(e.target.value)} />
+        <input aria-label="End date" type="date" className={input} value={to} onChange={(e) => setTo(e.target.value)} />
         <select
           className={input}
           value={kind}
@@ -120,14 +118,7 @@ export default function VehicleAvailability({ vehicleId }: { vehicleId: number }
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
-        <button
-          type="button"
-          disabled={busy}
-          onClick={add}
-          className="rounded-lg bg-primary-600 px-2.5 py-1 font-semibold text-white disabled:opacity-60"
-        >
-          Add
-        </button>
+        <Button type="button" variant="accent" size="sm" loading={busy} onClick={add}>Add window</Button>
       </div>
       {err && <p className="mt-1 text-red-600 dark:text-red-400">{err}</p>}
     </div>

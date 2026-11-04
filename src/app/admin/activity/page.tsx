@@ -1,5 +1,6 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useCallback, useEffect, useState } from "react";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
@@ -77,12 +78,12 @@ export default function AdminActivityPage() {
 
   return (
     <div>
-      <header className="mb-6">
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Activity log</h1>
         <p className="text-sm text-muted">
           Security- and lifecycle-relevant events. Newest first.
         </p>
-      </header>
+      </AdminPageHeader>
 
       <div className="mb-4">
         <select

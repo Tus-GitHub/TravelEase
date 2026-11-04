@@ -1,6 +1,9 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useState } from "react";
+import AdminEditor from "@/components/admin/AdminEditor";
+import RowActions from "@/components/admin/RowActions";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
@@ -25,7 +28,7 @@ interface Coupon {
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 const num = (v: string) => (v.trim() === "" ? undefined : Number(v));
 const fieldCls =
-  "w-full rounded-lg border border-line bg-surface px-2.5 py-1.5 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
+  "w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
 
 const BLANK = {
   code: "",
@@ -45,6 +48,8 @@ export default function AdminCouponsPage() {
     useAdminResource<Coupon>("/api/admin/coupons");
 
   const [form, setForm] = useState(BLANK);
+  const [editing, setEditing] = useState<Coupon | null>(null);
+  const [open, setOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -54,35 +59,40 @@ export default function AdminCouponsPage() {
     e.preventDefault();
     setBusy(true);
     setFormError(null);
-    const res = await create({
+    try {
+    const body = {
       code: form.code,
-      description: form.description || undefined,
+      description: form.description,
       discountType: form.discountType,
       discountValue: num(form.discountValue),
       maxDiscount: num(form.maxDiscount) ?? null,
       minBookingAmount: num(form.minBookingAmount),
       usageLimit: num(form.usageLimit) ?? null,
       perUserLimit: num(form.perUserLimit),
-      expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
-    });
-    setBusy(false);
+      expiresAt: editing && form.expiresAt === (editing.expiresAt?.slice(0, 10) ?? "") ? editing.expiresAt : form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
+    };
+    const res = editing ? await update(editing.id, body) : await create(body);
     if (!res.ok) setFormError(res.error);
-    else setForm(BLANK);
+    else { setForm(BLANK); setOpen(false); }
+    } catch { setFormError("Could not save. Please try again."); } finally { setBusy(false); }
   };
 
   return (
     <div>
-      <header className="mb-6">
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Coupons</h1>
-        <p className="text-sm text-muted">{items.length} active</p>
-      </header>
+        <p className="text-sm text-muted">{items.length} coupons</p>
+      </AdminPageHeader>
 
-      <Card padded hover={false} className="mb-6">
-        <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-5 flex justify-end"><Button variant="accent" size="sm" onClick={() => { setEditing(null); setForm(BLANK); setFormError(null); setOpen(true); }}>Add coupon</Button></div>
+      {open && <AdminEditor title={editing ? `Edit ${editing.code}` : "Add coupon"} onClose={() => setOpen(false)} busy={busy}>
+        <form onSubmit={submit}><fieldset disabled={busy} className="grid gap-5 sm:grid-cols-2">
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-muted">Code</span>
             <input
               className={`${fieldCls} uppercase`}
+              disabled={!!editing}
+              title={editing ? "Coupon codes cannot be changed" : undefined}
               value={form.code}
               onChange={(e) => setForm({ ...form, code: e.target.value })}
               placeholder="WELCOME10"
@@ -93,6 +103,8 @@ export default function AdminCouponsPage() {
             <span className="mb-1 block text-xs font-semibold text-muted">Type</span>
             <select
               className={fieldCls}
+              disabled={!!editing}
+              title={editing ? "Discount type cannot be changed" : undefined}
               value={form.discountType}
               onChange={(e) =>
                 setForm({ ...form, discountType: e.target.value as "percent" | "flat" })
@@ -162,7 +174,7 @@ export default function AdminCouponsPage() {
               onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
             />
           </label>
-          <label className="block sm:col-span-2 lg:col-span-3">
+          <label className="block sm:col-span-2">
             <span className="mb-1 block text-xs font-semibold text-muted">Description</span>
             <input
               className={fieldCls}
@@ -173,14 +185,14 @@ export default function AdminCouponsPage() {
           </label>
           <div className="flex items-end">
             <Button type="submit" variant="accent" size="sm" fullWidth loading={busy}>
-              Create coupon
+              {editing ? "Save changes" : "Create coupon"}
             </Button>
           </div>
-        </form>
+        </fieldset></form>
         {formError && (
           <p className="mt-3 text-sm text-red-600 dark:text-red-400">{formError}</p>
         )}
-      </Card>
+      </AdminEditor>}
 
       {error && (
         <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">
@@ -242,13 +254,7 @@ export default function AdminCouponsPage() {
                     </button>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => confirm(`Delete coupon ${c.code}?`) && remove(c.id)}
-                      className="text-xs font-medium text-red-600 hover:underline dark:text-red-400"
-                    >
-                      Delete
-                    </button>
+                    <RowActions name={c.code} onDelete={() => remove(c.id)} onEdit={() => { setEditing(c); setForm({ code: c.code, description: c.description || "", discountType: c.discountType, discountValue: String(c.discountValue), maxDiscount: c.maxDiscount == null ? "" : String(c.maxDiscount), minBookingAmount: String(c.minBookingAmount), usageLimit: c.usageLimit == null ? "" : String(c.usageLimit), perUserLimit: String(c.perUserLimit), expiresAt: c.expiresAt?.slice(0, 10) ?? "" }); setFormError(null); setOpen(true); }} />
                   </td>
                 </tr>
               ))}

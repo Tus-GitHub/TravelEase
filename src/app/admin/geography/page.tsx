@@ -1,5 +1,6 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useMemo, useState } from "react";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
@@ -169,7 +170,7 @@ function CitiesTab() {
             <td className="px-5 py-3.5 text-muted">{row.isPickupPoint ? "Yes" : "No"}</td>
             <td className="px-5 py-3.5 text-muted">{row.isAirport ? "Yes" : "No"}</td>
             <td className="px-5 py-3.5 text-right">
-              <RowActions
+              <RowActions name={row.name}
                 onEdit={() =>
                   form.startEdit(row.id, {
                     regionId: String(row.regionId),
@@ -295,10 +296,10 @@ export default function AdminGeographyPage() {
 
   return (
     <div>
-      <header className="mb-6">
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Geography</h1>
         <p className="text-sm text-muted">Regions, cities and tourist spots.</p>
-      </header>
+      </AdminPageHeader>
 
       <AdminTabs
         tabs={[

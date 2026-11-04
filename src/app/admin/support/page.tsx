@@ -1,6 +1,9 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useCallback, useEffect, useState } from "react";
+import AdminActionDialog from "@/components/admin/AdminActionDialog";
+import EditButton from "@/components/admin/EditButton";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
@@ -42,6 +45,7 @@ const fmt = (s: string) =>
 export default function AdminSupportPage() {
   const { isLoading, allowed } = useAdminSectionGuard("support");
 
+  const [editingStatus, setEditingStatus] = useState(false);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
   const [items, setItems] = useState<TicketSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,13 +96,16 @@ export default function AdminSupportPage() {
       const d = await res.json();
       if (!res.ok) {
         setErr(d.error ?? "Something went wrong.");
+        return { ok: false, error: d.error ?? "Something went wrong." };
       } else {
         setDetail(d.ticket);
         setReply("");
         void loadList();
+        return { ok: true };
       }
     } catch {
       setErr("Couldn't reach the server.");
+      return { ok: false, error: "Could not reach the server." };
     } finally {
       setBusy(false);
     }
@@ -108,13 +115,13 @@ export default function AdminSupportPage() {
 
   return (
     <div>
-      <header className="mb-6">
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Support</h1>
         <p className="text-sm text-muted">
           {items.length} ticket{items.length === 1 ? "" : "s"}
           {filter !== "all" ? ` · ${filter}` : ""}
         </p>
-      </header>
+      </AdminPageHeader>
 
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
@@ -243,18 +250,8 @@ export default function AdminSupportPage() {
               )}
 
               <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
-                <span className="self-center text-xs font-semibold text-muted">Set status:</span>
-                {STATUSES.filter((s) => s !== detail.status).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => patch({ status: s })}
-                    className="rounded-full bg-surface-hover px-3 py-1 text-xs font-semibold capitalize text-muted hover:text-fg disabled:opacity-50"
-                  >
-                    {s}
-                  </button>
-                ))}
+                <span className="self-center text-xs font-semibold text-muted">Ticket status</span><EditButton name={`${detail.reference} status`} disabled={busy} onClick={() => setEditingStatus(true)} />
+                {editingStatus && <AdminActionDialog title={`Edit ticket ${detail.reference}`} description={detail.subject} fields={[{ name: "status", label: "Status", value: detail.status, options: STATUSES.map(value => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) })) }]} onConfirm={values => patch({ status: values.status })} onClose={() => setEditingStatus(false)} />}
               </div>
             </div>
           )}

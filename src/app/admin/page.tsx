@@ -1,5 +1,6 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Card from "@/components/common/Card";
@@ -41,10 +42,10 @@ export default function AdminDashboardPage() {
 
   return (
     <div>
-      <header className="mb-6">
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Dashboard</h1>
         <p className="text-sm text-muted">Overview of Jagdamba Travellers activity.</p>
-      </header>
+      </AdminPageHeader>
 
       {error && (
         <p className="mb-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>

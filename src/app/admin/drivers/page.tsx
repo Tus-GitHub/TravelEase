@@ -1,4 +1,5 @@
 "use client";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import Card from "@/components/common/Card";
 import AdminEditor from "@/components/admin/AdminEditor";
 import RowActions from "@/components/admin/RowActions";
@@ -20,10 +21,10 @@ export default function AdminDriversPage() {
   const form = useCrudForm({ empty: BLANK, onCreate: r.create, onUpdate: r.update });
   if (isLoading || !allowed) return <p className="text-sm text-muted">Loading...</p>;
   return <div>
-    <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <AdminPageHeader className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div><h1 className="text-2xl font-bold text-fg">Drivers</h1><p className="mt-1 text-sm text-muted">{r.items.length} on the roster. Edit a profile to update details and the driver photo.</p></div>
       <Button type="button" variant="accent" size="sm" iconLeft="user" onClick={form.startCreate}>Add driver</Button>
-    </header>
+    </AdminPageHeader>
     {form.open && <AdminEditor title={form.editingId == null ? "Add driver" : `Edit ${form.draft.name}`} onClose={form.cancel} busy={form.saving} image={form.editingId == null ? undefined : { kind: "drivers", id: form.editingId, name: form.draft.name }}>
       <form onSubmit={(e) => { e.preventDefault(); void form.submit(); }} className="grid gap-5 sm:grid-cols-2">
         <FormField label="Driver name" icon="user"><input className={fieldBase} value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} placeholder="Full name" required minLength={2} maxLength={150} /></FormField>

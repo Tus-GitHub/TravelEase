@@ -1,5 +1,6 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useEffect, useState } from "react";
 import Card from "@/components/common/Card";
 import StatCard from "@/components/admin/StatCard";
@@ -109,7 +110,7 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div>
-      <header className="mb-6">
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Analytics</h1>
         <p className="text-sm text-muted">
           Revenue counts bookings that reached Confirmed / Ongoing / Completed.
@@ -120,7 +121,7 @@ export default function AdminAnalyticsPage() {
             </span>
           )}
         </p>
-      </header>
+      </AdminPageHeader>
 
       {error && (
         <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">

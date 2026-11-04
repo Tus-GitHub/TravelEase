@@ -1,8 +1,12 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useCallback, useEffect, useState } from "react";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
+import AdminEditor from "@/components/admin/AdminEditor";
+import AdminActionDialog from "@/components/admin/AdminActionDialog";
+import RowActions from "@/components/admin/RowActions";
 import AdminTabs from "@/components/admin/AdminTabs";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
 
@@ -49,7 +53,7 @@ const STATUS_TONE: Record<string, string> = {
   void: "bg-surface-hover text-muted",
 };
 const fieldCls =
-  "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
+  "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-fg focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
 
 export default function AdminVendorsPage() {
   const { isLoading, allowed } = useAdminSectionGuard("vendors");
@@ -59,13 +63,13 @@ export default function AdminVendorsPage() {
 
   return (
     <div>
-      <header className="mb-6">
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Vendors</h1>
         <p className="text-sm text-muted">
           Vendor businesses, the vehicles they own, and monthly payout statements.
           Commission % is set in <a href="/admin/settings" className="hover-underline text-primary-700 dark:text-primary-300">Site settings</a>.
         </p>
-      </header>
+      </AdminPageHeader>
 
       <AdminTabs
         tabs={[
@@ -82,6 +86,8 @@ export default function AdminVendorsPage() {
 }
 
 function VendorsTab() {
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Vendor | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [form, setForm] = useState({ businessName: "", contactName: "", contactEmail: "", contactPhone: "", payoutDetails: "" });
@@ -109,8 +115,9 @@ function VendorsTab() {
     }
     setBusy(true);
     setErr(null);
-    const res = await fetch("/api/admin/vendors", {
-      method: "POST",
+    try {
+    const res = await fetch(editing ? `/api/admin/vendors/${editing.id}` : "/api/admin/vendors", {
+      method: editing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
@@ -121,7 +128,9 @@ function VendorsTab() {
       return;
     }
     setForm({ businessName: "", contactName: "", contactEmail: "", contactPhone: "", payoutDetails: "" });
+    setOpen(false);
     void load();
+    } catch { setErr("Could not save vendor. Please try again."); } finally { setBusy(false); }
   };
 
   const patchVendor = async (id: number, body: Record<string, unknown>) => {
@@ -134,9 +143,10 @@ function VendorsTab() {
   };
 
   const removeVendor = async (id: number) => {
-    if (!confirm("Remove this vendor? Their vehicles become Jagdamba-owned.")) return;
-    await fetch(`/api/admin/vendors/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/vendors/${id}`, { method: "DELETE" });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); return { ok: false, error: d.error || "Could not remove vendor." }; }
     void load();
+    return { ok: true };
   };
 
   const assignVehicle = async (vehicleId: number, vendorProfileId: number | null) => {
@@ -150,22 +160,22 @@ function VendorsTab() {
 
   return (
     <div className="space-y-6">
-      <Card padded hover={false} className="max-w-2xl">
-        <h2 className="mb-3 text-base font-bold text-fg">Add a vendor</h2>
-        <form onSubmit={create} className="grid gap-3 sm:grid-cols-2">
-          <input className={fieldCls} placeholder="Business name *" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} />
-          <input className={fieldCls} placeholder="Contact name" value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} />
-          <input className={fieldCls} placeholder="Contact email" value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} />
-          <input className={fieldCls} placeholder="Contact phone" value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} />
-          <input className={`${fieldCls} sm:col-span-2`} placeholder="Payout details (bank / UPI)" value={form.payoutDetails} onChange={(e) => setForm({ ...form, payoutDetails: e.target.value })} />
+      <div className="flex justify-end"><Button variant="accent" size="sm" onClick={() => { setEditing(null); setForm({ businessName: "", contactName: "", contactEmail: "", contactPhone: "", payoutDetails: "" }); setErr(null); setOpen(true); }}>Add vendor</Button></div>
+      {open && <AdminEditor title={editing ? `Edit ${editing.businessName}` : "Add vendor"} busy={busy} onClose={() => setOpen(false)}>
+        <form onSubmit={create}><fieldset disabled={busy} className="grid gap-5 sm:grid-cols-2">
+          <label className="block text-xs font-semibold text-muted">Business name *<input className={fieldCls} placeholder="Business name *" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} /></label>
+          <label className="block text-xs font-semibold text-muted">Contact name<input className={fieldCls} placeholder="Contact name" value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} /></label>
+          <label className="block text-xs font-semibold text-muted">Contact email<input className={fieldCls} placeholder="Contact email" value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} /></label>
+          <label className="block text-xs font-semibold text-muted">Contact phone<input className={fieldCls} placeholder="Contact phone" value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} /></label>
+          <label className="block text-xs font-semibold text-muted sm:col-span-2">Payout details (bank / UPI)<input className={`${fieldCls} sm:col-span-2`} placeholder="Payout details (bank / UPI)" value={form.payoutDetails} onChange={(e) => setForm({ ...form, payoutDetails: e.target.value })} /></label>
           {err && <p className="text-sm text-red-600 dark:text-red-400 sm:col-span-2">{err}</p>}
           <div className="sm:col-span-2">
-            <Button type="submit" variant="accent" size="sm" loading={busy}>Add vendor</Button>
+            <Button type="submit" variant="accent" size="sm" loading={busy}>{editing ? "Save changes" : "Add vendor"}</Button>
           </div>
-        </form>
-      </Card>
+        </fieldset></form>
+      </AdminEditor>}
 
-      <Card hover={false} className="overflow-hidden">
+      <Card hover={false} className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-line-subtle bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted">
             <tr>
@@ -201,9 +211,7 @@ function VendorsTab() {
                   </select>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button type="button" onClick={() => removeVendor(v.id)} className="text-xs font-medium text-red-600 hover:underline dark:text-red-400">
-                    Remove
-                  </button>
+                  <RowActions name={v.businessName} removeDescription="Their vehicles will become Jagdamba-owned. Existing payout records are retained." onDelete={() => removeVendor(v.id)} onEdit={() => { setEditing(v); setForm({ businessName: v.businessName, contactName: v.contactName || "", contactEmail: v.contactEmail || "", contactPhone: v.contactPhone || "", payoutDetails: v.payoutDetails || "" }); setErr(null); setOpen(true); }} />
                 </td>
               </tr>
             ))}
@@ -214,7 +222,7 @@ function VendorsTab() {
         </table>
       </Card>
 
-      <Card hover={false} className="overflow-hidden">
+      <Card hover={false} className="overflow-x-auto">
         <h2 className="border-b border-line-subtle px-5 py-4 text-sm font-semibold text-fg">Vehicle ownership</h2>
         <table className="w-full text-left text-sm">
           <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted">
@@ -254,6 +262,7 @@ function VendorsTab() {
 }
 
 function PayoutsTab() {
+  const [settlement, setSettlement] = useState<{ payout: Payout; status: "paid" | "void" } | null>(null);
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const [month, setMonth] = useState(defaultMonth);
@@ -288,25 +297,19 @@ function PayoutsTab() {
     void load();
   };
 
-  const settle = async (id: string, status: "paid" | "void") => {
-    let method: string | null = null;
-    let reference: string | null = null;
-    if (status === "paid") {
-      method = prompt("Payment method (e.g. bank transfer, UPI)") || null;
-      reference = prompt("Reference / txn id (optional)") || null;
-    } else if (!confirm("Void this payout statement?")) {
-      return;
-    }
-    await fetch(`/api/admin/payouts/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, method, reference }),
+  const settle = async (values: Record<string, string>) => {
+    if (!settlement) return { ok: false, error: "Select a payout first." };
+    const res = await fetch(`/api/admin/payouts/${settlement.payout.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: settlement.status, method: values.method || null, reference: values.reference || null }),
     });
-    void load();
+    if (!res.ok) { const d = await res.json().catch(() => ({})); return { ok: false, error: d.error || "Could not update payout." }; }
+    void load(); return { ok: true };
   };
 
   return (
     <div className="space-y-5">
+      {settlement && <AdminActionDialog title={settlement.status === "paid" ? "Record vendor payment" : "Void payout statement?"} description={`${settlement.payout.vendorName} - ${inr(settlement.payout.netAmount)} - ${settlement.payout.periodStart}`} confirmLabel={settlement.status === "paid" ? "Mark paid" : "Void statement"} danger={settlement.status === "void"} fields={settlement.status === "paid" ? [{ name: "method", label: "Payment method (bank transfer / UPI)" }, { name: "reference", label: "Transaction reference (optional)" }] : []} onConfirm={settle} onClose={() => setSettlement(null)} />}
       <Card padded hover={false} className="max-w-lg">
         <h2 className="mb-3 text-base font-bold text-fg">Generate monthly payouts</h2>
         <p className="mb-3 text-xs text-muted">
@@ -323,7 +326,7 @@ function PayoutsTab() {
         {msg && <p className="mt-2 text-sm text-muted">{msg}</p>}
       </Card>
 
-      <Card hover={false} className="overflow-hidden">
+      <Card hover={false} className="overflow-x-auto">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-line-subtle bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted">
@@ -356,8 +359,8 @@ function PayoutsTab() {
                   <td className="px-4 py-3 text-right">
                     {p.status === "pending" && (
                       <div className="flex justify-end gap-2 text-xs font-medium">
-                        <button type="button" onClick={() => settle(p.id, "paid")} className="text-emerald-600 hover:underline dark:text-emerald-400">Mark paid</button>
-                        <button type="button" onClick={() => settle(p.id, "void")} className="text-red-600 hover:underline dark:text-red-400">Void</button>
+                        <button type="button" onClick={() => setSettlement({ payout: p, status: "paid" })} className="rounded-xl border border-line px-3 py-2 text-fg hover:bg-surface-hover">Mark paid</button>
+                        <button type="button" onClick={() => setSettlement({ payout: p, status: "void" })} className="rounded-xl px-3 py-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">Void</button>
                       </div>
                     )}
                   </td>

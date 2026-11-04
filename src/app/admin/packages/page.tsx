@@ -1,5 +1,6 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useMemo, useState } from "react";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
@@ -102,10 +103,10 @@ export default function AdminPackagesPage() {
     const res = await fetch(`/api/admin/package-stops/${stopId}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setStopError(data.error || "Couldn't remove stop.");
-      return;
+      return { ok: false, error: data.error || "Could not remove stop." };
     }
     await r.refetch();
+    return { ok: true };
   };
 
   if (isLoading || !allowed) {
@@ -114,7 +115,7 @@ export default function AdminPackagesPage() {
 
   return (
     <div>
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <AdminPageHeader className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-fg">Packages</h1>
           <p className="text-sm text-muted">{r.items.length} curated packages</p>
@@ -127,7 +128,7 @@ export default function AdminPackagesPage() {
         >
           {form.open ? "Cancel" : "Add Package"}
         </Button>
-      </header>
+      </AdminPageHeader>
 
       {r.error && <ErrorNote message={r.error} />}
       {stopError && <ErrorNote message={stopError} />}
@@ -260,7 +261,7 @@ function PackageRows({
   onEdit: () => void;
   onDelete: () => Promise<{ ok: boolean; error?: string }>;
   onAddStop: (body: unknown) => Promise<void>;
-  onRemoveStop: (stopId: number) => Promise<void>;
+  onRemoveStop: (stopId: number) => Promise<{ ok: boolean; error?: string }>;
 }) {
   const [stop, setStop] = useState({ touristSpotId: "", stopOrder: "", nightsHere: "0" });
   const [adding, setAdding] = useState(false);
@@ -301,13 +302,7 @@ function PackageRows({
                   <span className="text-xs text-faint">
                     · {s.nightsHere} night{s.nightsHere === 1 ? "" : "s"}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveStop(s.id)}
-                    className="text-xs text-faint hover:text-red-600"
-                  >
-                    remove
-                  </button>
+                  <RowActions name={s.touristSpotName} onDelete={() => onRemoveStop(s.id)} />
                 </li>
               ))}
             </ol>

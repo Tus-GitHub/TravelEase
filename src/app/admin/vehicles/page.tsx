@@ -1,5 +1,6 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Fragment, useMemo, useState } from "react";
 import Card from "@/components/common/Card";
 import AdminEditor from "@/components/admin/AdminEditor";
@@ -62,7 +63,7 @@ function VehicleTypesTab() {
       {r.error && <ErrorNote message={r.error} />}
 
       {form.open && (
-        <Card padded hover={false} className="mb-6">
+        <AdminEditor title={form.editingId == null ? "Add vehicle type" : `Edit ${form.draft.title}`} onClose={form.cancel} busy={form.saving}>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -105,7 +106,7 @@ function VehicleTypesTab() {
               </Button>
             </div>
           </form>
-        </Card>
+        </AdminEditor>
       )}
 
       <Card hover={false} className="overflow-hidden">
@@ -134,7 +135,7 @@ function VehicleTypesTab() {
                     />
                   </td>
                   <td className="px-5 py-3.5 text-right">
-                    <RowActions
+                    <RowActions name={t.title}
                       onEdit={() =>
                         form.startEdit(t.id, {
                           title: t.title,
@@ -394,10 +395,10 @@ export default function AdminVehiclesPage() {
 
   return (
     <div>
-      <header className="mb-6">
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Fleet</h1>
         <p className="text-sm text-muted">Manage your fleet. Choose Edit to update vehicle details, photos and the main image.</p>
-      </header>
+      </AdminPageHeader>
 
       <AdminTabs
         tabs={[

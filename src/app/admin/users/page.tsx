@@ -1,6 +1,9 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useMemo, useState } from "react";
+import AdminActionDialog from "@/components/admin/AdminActionDialog";
+import EditButton from "@/components/admin/EditButton";
 import Card from "@/components/common/Card";
 import Icon from "@/components/common/Icon";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
@@ -22,8 +25,8 @@ export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
   const { items, loading, error, update } = useAdminResource<AdminUser>("/api/admin/users");
   const [query, setQuery] = useState("");
-  const [rowError, setRowError] = useState<string | null>(null);
-  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const [editing, setEditing] = useState<AdminUser | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -33,21 +36,14 @@ export default function AdminUsersPage() {
     );
   }, [items, query]);
 
-  const changeRole = async (id: string, role: AdminRole) => {
-    setRowError(null);
-    setSavingId(id);
-    const res = await update(id, { role });
-    setSavingId(null);
-    if (!res.ok) setRowError(res.error);
-  };
-
   if (isLoading || !allowed) {
     return <p className="text-sm text-muted">Loading…</p>;
   }
 
   return (
     <div>
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {editing && <AdminActionDialog title={`Edit ${editing.name}`} description={`${editing.email} - role changes take effect immediately.`} fields={[{ name: "role", label: "Account role", value: editing.role, options: [{ value: "customer", label: "Customer" }, { value: "agent", label: "Agent" }, { value: "admin", label: "Admin" }] }]} onConfirm={values => update(editing.id, { role: values.role })} onClose={() => setEditing(null)} />}
+      <AdminPageHeader className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-fg">Users</h1>
           <p className="text-sm text-muted">{items.length} total accounts</p>
@@ -65,13 +61,10 @@ export default function AdminUsersPage() {
             className="w-full rounded-xl border border-line bg-surface py-2.5 pl-10 pr-3 text-sm text-fg placeholder:text-faint focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
           />
         </div>
-      </header>
+      </AdminPageHeader>
 
       {error && (
         <p className="mb-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>
-      )}
-      {rowError && (
-        <p className="mb-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">{rowError}</p>
       )}
 
       <Card hover={false} className="overflow-hidden">
@@ -95,18 +88,7 @@ export default function AdminUsersPage() {
                     <td className="px-5 py-3.5 text-muted">{u.email}</td>
                     <td className="px-5 py-3.5 text-muted">{u.phone}</td>
                     <td className="px-5 py-3.5">
-                      <select
-                        value={u.role}
-                        disabled={isSelf || savingId === u.id || u.role === 'driver'}
-                        onChange={(e) => changeRole(u.id, e.target.value as AdminRole)}
-                        className="rounded-lg border border-line bg-surface py-1.5 pl-2.5 pr-7 text-xs font-semibold capitalize focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100 disabled:opacity-60"
-                        title={isSelf ? "You can't change your own role" : undefined}
-                      >
-                        {u.role === 'driver' && <option value="driver">Driver (manage in Drivers)</option>}
-                        <option value="customer">Customer</option>
-                        <option value="agent">Agent</option>
-                        <option value="admin">Admin</option>
-                      </select>
+                      <div className="flex items-center gap-3"><span className="capitalize text-muted">{u.role}</span><EditButton name={`${u.name} role`} disabled={isSelf || u.role === "driver"} onClick={() => setEditing(u)} /></div>
                     </td>
                     <td className="px-5 py-3.5 text-muted">
                       {new Date(u.createdAt).toLocaleDateString("en-IN", {

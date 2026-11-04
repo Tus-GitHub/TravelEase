@@ -1,6 +1,9 @@
 "use client";
 
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import AdminActionDialog from "@/components/admin/AdminActionDialog";
+import Button from "@/components/common/Button";
 import Card from "@/components/common/Card";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
 import { useAdminResource } from "@/lib/admin/useAdminResource";
@@ -62,14 +65,13 @@ const STATUS_FILTERS: (BookingStatus | "All")[] = [
 ];
 const cellSelect =
   "rounded-lg border border-line bg-surface py-1.5 pl-2.5 pr-7 text-xs font-semibold focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100 disabled:opacity-60";
-const cellInput =
-  "rounded-lg border border-line bg-surface px-2 py-1 text-xs focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100";
 
 export default function AdminBookingsPage() {
   const { isLoading, allowed } = useAdminSectionGuard("bookings");
   const { items, loading, error, update, refetch } =
     useAdminResource<AdminBooking>("/api/admin/bookings");
 
+  const [transition, setTransition] = useState<{ booking: AdminBooking; to: BookingStatus } | null>(null);
   const [filter, setFilter] = useState<BookingStatus | "All">("All");
   const [agents, setAgents] = useState<AdminUser[]>([]);
   const [drivers, setDrivers] = useState<AdminDriver[]>([]);
@@ -112,6 +114,7 @@ export default function AdminBookingsPage() {
   ) => {
     setRowError(null);
     setBusyId(id);
+    try {
     const res = await fetch(`/api/admin/bookings/${id}/refund`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -120,20 +123,26 @@ export default function AdminBookingsPage() {
     setBusyId(null);
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      setRowError(d.error ?? "Couldn't settle the refund.");
+      return { ok: false, error: d.error ?? "Could not settle the refund." };
     } else {
       await refetch();
+      return { ok: true };
     }
+    } finally { setBusyId(null); }
   };
 
   if (isLoading || !allowed) return <p className="text-sm text-muted">Loading…</p>;
 
   return (
     <div>
-      <header className="mb-6">
+      {transition && <AdminActionDialog title={`${transition.to === "Cancelled" ? "Cancel" : "Update"} booking ${transition.booking.reference}`} description={`${transition.booking.customerName} - ${transition.booking.status} to ${transition.to}`} confirmLabel={transition.to === "Cancelled" ? "Cancel booking" : "Update booking"} danger={transition.to === "Cancelled"} fields={[
+        ...(transition.to === "Cancelled" && ["Confirmed", "Ongoing"].includes(transition.booking.status) ? [{ name: "refundInitiatedBy", label: "Cancellation and refund", value: "customer", options: [{ value: "customer", label: "Customer initiated - apply cancellation policy" }, { value: "operator", label: "Jagdamba initiated - full refund" }] }] : []),
+        { name: "reason", label: "Reason", value: "Changed by admin", required: true },
+      ]} onConfirm={values => update(transition.booking.id, { status: transition.to, reason: values.reason, refundInitiatedBy: values.refundInitiatedBy || "customer" })} onClose={() => setTransition(null)} />}
+      <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Bookings</h1>
         <p className="text-sm text-muted">{items.length} total</p>
-      </header>
+      </AdminPageHeader>
 
       <div className="mb-4 flex flex-wrap gap-2">
         {STATUS_FILTERS.map((s) => (
@@ -216,17 +225,7 @@ export default function AdminBookingsPage() {
                               onChange={(e) => {
                                 const to = e.target.value;
                                 if (!to) return;
-                                const operator =
-                                  to === "Cancelled" &&
-                                  (b.status === "Confirmed" || b.status === "Ongoing") &&
-                                  confirm(
-                                    "Full refund (Jagdamba-initiated)?\nOK = full refund · Cancel = cancellation policy applies",
-                                  );
-                                act(b.id, {
-                                  status: to,
-                                  reason: "Changed by admin",
-                                  refundInitiatedBy: operator ? "operator" : "customer",
-                                });
+                                setTransition({ booking: b, to: to as BookingStatus });
                               }}
                             >
                               <option value="">Change…</option>
@@ -312,7 +311,7 @@ export default function AdminBookingsPage() {
                                 </span>
                               </p>
                               {b.refund.status === "pending" && b.refund.amount > 0 ? (
-                                <RefundSettleForm
+                                <RefundSettleForm name={`${b.reference} - ${inr(b.refund.amount)}`}
                                   busy={busyId === b.id}
                                   onSettle={(payload) => settle(b.id, payload)}
                                 />
@@ -359,51 +358,14 @@ export default function AdminBookingsPage() {
   );
 }
 
-function RefundSettleForm({
-  busy,
-  onSettle,
-}: {
-  busy: boolean;
-  onSettle: (p: { status: "paid" | "waived"; method?: string; reference?: string }) => void;
+function RefundSettleForm({ name, busy, onSettle }: {
+  name: string; busy: boolean;
+  onSettle: (p: { status: "paid" | "waived"; method?: string; reference?: string }) => Promise<{ ok: boolean; error?: string }>;
 }) {
-  const [method, setMethod] = useState("");
-  const [reference, setReference] = useState("");
-  return (
-    <div className="mt-2 flex flex-wrap items-center gap-2">
-      <input
-        className={cellInput}
-        placeholder="Method (bank transfer, UPI…)"
-        value={method}
-        onChange={(e) => setMethod(e.target.value)}
-      />
-      <input
-        className={cellInput}
-        placeholder="Reference"
-        value={reference}
-        onChange={(e) => setReference(e.target.value)}
-      />
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() =>
-          onSettle({
-            status: "paid",
-            method: method || undefined,
-            reference: reference || undefined,
-          })
-        }
-        className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-60"
-      >
-        Mark paid
-      </button>
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => onSettle({ status: "waived" })}
-        className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-muted disabled:opacity-60"
-      >
-        Waive
-      </button>
-    </div>
-  );
+  const [action, setAction] = useState<"paid" | "waived" | null>(null);
+  return <div className="mt-3 flex flex-wrap gap-2">
+    <Button size="sm" variant="outline" disabled={busy} onClick={() => setAction("paid")}>Mark paid</Button>
+    <Button size="sm" variant="ghost" disabled={busy} onClick={() => setAction("waived")}>Waive</Button>
+    {action && <AdminActionDialog title={action === "paid" ? "Record refund payment" : "Waive refund?"} description={name} confirmLabel={action === "paid" ? "Mark paid" : "Waive refund"} danger={action === "waived"} fields={action === "paid" ? [{ name: "method", label: "Payment method" }, { name: "reference", label: "Transaction reference (optional)" }] : []} onConfirm={values => onSettle({ status: action, method: values.method || undefined, reference: values.reference || undefined })} onClose={() => setAction(null)} />}
+  </div>;
 }
