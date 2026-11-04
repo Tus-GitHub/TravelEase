@@ -16,9 +16,16 @@ export interface SiteContact {
 }
 export interface SiteSettings {
   contact: SiteContact;
+  /** Global commission % Jagdamba keeps on a vendor's booking (chunk 3.5). 0 = none. */
+  vendorCommissionPct: number;
 }
 
-const KEYS = ["contact_phone", "contact_email", "contact_address"] as const;
+const KEYS = [
+  "contact_phone",
+  "contact_email",
+  "contact_address",
+  "vendor_commission_pct",
+] as const;
 
 function staticDefaults(): SiteSettings {
   return {
@@ -27,6 +34,7 @@ function staticDefaults(): SiteSettings {
       email: site.contact.email,
       address: site.contact.address,
     },
+    vendorCommissionPct: 0,
   };
 }
 
@@ -53,12 +61,15 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       const v = map.get(key);
       return v ? v : fallback;
     };
+    const rawPct = Number(map.get("vendor_commission_pct"));
     const value: SiteSettings = {
       contact: {
         phone: pick("contact_phone", defaults.contact.phone),
         email: pick("contact_email", defaults.contact.email),
         address: pick("contact_address", defaults.contact.address),
       },
+      vendorCommissionPct:
+        Number.isFinite(rawPct) && rawPct >= 0 && rawPct <= 100 ? rawPct : 0,
     };
     cache = { value, at: Date.now() };
     return value;

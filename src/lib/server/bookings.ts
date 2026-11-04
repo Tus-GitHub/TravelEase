@@ -27,6 +27,7 @@ import {
 } from "./availability";
 import { getReviewForBooking, type ReviewView } from "./reviews";
 import { resolveSeason } from "./seasonal-pricing";
+import { logActivity } from "./activity-log";
 import { canTransition, type BookingActor, type BookingStatus } from "@/lib/bookingStatus";
 import type { CancelInitiator } from "@/lib/refund";
 
@@ -189,6 +190,13 @@ export async function transitionBooking(input: {
 
   // Notify the booking owner (chunk 2.2) — never throws, never blocks the result.
   await notifyBookingStatusChanged(input.bookingId, from, input.toStatus);
+  await logActivity({
+    userId: input.user.id,
+    action: "booking.status_change",
+    entityType: "booking",
+    entityId: input.bookingId,
+    details: { from, to: input.toStatus, reason: input.reason ?? null },
+  });
 
   return { ok: true, status: input.toStatus };
 }
@@ -696,6 +704,13 @@ export async function createBooking(
 
   // Confirmation email (chunk 2.2) — non-blocking, never throws.
   await notifyBookingCreated(bookingId);
+  await logActivity({
+    userId: user.id,
+    action: "booking.create",
+    entityType: "booking",
+    entityId: bookingId,
+    details: { total: price.totalAmount, type: input.bookingType },
+  });
 
   return { ok: true, bookingId };
 }

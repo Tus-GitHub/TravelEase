@@ -1,7 +1,8 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import Section from "@/components/common/Section";
@@ -11,7 +12,10 @@ import Badge from "@/components/common/Badge";
 import AnimateInView from "@/components/common/AnimateInView";
 import PackageCard from "@/components/cards/PackageCard";
 import MapSpotSelector from "@/components/ui/MapSpotSelector";
+import { useAuth } from "@/context/AuthContext";
 import type { Region, TouristSpot, TravelPackage } from "@/types";
+
+type SaveState = "idle" | "saving" | "saved" | "error";
 
 interface PackageBuilderProps {
   regions: Region[];
@@ -389,11 +393,17 @@ function PackageSummary({
   spots,
   onReset,
   onBook,
+  onSave,
+  saveState,
+  canSave,
 }: {
   region: Region;
   spots: TouristSpot[];
   onReset: () => void;
   onBook: (vehicleSlug: string) => void;
+  onSave: (vehicleSlug: string) => void;
+  saveState: SaveState;
+  canSave: boolean;
 }) {
   const [vehicle, setVehicle] = useState(vehicleOptions[0].value);
 
@@ -523,6 +533,36 @@ function PackageSummary({
               </Button>
             </div>
 
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm">
+              {saveState === "saved" ? (
+                <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                  Saved —{" "}
+                  <Link href="/profile/saved" className="hover-underline">
+                    view saved trips
+                  </Link>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onSave(vehicle)}
+                  disabled={saveState === "saving"}
+                  className="inline-flex items-center gap-1.5 font-medium text-primary-700 underline underline-offset-2 transition-colors hover:text-accent-600 disabled:opacity-60 dark:text-primary-300"
+                >
+                  <Icon name="bookmark" className="h-4 w-4" />
+                  {saveState === "saving"
+                    ? "Saving…"
+                    : canSave
+                      ? "Save for later"
+                      : "Sign in to save for later"}
+                </button>
+              )}
+              {saveState === "error" && (
+                <span className="text-xs text-red-600 dark:text-red-400">
+                  Couldn&apos;t save. Try again.
+                </span>
+              )}
+            </div>
+
             <p className="mt-4 text-center text-xs text-faint">
               Choose your travel dates and see the full price on the next step.
             </p>
@@ -545,11 +585,16 @@ const stepVariants = {
 
 export default function PackageBuilder({ regions, packages }: PackageBuilderProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [mode, setMode]               = useState<Mode>("packages");
   const [step, setStep]               = useState(1);
   const [region, setRegion]           = useState<Region | null>(null);
   const [selectedSpots, setSelectedSpots] = useState<TouristSpot[]>([]);
   const [orderedSpots, setOrderedSpots]   = useState<TouristSpot[]>([]);
+  const [saveState, setSaveState]     = useState<SaveState>("idle");
+
+  // Any change to the route invalidates a prior "Saved" confirmation.
+  useEffect(() => setSaveState("idle"), [orderedSpots]);
 
   // Build Your Own -> the booking flow. Spot ids are the real tourist_spot_ids
   // (as strings); /booking/new parses them back and snapshots them as stops.
@@ -562,6 +607,32 @@ export default function PackageBuilder({ regions, packages }: PackageBuilderProp
       regionName: region.name,
     });
     router.push(`/booking/new?${params.toString()}`);
+  };
+
+  // Build Your Own -> save the route for later (Phase 3, saved itineraries).
+  const saveCustomPackage = async (vehicleSlug: string) => {
+    if (!region || orderedSpots.length < 2) return;
+    if (!user) {
+      router.push("/login?redirect=/");
+      return;
+    }
+    setSaveState("saving");
+    try {
+      const res = await fetch("/api/saved-itineraries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "custom",
+          regionId: Number(region.id),
+          vehicleTypeSlug: vehicleSlug,
+          spotIds: orderedSpots.map((s) => Number(s.id)),
+          title: `${region.name} itinerary`,
+        }),
+      });
+      setSaveState(res.ok ? "saved" : "error");
+    } catch {
+      setSaveState("error");
+    }
   };
 
   const handleRegionSelect = (r: Region) => {
@@ -739,6 +810,9 @@ export default function PackageBuilder({ regions, packages }: PackageBuilderProp
                     spots={orderedSpots}
                     onReset={reset}
                     onBook={bookCustomPackage}
+                    onSave={saveCustomPackage}
+                    saveState={saveState}
+                    canSave={!!user}
                   />
                 </motion.div>
               )}

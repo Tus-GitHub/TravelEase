@@ -118,6 +118,9 @@ export interface Vehicle {
   basePricePerDay: number;
   rating: number | null;
   isAvailable: boolean;
+  /** null = Jagdamba-owned; set = owned by this vendor (chunk 3.5). */
+  vendorProfileId: number | null;
+  vendorBusinessName: string | null;
 }
 
 interface VehicleRow {
@@ -131,6 +134,8 @@ interface VehicleRow {
   base_price_per_day: string;
   rating: string | null;
   is_available: boolean;
+  vendor_profile_id: number | null;
+  vendor_business_name: string | null;
 }
 
 function toVehicle(r: VehicleRow): Vehicle {
@@ -145,15 +150,19 @@ function toVehicle(r: VehicleRow): Vehicle {
     basePricePerDay: Number(r.base_price_per_day),
     rating: r.rating != null ? Number(r.rating) : null,
     isAvailable: r.is_available,
+    vendorProfileId: r.vendor_profile_id,
+    vendorBusinessName: r.vendor_business_name,
   };
 }
 
 const V_SELECT = `
   SELECT v.vehicle_id, v.vehicle_type_id, vt.title AS vehicle_type_title,
          v.name, v.registration_number, v.seating_capacity, v.features,
-         v.base_price_per_day, v.rating, v.is_available
+         v.base_price_per_day, v.rating, v.is_available,
+         v.vendor_profile_id, vp.business_name AS vendor_business_name
   FROM vehicles v
   JOIN vehicle_types vt ON vt.vehicle_type_id = v.vehicle_type_id
+  LEFT JOIN vendor_profiles vp ON vp.vendor_profile_id = v.vendor_profile_id
 `;
 
 export async function listVehicles(): Promise<Vehicle[]> {
@@ -210,11 +219,12 @@ const V_COLUMNS = {
   seatingCapacity: "seating_capacity",
   basePricePerDay: "base_price_per_day",
   isAvailable: "is_available",
+  vendorProfileId: "vendor_profile_id",
 } as const;
 
 export async function updateVehicle(
   id: number,
-  input: Partial<VehicleInput & { isAvailable: boolean }>,
+  input: Partial<VehicleInput & { isAvailable: boolean; vendorProfileId: number | null }>,
   actorId: string,
 ): Promise<Vehicle | null> {
   const { features, ...rest } = input;

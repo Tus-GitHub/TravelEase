@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { getPool } from "./db";
 import { hashPassword, verifyPassword } from "./password";
+import { logActivity } from "./activity-log";
 
 export interface PublicUser {
   id: string;
@@ -45,7 +46,8 @@ function toPublicUser(row: UserRow): PublicUser {
 export async function findUserByEmail(email: string): Promise<UserRow | undefined> {
   const pool = getPool();
   const result = await pool.query(
-    `${USER_SELECT} WHERE u.email = $1 AND u.is_deleted = false`,
+    `${USER_SELECT} WHERE u.email = $1 AND u.is_deleted = false AND u.is_active = true
+       AND (r.name <> 'driver' OR EXISTS (SELECT 1 FROM drivers d WHERE d.user_id=u.user_id AND d.is_active AND NOT d.is_deleted))`,
     [email.trim().toLowerCase()],
   );
   return result.rows[0];
@@ -54,7 +56,8 @@ export async function findUserByEmail(email: string): Promise<UserRow | undefine
 export async function findUserById(id: string): Promise<UserRow | undefined> {
   const pool = getPool();
   const result = await pool.query(
-    `${USER_SELECT} WHERE u.user_id = $1 AND u.is_deleted = false`,
+    `${USER_SELECT} WHERE u.user_id = $1 AND u.is_deleted = false AND u.is_active = true
+       AND (r.name <> 'driver' OR EXISTS (SELECT 1 FROM drivers d WHERE d.user_id=u.user_id AND d.is_active AND NOT d.is_deleted))`,
     [id],
   );
   return result.rows[0];
@@ -195,6 +198,9 @@ export async function deleteAccount(userId: string): Promise<boolean> {
      ),
      drop_reset AS (
        DELETE FROM password_reset_tokens WHERE user_id = $1
+     ),
+     drop_saved AS (
+       DELETE FROM saved_itineraries WHERE user_id = $1
      )
      UPDATE users SET
        is_deleted    = true,
@@ -207,7 +213,16 @@ export async function deleteAccount(userId: string): Promise<boolean> {
      RETURNING user_id`,
     [userId],
   );
-  return (result.rowCount ?? 0) > 0;
+  const ok = (result.rowCount ?? 0) > 0;
+  if (ok) {
+    await logActivity({
+      userId,
+      action: "user.account_delete",
+      entityType: "user",
+      entityId: userId,
+    });
+  }
+  return ok;
 }
 
 export { toPublicUser };

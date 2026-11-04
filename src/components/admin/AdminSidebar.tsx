@@ -19,16 +19,20 @@ const sectionNavItems: {
   section: AdminSection | null;
 }[] = [
   { href: "/admin", label: "Dashboard", icon: "grid", section: null },
+  { href: "/admin/analytics", label: "Analytics", icon: "chart", section: "analytics" },
   { href: "/admin/bookings", label: "Bookings", icon: "calendar", section: "bookings" },
+  { href: "/admin/support", label: "Support", icon: "chat", section: "support" },
   { href: "/admin/drivers", label: "Drivers", icon: "user", section: "drivers" },
   { href: "/admin/coupons", label: "Coupons", icon: "tag", section: "coupons" },
   { href: "/admin/reviews", label: "Reviews", icon: "star", section: "reviews" },
   { href: "/admin/seasonal-pricing", label: "Seasonal", icon: "calendar", section: "seasonal" },
   { href: "/admin/users", label: "Users", icon: "users", section: "users" },
   { href: "/admin/vehicles", label: "Fleet", icon: "car", section: "vehicles" },
+  { href: "/admin/vendors", label: "Vendors", icon: "briefcase", section: "vendors" },
   { href: "/admin/geography", label: "Geography", icon: "map-pin", section: "geography" },
   { href: "/admin/packages", label: "Packages", icon: "tag", section: "packages" },
   { href: "/admin/settings", label: "Site settings", icon: "headset", section: "settings" },
+  { href: "/admin/activity", label: "Activity log", icon: "clock", section: "activity" },
 ];
 
 export default function AdminSidebar({ user }: { user: AuthUser }) {

@@ -19,6 +19,7 @@ import {
 } from "@/lib/server/catalogue";
 import { listReviewsForPackage } from "@/lib/server/reviews";
 import ReviewList from "@/components/reviews/ReviewList";
+import SavePackageButton from "@/components/packages/SavePackageButton";
 
 export const dynamic = "force-dynamic";
 
@@ -115,7 +116,7 @@ export default async function PackageDetailPage({
             </ul>
           )}
 
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-7 flex flex-wrap items-start gap-3">
             <Magnetic>
               <Button
                 href={`/booking/new?package=${pkg.slug}`}
@@ -126,7 +127,12 @@ export default async function PackageDetailPage({
                 Book This Package
               </Button>
             </Magnetic>
-            <Button href="/packages" variant="outline" size="lg">
+            <SavePackageButton
+              packageId={pkg.id}
+              packageName={pkg.name}
+              packageSlug={pkg.slug}
+            />
+            <Button href="/packages" variant="ghost" size="lg">
               Back to packages
             </Button>
           </div>

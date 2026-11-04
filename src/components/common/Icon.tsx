@@ -265,6 +265,41 @@ const paths: Record<IconName, React.ReactNode> = {
       d="M4 7h16M10 11v6M14 11v6M5 7l1 13a2 2 0 002 2h8a2 2 0 002-2l1-13M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"
     />
   ),
+  bookmark: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M6 4h12a1 1 0 011 1v15l-7-4-7 4V5a1 1 0 011-1z"
+    />
+  ),
+  chat: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M8 10h8M8 14h5M5 4h14a1 1 0 011 1v11a1 1 0 01-1 1H9l-4 4V5a1 1 0 011-1z"
+    />
+  ),
+  clock: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 7v5l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+  ),
+  chart: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M4 20h16M7 16v-5m5 5V8m5 8v-3M5 4v16"
+    />
+  ),
+  briefcase: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m-9 0h14a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1zm0 5h18"
+    />
+  ),
 };
 
 export interface IconProps {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyCredentials } from "@/lib/server/users";
 import { createSession, SESSION_COOKIE } from "@/lib/server/session";
+import { logActivity, clientIp } from "@/lib/server/activity-log";
 
 export async function POST(request: Request) {
   let body: { email?: string; password?: string; rememberMe?: boolean };
@@ -39,6 +40,13 @@ export async function POST(request: Request) {
   }
 
   const { token, maxAge } = await createSession(user.id, rememberMe);
+  await logActivity({
+    userId: user.id,
+    action: "user.login",
+    entityType: "user",
+    entityId: user.id,
+    ipAddress: clientIp(request),
+  });
   const response = NextResponse.json({ user });
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,

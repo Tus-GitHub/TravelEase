@@ -1,6 +1,7 @@
 import type { AdminRole } from "@/lib/admin/types";
 
 const roleStyles: Record<AdminRole, string> = {
+  driver: "bg-surface-hover text-muted",
   admin: "bg-accent-100 text-accent-700",
   agent: "bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300",
   customer: "bg-surface-hover text-muted",

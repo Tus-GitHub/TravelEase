@@ -4,6 +4,7 @@ import {
   sendBookingCancellation,
   sendBookingStatusUpdate,
   sendDriverAssigned,
+  sendSupportTicketReply,
   appOrigin,
   type BookingEmailInfo,
 } from "./email";
@@ -21,7 +22,8 @@ type NotificationKind =
   | "booking.confirmation"
   | "booking.cancellation"
   | "booking.status"
-  | "booking.driver";
+  | "booking.driver"
+  | "support.reply";
 
 // The customer only sees driver details once the trip is locked in.
 const DRIVER_VISIBLE: BookingStatus[] = ["Confirmed", "Ongoing", "Completed"];
@@ -200,5 +202,73 @@ export async function notifyBookingStatusChanged(
     }
   } catch (err) {
     console.error("notifyBookingStatusChanged: unexpected", err);
+  }
+}
+
+// ─── Support tickets (chunk 3.2) ───────────────────────────────────────────
+
+async function logSupport(
+  userId: string,
+  recipient: string,
+  subject: string,
+  error?: string,
+): Promise<void> {
+  try {
+    await getPool().query(
+      `INSERT INTO notifications
+         (user_id, channel, kind, recipient, subject, status, error)
+       VALUES ($1, 'email', 'support.reply', $2, $3, $4, $5)`,
+      [
+        userId,
+        recipient,
+        subject.slice(0, 300),
+        error ? "failed" : "sent",
+        error ? error.slice(0, 500) : null,
+      ],
+    );
+  } catch (err) {
+    console.error("notifications: could not write support log row", err);
+  }
+}
+
+/**
+ * Fired when staff replies to a support ticket (addTicketMessage). Emails the
+ * ticket owner the latest message. Non-blocking — every failure is caught.
+ */
+export async function notifySupportReply(ticketId: string): Promise<void> {
+  try {
+    const row = (
+      await getPool().query(
+        `SELECT st.reference, st.subject,
+                u.user_id AS owner_user_id, u.email AS owner_email,
+                (SELECT m.body FROM support_ticket_messages m
+                  WHERE m.support_ticket_id = st.support_ticket_id
+                  ORDER BY m.created_at DESC, m.support_ticket_message_id DESC
+                  LIMIT 1) AS last_body
+           FROM support_tickets st
+           JOIN users u ON u.user_id = st.user_id
+          WHERE st.support_ticket_id = $1`,
+        [ticketId],
+      )
+    ).rows[0];
+    if (!row) return;
+
+    const subject = `Re: ${row.subject} — ${row.reference}`;
+    const url = `${appOrigin()}/profile/support/${ticketId}`;
+    const snippet = String(row.last_body ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
+    try {
+      await sendSupportTicketReply(row.owner_email, {
+        reference: row.reference,
+        subject: row.subject,
+        snippet,
+        url,
+      });
+      await logSupport(row.owner_user_id, row.owner_email, subject);
+    } catch (err) {
+      console.error("notifySupportReply: send failed", err);
+      await logSupport(row.owner_user_id, row.owner_email, subject, String(err));
+    }
+  } catch (err) {
+    console.error("notifySupportReply: unexpected", err);
   }
 }

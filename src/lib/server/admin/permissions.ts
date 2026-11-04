@@ -1,4 +1,5 @@
 import { getPool } from "../db";
+import { logActivity } from "../activity-log";
 
 export type PermissionRole = "agent" | "customer";
 export type AdminSection =
@@ -11,7 +12,11 @@ export type AdminSection =
   | "reviews"
   | "seasonal"
   | "drivers"
-  | "settings";
+  | "settings"
+  | "support"
+  | "activity"
+  | "analytics"
+  | "vendors";
 
 export const PERMISSION_ROLES: PermissionRole[] = ["agent", "customer"];
 export const ADMIN_SECTIONS: AdminSection[] = [
@@ -25,6 +30,10 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   "seasonal",
   "drivers",
   "settings",
+  "support",
+  "activity",
+  "analytics",
+  "vendors",
 ];
 
 export type PermissionMatrix = Record<PermissionRole, Record<AdminSection, boolean>>;
@@ -49,6 +58,10 @@ function emptyMatrix(): PermissionMatrix {
     seasonal: false,
     drivers: false,
     settings: false,
+    support: false,
+    activity: false,
+    analytics: false,
+    vendors: false,
   };
   return { agent: { ...off }, customer: { ...off } };
 }
@@ -84,5 +97,12 @@ export async function setPermission(
      DO UPDATE SET is_allowed = EXCLUDED.is_allowed, updated_by = EXCLUDED.updated_by`,
     [role, section, isAllowed, actorId],
   );
+  await logActivity({
+    userId: actorId,
+    action: "permission.change",
+    entityType: "role_permission",
+    entityId: `${role}:${section}`,
+    details: { role, section, isAllowed },
+  });
   return getPermissionMatrix();
 }

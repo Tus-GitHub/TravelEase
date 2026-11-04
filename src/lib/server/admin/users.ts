@@ -1,4 +1,5 @@
 import { getPool } from "../db";
+import { logActivity } from "../activity-log";
 
 export interface AdminUser {
   id: string;
@@ -52,12 +53,22 @@ const UUID_RE =
 export async function setUserRole(
   userId: string,
   role: RoleName,
+  actorId?: string,
 ): Promise<AdminUser | null> {
   // A non-UUID id can't match any row; bail before Postgres rejects the cast
   // (22P02) and turns a plain "not found" into a 500.
   if (!UUID_RE.test(userId)) return null;
 
   const pool = getPool();
+  const before =
+    (
+      await pool.query(
+        `SELECT ro.name FROM users u JOIN roles ro ON ro.role_id = u.role_id
+          WHERE u.user_id = $1`,
+        [userId],
+      )
+    ).rows[0]?.name ?? null;
+
   const updated = await pool.query(
     `UPDATE users
      SET role_id = (SELECT role_id FROM roles WHERE name = $1)
@@ -66,6 +77,16 @@ export async function setUserRole(
     [role, userId],
   );
   if (!updated.rows[0]) return null;
+
+  if (before !== role) {
+    await logActivity({
+      userId: actorId ?? null,
+      action: "user.role_change",
+      entityType: "user",
+      entityId: userId,
+      details: { from: before, to: role },
+    });
+  }
 
   const result = await pool.query(`${SELECT} WHERE u.user_id = $1`, [userId]);
   return result.rows[0] ? toAdminUser(result.rows[0]) : null;

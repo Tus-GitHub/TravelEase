@@ -11,6 +11,7 @@ export interface AdminDriver {
   note: string;
   isActive: boolean;
   activeBookings: number;
+  loginEmail: string | null;
 }
 
 interface Row {
@@ -21,6 +22,7 @@ interface Row {
   note: string | null;
   is_active: boolean;
   active_bookings: number;
+  login_email: string | null;
 }
 
 const toDriver = (r: Row): AdminDriver => ({
@@ -31,14 +33,16 @@ const toDriver = (r: Row): AdminDriver => ({
   note: r.note ?? "",
   isActive: r.is_active,
   activeBookings: Number(r.active_bookings),
+  loginEmail: r.login_email,
 });
 
 const SELECT = `
-  SELECT d.driver_id, d.name, d.phone, d.licence_number, d.note, d.is_active,
+  SELECT d.driver_id, d.name, d.phone, d.licence_number, d.note, d.is_active, u.email AS login_email,
          (SELECT count(*) FROM bookings b
             WHERE b.driver_id = d.driver_id
               AND b.status IN ('Confirmed','Ongoing')) AS active_bookings
   FROM drivers d
+  LEFT JOIN users u ON u.user_id=d.user_id AND NOT u.is_deleted
 `;
 
 export async function listDrivers(): Promise<AdminDriver[]> {

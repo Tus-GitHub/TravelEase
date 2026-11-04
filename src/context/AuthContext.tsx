@@ -20,7 +20,7 @@ export interface AuthUser {
 }
 
 type AuthResult =
-  | { ok: true; requiresVerification?: boolean }
+  | { ok: true; requiresVerification?: boolean; role?: string }
   | { ok: false; error: string; code?: string };
 
 interface AuthContextValue {
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const data = await res.json();
       setUser(data.user);
-      return { ok: true };
+      return { ok: true, role: data.user.role };
     },
     [],
   );

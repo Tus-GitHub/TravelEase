@@ -214,6 +214,34 @@ export default function ProfilePage() {
           }}
         />
 
+        <Card padded hover={false}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-fg">Saved trips</h2>
+              <p className="mt-0.5 text-sm text-muted">
+                Routes and packages you saved to book later.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" href="/profile/saved" iconLeft="bookmark">
+              View saved trips
+            </Button>
+          </div>
+        </Card>
+
+        <Card padded hover={false}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-fg">Help &amp; support</h2>
+              <p className="mt-0.5 text-sm text-muted">
+                Questions about a booking, payment or refund? Open a ticket.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" href="/profile/support" iconLeft="chat">
+              Support tickets
+            </Button>
+          </div>
+        </Card>
+
         {isCustomer && (
           <>
             <AddressCard profile={profile ?? EMPTY_PROFILE} onSaved={setProfile} />

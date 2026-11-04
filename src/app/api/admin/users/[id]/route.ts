@@ -31,7 +31,7 @@ export async function PATCH(
     );
   }
 
-  const updated = await setUserRole(params.id, body.role);
+  const updated = await setUserRole(params.id, body.role, auth.user.id);
   if (!updated) {
     return NextResponse.json({ error: "User not found." }, { status: 404 });
   }

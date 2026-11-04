@@ -91,7 +91,7 @@ export default function LoginPage() {
     // paths only, to avoid an open redirect.
     const raw = new URLSearchParams(window.location.search).get("redirect");
     const dest = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
-    router.push(dest);
+    router.push(result.role === 'driver' ? '/drive' : dest);
   };
 
   return (

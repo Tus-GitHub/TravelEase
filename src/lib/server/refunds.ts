@@ -1,5 +1,6 @@
 import type { PoolClient } from "pg";
 import { getPool } from "./db";
+import { logActivity } from "./activity-log";
 import { calculateRefund, type CancelInitiator } from "@/lib/refund";
 
 /**
@@ -124,7 +125,15 @@ export async function settleRefund(
       bookingId,
     ],
   );
-  return { ok: true, refund: toView(r.rows[0]) };
+  const refund = toView(r.rows[0]);
+  await logActivity({
+    userId: actorId,
+    action: "refund.settle",
+    entityType: "booking",
+    entityId: bookingId,
+    details: { status: refund.status, amount: refund.amount, method: input.method?.trim() || null },
+  });
+  return { ok: true, refund };
 }
 
 /** True when the booking has no outstanding (pending, non-zero) refund. */

@@ -62,6 +62,7 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
           <p className="truncate text-xs text-muted">{user.email}</p>
         </div>
 
+        {user.role === 'driver' && <Link href="/drive" onClick={() => setIsOpen(false)} className="block px-4 py-2.5 text-sm text-fg">Driver trips</Link>}
         <Link
           href="/profile"
           onClick={() => setIsOpen(false)}
@@ -78,6 +79,24 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
         >
           <Icon name="calendar" className="h-4 w-4" />
           My Bookings
+        </Link>
+
+        <Link
+          href="/profile/saved"
+          onClick={() => setIsOpen(false)}
+          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-primary-50 hover:text-primary-900"
+        >
+          <Icon name="bookmark" className="h-4 w-4" />
+          Saved Trips
+        </Link>
+
+        <Link
+          href="/profile/support"
+          onClick={() => setIsOpen(false)}
+          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-primary-50 hover:text-primary-900"
+        >
+          <Icon name="chat" className="h-4 w-4" />
+          Help &amp; Support
         </Link>
 
         <button

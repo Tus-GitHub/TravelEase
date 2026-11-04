@@ -30,7 +30,18 @@ export async function PATCH(
     features?: string[];
     basePricePerDay?: number;
     isAvailable?: boolean;
+    vendorProfileId?: number | null;
   } = {};
+
+  if (body.vendorProfileId === null) {
+    input.vendorProfileId = null;
+  } else if (body.vendorProfileId !== undefined) {
+    const n = Number(body.vendorProfileId);
+    if (!Number.isInteger(n) || n <= 0) {
+      return NextResponse.json({ error: "Invalid vendor." }, { status: 400 });
+    }
+    input.vendorProfileId = n;
+  }
 
   if (body.vehicleTypeId !== undefined) {
     const n = Number(body.vehicleTypeId);

@@ -19,9 +19,12 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const input: Record<string, string> = {};
+  const input: Record<string, string | number> = {};
   for (const k of ["contactPhone", "contactEmail", "contactAddress"] as const) {
     if (typeof body[k] === "string") input[k] = body[k] as string;
+  }
+  if (typeof body.vendorCommissionPct === "string" || typeof body.vendorCommissionPct === "number") {
+    input.vendorCommissionPct = body.vendorCommissionPct;
   }
   if (Object.keys(input).length === 0) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });

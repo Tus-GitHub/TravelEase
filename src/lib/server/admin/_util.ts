@@ -1,4 +1,5 @@
 import { getPool } from "../db";
+import { logActivity } from "../activity-log";
 
 /**
  * Partial UPDATE from a static camelCase->column map. Only keys present in
@@ -33,7 +34,17 @@ export async function applyPartialUpdate(
      WHERE ${idColumn} = $${vals.length} AND is_deleted = false`,
     vals,
   );
-  return (result.rowCount ?? 0) > 0;
+  const ok = (result.rowCount ?? 0) > 0;
+  if (ok) {
+    await logActivity({
+      userId: actorId,
+      action: "admin.update",
+      entityType: table,
+      entityId: id,
+      details: { fields: Object.keys(columnMap).filter((k) => input[k] !== undefined) },
+    });
+  }
+  return ok;
 }
 
 export async function softDelete(
@@ -47,7 +58,16 @@ export async function softDelete(
      WHERE ${idColumn} = $2 AND is_deleted = false`,
     [actorId, id],
   );
-  return (result.rowCount ?? 0) > 0;
+  const ok = (result.rowCount ?? 0) > 0;
+  if (ok) {
+    await logActivity({
+      userId: actorId,
+      action: "admin.delete",
+      entityType: table,
+      entityId: id,
+    });
+  }
+  return ok;
 }
 
 /**

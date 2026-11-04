@@ -97,11 +97,12 @@ export default function AdminUsersPage() {
                     <td className="px-5 py-3.5">
                       <select
                         value={u.role}
-                        disabled={isSelf || savingId === u.id}
+                        disabled={isSelf || savingId === u.id || u.role === 'driver'}
                         onChange={(e) => changeRole(u.id, e.target.value as AdminRole)}
                         className="rounded-lg border border-line bg-surface py-1.5 pl-2.5 pr-7 text-xs font-semibold capitalize focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100 disabled:opacity-60"
                         title={isSelf ? "You can't change your own role" : undefined}
                       >
+                        {u.role === 'driver' && <option value="driver">Driver (manage in Drivers)</option>}
                         <option value="customer">Customer</option>
                         <option value="agent">Agent</option>
                         <option value="admin">Admin</option>

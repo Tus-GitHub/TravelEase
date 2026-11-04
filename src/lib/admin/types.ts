@@ -1,1 +1,1 @@
-export type AdminRole = "customer" | "agent" | "admin";
+export type AdminRole = "customer" | "agent" | "admin" | "driver";

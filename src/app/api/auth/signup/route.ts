@@ -3,6 +3,7 @@ import { createUser, findUserByEmail } from "@/lib/server/users";
 import { isUniqueViolation } from "@/lib/server/db-errors";
 import { createAuthToken } from "@/lib/server/auth-tokens";
 import { sendVerificationEmail, appOrigin } from "@/lib/server/email";
+import { logActivity, clientIp } from "@/lib/server/activity-log";
 import { isValidEmail, isValidPhone, PASSWORD_MIN_LENGTH } from "@/lib/validation";
 
 export async function POST(request: Request) {
@@ -64,6 +65,14 @@ export async function POST(request: Request) {
     }
     throw err;
   }
+
+  await logActivity({
+    userId: user.id,
+    action: "user.signup",
+    entityType: "user",
+    entityId: user.id,
+    ipAddress: clientIp(request),
+  });
 
   // The account exists but is unverified — no session is issued. Login stays
   // blocked until the verification link is clicked (plan.md §24).

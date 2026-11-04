@@ -9,6 +9,7 @@ interface SiteSettings {
   contactPhone: string;
   contactEmail: string;
   contactAddress: string;
+  vendorCommissionPct: string;
   defaults: { contactPhone: string; contactEmail: string; contactAddress: string };
 }
 
@@ -19,7 +20,12 @@ export default function AdminSettingsPage() {
   const { isLoading, allowed } = useAdminSectionGuard("settings");
 
   const [data, setData] = useState<SiteSettings | null>(null);
-  const [form, setForm] = useState({ contactPhone: "", contactEmail: "", contactAddress: "" });
+  const [form, setForm] = useState({
+    contactPhone: "",
+    contactEmail: "",
+    contactAddress: "",
+    vendorCommissionPct: "",
+  });
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -34,6 +40,7 @@ export default function AdminSettingsPage() {
           contactPhone: d.item.contactPhone,
           contactEmail: d.item.contactEmail,
           contactAddress: d.item.contactAddress,
+          vendorCommissionPct: d.item.vendorCommissionPct,
         });
         setState("ready");
       })
@@ -79,6 +86,12 @@ export default function AdminSettingsPage() {
     },
     { key: "contactEmail", label: "Support email", hint: "Footer and contact page.", type: "email" },
     { key: "contactAddress", label: "Office address", hint: "Footer and contact page." },
+    {
+      key: "vendorCommissionPct",
+      label: "Vendor commission (%)",
+      hint: "The share Jagdamba keeps on a vendor's booking, used when generating payout statements. Blank or 0 = no commission.",
+      type: "number",
+    },
   ];
 
   return (
@@ -99,22 +112,25 @@ export default function AdminSettingsPage() {
       ) : (
         <Card padded hover={false} className="max-w-xl">
           <form onSubmit={save} className="flex flex-col gap-5">
-            {fields.map((f) => (
-              <label key={f.key} className="block">
-                <span className="mb-1 block text-sm font-semibold text-fg">{f.label}</span>
-                <input
-                  className={fieldCls}
-                  type={f.type ?? "text"}
-                  value={form[f.key]}
-                  placeholder={data?.defaults[f.key] ?? ""}
-                  onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                />
-                <span className="mt-1 block text-xs text-faint">
-                  {f.hint}
-                  {data?.defaults[f.key] ? ` Default: ${data.defaults[f.key]}` : ""}
-                </span>
-              </label>
-            ))}
+            {fields.map((f) => {
+              const dflt = (data?.defaults as Record<string, string | undefined> | undefined)?.[f.key];
+              return (
+                <label key={f.key} className="block">
+                  <span className="mb-1 block text-sm font-semibold text-fg">{f.label}</span>
+                  <input
+                    className={fieldCls}
+                    type={f.type ?? "text"}
+                    value={form[f.key]}
+                    placeholder={dflt ?? ""}
+                    onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+                  />
+                  <span className="mt-1 block text-xs text-faint">
+                    {f.hint}
+                    {dflt ? ` Default: ${dflt}` : ""}
+                  </span>
+                </label>
+              );
+            })}
 
             {msg && (
               <p

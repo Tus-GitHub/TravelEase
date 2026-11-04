@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import Card from "@/components/common/Card";
+import DriverLoginControl from '@/components/driver/DriverLoginControl';
 import Button from "@/components/common/Button";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
 import { useAdminResource } from "@/lib/admin/useAdminResource";
 
 interface Driver {
+  loginEmail: string | null;
   id: number;
   name: string;
   phone: string;
@@ -22,7 +24,7 @@ const BLANK = { name: "", phone: "", licenceNumber: "", note: "" };
 
 export default function AdminDriversPage() {
   const { isLoading, allowed } = useAdminSectionGuard("drivers");
-  const { items, loading, error, create, update, remove } =
+  const { items, loading, error, create, update, remove, refetch } =
     useAdminResource<Driver>("/api/admin/drivers");
   const [form, setForm] = useState(BLANK);
   const [formError, setFormError] = useState<string | null>(null);
@@ -123,6 +125,7 @@ export default function AdminDriversPage() {
                 <th className="px-4 py-3">Note</th>
                 <th className="px-4 py-3">On trips</th>
                 <th className="px-4 py-3">Active</th>
+                <th className="px-4 py-3">Login</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -147,6 +150,7 @@ export default function AdminDriversPage() {
                       {d.isActive ? "Active" : "Off"}
                     </button>
                   </td>
+                  <td className="px-4 py-3"><DriverLoginControl id={d.id} email={d.loginEmail} reload={refetch}/></td>
                   <td className="px-4 py-3 text-right">
                     <button
                       type="button"
@@ -160,7 +164,7 @@ export default function AdminDriversPage() {
               ))}
               {!loading && items.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-faint">
+                  <td colSpan={8} className="px-4 py-10 text-center text-faint">
                     No drivers yet.
                   </td>
                 </tr>

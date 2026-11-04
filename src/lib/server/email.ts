@@ -256,3 +256,31 @@ export async function sendBookingStatusUpdate(
     { label: "View booking", url: b.url },
   );
 }
+
+// ─── Support tickets (plan.md §23, chunk 3.2) ───────────────────────────────
+
+export interface SupportEmailInfo {
+  reference: string; // HELP-XXXXXXXX
+  subject: string;
+  snippet: string; // first ~200 chars of the staff reply
+  url: string; // link to the conversation
+}
+
+/** Sent to the customer when staff replies to their support ticket. */
+export async function sendSupportTicketReply(
+  to: string,
+  info: SupportEmailInfo,
+): Promise<void> {
+  await sendBookingEmail(
+    to,
+    `Re: ${info.subject} — ${info.reference}`,
+    "We've replied to your support request",
+    "Our team has responded to your ticket. Open the conversation to read the full reply and continue the thread.",
+    [
+      { label: "Ticket", value: info.reference },
+      { label: "Subject", value: info.subject },
+      { label: "Reply", value: info.snippet },
+    ],
+    { label: "View conversation", url: info.url },
+  );
+}

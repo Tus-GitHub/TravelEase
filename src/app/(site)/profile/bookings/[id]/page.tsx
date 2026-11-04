@@ -8,6 +8,7 @@ import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import Skeleton from "@/components/common/Skeleton";
+import DriverTracker from '@/components/driver/DriverTracker';
 import BookingStatusBadge from "@/components/booking/BookingStatusBadge";
 import { useAuth } from "@/context/AuthContext";
 import { useSiteContact } from "@/context/SiteContactContext";
@@ -268,6 +269,7 @@ export default function BookingDetailPage() {
               </div>
             )}
 
+            {booking.status === 'Ongoing' && <DriverTracker bookingId={booking.id}/>}
             {booking.driver && (
               <div className="mt-5 rounded-xl border border-line bg-surface px-4 py-4 text-sm">
                 <p className="text-xs font-semibold uppercase tracking-wide text-faint">
@@ -306,6 +308,17 @@ export default function BookingDetailPage() {
                 </p>
               </div>
             )}
+
+            <p className="mt-4 text-sm text-muted">
+              Something not right with this trip?{" "}
+              <Link
+                href={`/profile/support?booking=${booking.id}`}
+                className="hover-underline font-medium text-primary-700 dark:text-primary-300"
+              >
+                Get help
+              </Link>
+              .
+            </p>
 
             <Card padded hover={false} className="mt-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-faint">History</p>
