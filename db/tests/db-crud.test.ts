@@ -1204,6 +1204,58 @@ t('DR6','DriverApp','Inactive and revoked drivers lose access','Revoke sessions 
   eq((await client.query('SELECT * FROM sessions WHERE user_id=$1',[f.u.id])).rowCount,0,'revoked sessions');
 });
 
+// Image mutations exercise real ownership boundaries, triggers and public reads.
+const images = await import("../../src/lib/server/admin/images.ts");
+const catalogue = await import("../../src/lib/server/catalogue.ts");
+const imageUrl = "https://res.cloudinary.com/test/image/upload/v1/test.webp";
+t("IM1", "Images", "single-image targets replace and remove", "Driver, package, region and spot images persist in their existing/approved columns with actor stamps.", async () => {
+  const r = await mkRegion(); const c = await mkCity(r.id); const s = await mkSpot(c.id);
+  const vt = await mkVehicleType(); const p = await mkPackage(r.id, vt.id);
+  const d = await roster.createDriver({ name: "Photo driver", phone: "9999999999" }, ACTOR);
+  ok(d.ok, "driver created");
+  const targets = [["drivers", d.ok ? d.driver.id : 0], ["packages", p.id], ["regions", r.id], ["tourist-spots", s.id]] as const;
+  for (const [kind, id] of targets) {
+    await images.saveImage(kind, id, imageUrl, ACTOR);
+    eq((await images.listImages(kind, id))[0].url, imageUrl, `${kind} photo saved`);
+    await images.saveImage(kind, id, imageUrl.replace("test.webp", "replacement.webp"), ACTOR);
+    eq((await images.listImages(kind, id)).length, 1, `${kind} replaced, not appended`);
+    await images.changeImage(kind, id, id, "remove", ACTOR);
+    eq((await images.listImages(kind, id)).length, 0, `${kind} removed`);
+  }
+});
+t("IM2", "Images", "vehicle cover and removal reach public catalogue", "One primary, cover switching, soft deletion and fallback cover are reflected in public vehicle reads.", async () => {
+  const vt = await mkVehicleType(); const v = await mkVehicle(vt.id);
+  await images.saveImage("vehicles", v.id, imageUrl, ACTOR);
+  const second = imageUrl.replace("test.webp", "second.webp");
+  await images.saveImage("vehicles", v.id, second, ACTOR);
+  let rows = await images.listImages("vehicles", v.id);
+  eq(rows.filter(x => x.primary).length, 1, "one primary");
+  const secondId = rows.find(x => x.url === second)!.id;
+  await images.changeImage("vehicles", v.id, secondId, "primary", ACTOR);
+  eq((await catalogue.getPublicVehicle(v.id))?.imageUrl, second, "public cover changed");
+  await images.changeImage("vehicles", v.id, secondId, "remove", ACTOR);
+  rows = await images.listImages("vehicles", v.id);
+  eq(rows.length, 1, "removed image hidden"); ok(rows[0].primary, "fallback is primary");
+  eq((await catalogue.getPublicVehicle(v.id))?.imageUrl, imageUrl, "public fallback");
+});
+t("IM3", "Images", "cross-vehicle mutation rejected", "An image ID cannot be changed via another vehicle; neither cover nor deletion is allowed.", async () => {
+  const vt = await mkVehicleType(); const a = await mkVehicle(vt.id); const b = await mkVehicle(vt.id);
+  await images.saveImage("vehicles", a.id, imageUrl, ACTOR);
+  const imageId = (await images.listImages("vehicles", a.id))[0].id;
+  for (const action of ["remove", "primary"] as const) {
+    await rejects(() => images.changeImage("vehicles", b.id, imageId, action, ACTOR), e => e.status === 404, action);
+  }
+  eq((await images.listImages("vehicles", a.id)).length, 1, "source unchanged");
+});
+t("IM4", "Images", "deleted targets and gallery limit guarded", "Reject missing/deleted records and more than ten vehicle photos.", async () => {
+  const vt = await mkVehicleType(); const v = await mkVehicle(vt.id);
+  for (let i = 0; i < 10; i++) await images.saveImage("vehicles", v.id, imageUrl, ACTOR);
+  await rejects(() => images.saveImage("vehicles", v.id, imageUrl, ACTOR), e => e.status === 400, "gallery cap");
+  await fleet.deleteVehicle(v.id, ACTOR);
+  await rejects(() => images.saveImage("vehicles", v.id, imageUrl, ACTOR), e => e.status === 404, "deleted record");
+  await rejects(() => images.listImages("drivers", 2147483647), e => e.status === 404, "missing record");
+});
+
 // ── run ──
 let passed = 0;
 for (const c of cases) {

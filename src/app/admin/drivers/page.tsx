@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Card from "@/components/common/Card";
+import ImageManager from "@/components/admin/ImageManager";
 import DriverLoginControl from '@/components/driver/DriverLoginControl';
 import Button from "@/components/common/Button";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
@@ -132,7 +133,7 @@ export default function AdminDriversPage() {
             <tbody className="divide-y divide-line-subtle">
               {items.map((d) => (
                 <tr key={d.id} className="hover:bg-surface-hover/60">
-                  <td className="px-4 py-3 font-medium text-fg">{d.name}</td>
+                  <td className="px-4 py-3 font-medium text-fg">{d.name}<ImageManager kind="drivers" id={d.id} name={d.name} /></td>
                   <td className="px-4 py-3 text-muted">{d.phone}</td>
                   <td className="px-4 py-3 text-muted">{d.licenceNumber || "—"}</td>
                   <td className="px-4 py-3 text-muted">{d.note || "—"}</td>

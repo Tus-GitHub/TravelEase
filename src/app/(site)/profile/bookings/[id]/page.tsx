@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import Section from "@/components/common/Section";
 import Card from "@/components/common/Card";
@@ -66,7 +67,7 @@ interface Booking {
   history: StatusEvent[];
   refund: Refund | null;
   review: Review | null;
-  driver: { name: string; phone: string | null } | null;
+  driver: { name: string; phone: string | null; imageUrl: string | null } | null;
 }
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
@@ -275,6 +276,7 @@ export default function BookingDetailPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-faint">
                   Your driver
                 </p>
+                {booking.driver.imageUrl && <Image src={booking.driver.imageUrl} alt={booking.driver.name} width={64} height={64} className="mt-2 h-16 w-16 rounded-full object-cover" />}
                 <p className="mt-1.5 font-semibold text-fg">{booking.driver.name}</p>
                 {booking.driver.phone && (
                   <p className="mt-0.5 text-muted">

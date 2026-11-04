@@ -32,7 +32,42 @@ The two values are the `DATABASE_URL_PRODUCTION` and `DATABASE_URL` lines in loc
 If a host has no `-pooler`, enable "Connection pooling" in the Neon dashboard → Connect and copy
 that string. `NODE_ENV=production` and `VERCEL_ENV` are set by Vercel automatically.
 
-### 3. First deploy
+### 3. Image storage (Cloudinary Free)
+
+Admin photo controls use Cloudinary's Free plan. Create a free account at
+https://cloudinary.com/users/register/free and get the cloud name, API key and
+API secret from its dashboard. Add these **server-only** environment variables
+to `.env.local` and the Vercel Preview and Production scopes:
+
+```
+CLOUDINARY_CLOUD_NAME=<cloud name>
+CLOUDINARY_API_KEY=<API key>
+CLOUDINARY_API_SECRET=<API secret>
+```
+
+Restart the local server after adding them; redeploy Preview for Vercel changes.
+Do not put credentials in git, chat, or `NEXT_PUBLIC_` variables. No unsigned
+upload preset is needed. The user approved production rollout on 2026-11-04;
+migration `026_driver_image.sql` runs automatically during that deployment.
+The running code requires that migration. Local development uses the development
+database; keep the production connection scoped to Production in Vercel.
+
+After creating a driver, vehicle, package, region or tourist spot, choose
+**Manage photo(s)** under its name. Upload JPEG/PNG/WebP up to 3 MB. Vehicles
+support ten photos and a selectable cover; other records have one replaceable
+image. Photos are public, so do not upload licence/identity documents here.
+Incoming images are resized to at most 2000×2000 and converted to WebP.
+
+Uploads use signed server requests. Removing/replacing a photo detaches its
+database reference; old Cloudinary assets are retained to avoid deleting shared
+images or breaking historical links. Periodically remove unused assets in the
+Cloudinary Media Library to stay within the free allowance. Failed database
+saves trigger best-effort cleanup of the new upload only. Cloudinary's Free
+plan currently includes 25 monthly credits shared between storage, processing
+and bandwidth: https://cloudinary.com/pricing . No paid plan is required by this
+implementation, and exceeding the allowance requires attention in Cloudinary.
+
+### 4. First production deploy
 
 Click **Deploy**. `vercel-build` runs `db/predeploy.js` first — on this production deploy it
 applies every pending migration to the Neon `production` branch (currently it's behind by the

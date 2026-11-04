@@ -6,6 +6,7 @@ import Button from "@/components/common/Button";
 import FormField, { fieldBase } from "@/components/forms/FormField";
 import AdminTabs from "@/components/admin/AdminTabs";
 import RowActions from "@/components/admin/RowActions";
+import ImageManager from "@/components/admin/ImageManager";
 import Toggle from "@/components/admin/Toggle";
 import { ErrorNote, EmptyRow, LoadingRow } from "@/components/admin/tableBits";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
@@ -72,7 +73,7 @@ function RegionsTab() {
       <TableCard headers={["Region", "State", "Active", "Actions"]}>
         {r.items.map((row) => (
           <tr key={row.id} className="hover:bg-surface-hover/60">
-            <td className="px-5 py-3.5 font-medium text-fg">{row.name}</td>
+              <td className="px-5 py-3.5 font-medium text-fg">{row.name}<ImageManager kind="regions" id={row.id} name={row.name} /></td>
             <td className="px-5 py-3.5 text-muted">{row.state}</td>
             <td className="px-5 py-3.5">
               <Toggle on={row.isActive} onChange={(next) => r.update(row.id, { isActive: next })} label="Toggle active" />
@@ -240,7 +241,7 @@ function SpotsTab() {
       <TableCard headers={["Spot", "City", "Tag", "Actions"]}>
         {r.items.map((row) => (
           <tr key={row.id} className="hover:bg-surface-hover/60">
-            <td className="px-5 py-3.5 font-medium text-fg">{row.name}</td>
+              <td className="px-5 py-3.5 font-medium text-fg">{row.name}<ImageManager kind="tourist-spots" id={row.id} name={row.name} /></td>
             <td className="px-5 py-3.5 text-muted">{row.cityName || cityName(row.cityId)}</td>
             <td className="px-5 py-3.5 text-muted">{row.tag || "—"}</td>
             <td className="px-5 py-3.5 text-right">

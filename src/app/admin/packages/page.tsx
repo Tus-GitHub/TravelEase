@@ -6,6 +6,7 @@ import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import FormField, { fieldBase } from "@/components/forms/FormField";
 import RowActions from "@/components/admin/RowActions";
+import ImageManager from "@/components/admin/ImageManager";
 import { ErrorNote, EmptyRow, LoadingRow } from "@/components/admin/tableBits";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
 import { useAdminResource } from "@/lib/admin/useAdminResource";
@@ -267,7 +268,7 @@ function PackageRows({
   return (
     <>
       <tr className="hover:bg-surface-hover/60">
-        <td className="px-5 py-3.5 font-medium text-fg">{pkg.name}</td>
+        <td className="px-5 py-3.5 font-medium text-fg">{pkg.name}<ImageManager kind="packages" id={pkg.id} name={pkg.name} /></td>
         <td className="px-5 py-3.5 text-muted">{regionName}</td>
         <td className="px-5 py-3.5 text-muted">{typeTitle}</td>
         <td className="px-5 py-3.5 text-muted">{pkg.durationDays}</td>

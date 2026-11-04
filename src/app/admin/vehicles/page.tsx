@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import Card from "@/components/common/Card";
+import ImageManager from "@/components/admin/ImageManager";
 import Button from "@/components/common/Button";
 import FormField, { fieldBase } from "@/components/forms/FormField";
 import AdminTabs from "@/components/admin/AdminTabs";
@@ -304,6 +305,7 @@ function VehiclesTab() {
                 <tr className="hover:bg-surface-hover/60">
                   <td className="px-5 py-3.5 font-medium text-fg">
                     {v.name}
+                    <ImageManager kind="vehicles" id={v.id} name={v.name} />
                     <button
                       type="button"
                       onClick={() => setAvailOpen(availOpen === v.id ? null : v.id)}

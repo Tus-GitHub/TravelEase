@@ -103,8 +103,8 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
         </div>
       </div>
       <div
-        className={`overflow-hidden bg-primary-900 transition-[max-height] duration-300 lg:hidden ${
-          isMobileOpen ? "max-h-96" : "max-h-0"
+        className={`admin-sidebar-scroll bg-primary-900 transition-[max-height] duration-300 lg:hidden ${
+          isMobileOpen ? "max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain" : "max-h-0 overflow-hidden"
         }`}
       >
         <div className="px-4 py-4">
@@ -130,19 +130,19 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
       </div>
 
       {/* Desktop fixed sidebar */}
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-primary-900 px-4 py-6 lg:flex">
-        <div className="mb-8 px-2">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col overflow-hidden bg-primary-900 px-4 py-6 lg:flex">
+        <div className="mb-8 shrink-0 px-2">
           <Logo inverted />
           <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-white/40">
             Admin Panel
           </p>
         </div>
 
-        <nav className="flex-1">
+        <nav className="admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
           <NavList />
         </nav>
 
-        <div className="border-t border-white/10 pt-4">
+        <div className="shrink-0 border-t border-white/10 pt-4">
           <div className="mb-3 flex items-center gap-3 px-2">
             <Avatar name={user.name} className="h-9 w-9 text-xs" />
             <div className="min-w-0 flex-1">

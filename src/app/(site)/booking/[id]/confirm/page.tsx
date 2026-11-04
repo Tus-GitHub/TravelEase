@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { cookies } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -112,6 +113,7 @@ export default async function BookingConfirmPage({
         {booking.driver && (
           <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-4 text-sm">
             <p className="text-xs font-semibold uppercase tracking-wide text-faint">Your driver</p>
+            {booking.driver.imageUrl && <Image src={booking.driver.imageUrl} alt={booking.driver.name} width={64} height={64} className="mt-2 h-16 w-16 rounded-full object-cover" />}
             <p className="mt-1.5 font-semibold text-fg">{booking.driver.name}</p>
             {booking.driver.phone && (
               <p className="mt-0.5">

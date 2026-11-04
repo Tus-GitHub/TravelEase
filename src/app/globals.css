@@ -82,6 +82,37 @@
 }
 
 @layer components {
+  /* Both admin menus sit on the same navy surface in light and dark mode. */
+  .admin-sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.primary.400') transparent;
+  }
+
+  .admin-sidebar-scroll::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .admin-sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .admin-sidebar-scroll::-webkit-scrollbar-thumb {
+    background: theme('colors.primary.400');
+    border-radius: 9999px;
+  }
+
+  .admin-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+    background: theme('colors.primary.300');
+  }
+
+  /* Let WebKit/Blink use the explicit slim width above. */
+  @supports selector(::-webkit-scrollbar) {
+    .admin-sidebar-scroll {
+      scrollbar-width: auto;
+      scrollbar-color: auto;
+    }
+  }
+
   /* Shared layout container used by every Section */
   .section-container {
     @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;

@@ -258,7 +258,7 @@ export interface BookingDetail extends BookingSummary {
   refund: RefundView | null;
   review: ReviewView | null;
   /** Set only once the trip is Confirmed or later (chunk 2.9). */
-  driver: { name: string; phone: string | null } | null;
+  driver: { name: string; phone: string | null; imageUrl: string | null } | null;
 }
 
 // Statuses at which the customer is shown their assigned driver.
@@ -318,7 +318,7 @@ export async function getBookingForUser(
               b.end_datetime, b.passenger_count, b.estimated_distance_km, b.estimated_hours,
               b.duration_days, b.price_breakdown, b.subtotal, b.discount_amount, b.tax_amount,
               b.assigned_agent_user_id, b.customer_notes,
-              dr.name AS driver_name, dr.phone AS driver_phone
+              dr.name AS driver_name, dr.phone AS driver_phone, dr.image_url AS driver_image_url
          FROM bookings b
          JOIN booking_types bt ON bt.booking_type_id = b.booking_type_id
          LEFT JOIN drivers dr ON dr.driver_id = b.driver_id
@@ -395,7 +395,7 @@ export async function getBookingForUser(
     review,
     driver:
       b.driver_name && DRIVER_VISIBLE_STATUSES.includes(b.status as BookingStatus)
-        ? { name: b.driver_name as string, phone: (b.driver_phone as string) ?? null }
+        ? { name: b.driver_name as string, phone: (b.driver_phone as string) ?? null, imageUrl: (b.driver_image_url as string) ?? null }
         : null,
   };
 }
