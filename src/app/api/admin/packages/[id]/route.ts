@@ -23,6 +23,7 @@ export async function PATCH(
   }
 
   const input: {
+    bookingMode?: "private" | "shared" | "both";
     regionId?: number;
     vehicleTypeId?: number;
     name?: string;
@@ -33,6 +34,10 @@ export async function PATCH(
     rating?: number | null;
     isActive?: boolean;
   } = {};
+  if (body.bookingMode !== undefined) {
+    if (!["private", "shared", "both"].includes(String(body.bookingMode))) return NextResponse.json({ error: "Choose private, shared or both booking modes." }, { status: 400 });
+    input.bookingMode = body.bookingMode as "private" | "shared" | "both";
+  }
 
   const intField = (v: unknown, min: number) => {
     const n = Number(v);

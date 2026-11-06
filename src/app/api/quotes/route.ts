@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { readBoundedJsonObject } from "@/lib/server/http-json";
+import { matchesRequestOrigin } from "@/lib/server/request-origin";
 import { calculatePrice, type BookingTypeCode, type TripInput } from "@/lib/server/pricing";
 import { resolveBookingTypeId, resolvePricingRule } from "@/lib/server/pricing-rules";
 import { getPool } from "@/lib/server/db";
 import { validateCoupon } from "@/lib/server/coupons";
 import { resolveSeason } from "@/lib/server/seasonal-pricing";
 import { getUserIdForToken, SESSION_COOKIE } from "@/lib/server/session";
+import { quoteSharedTrip } from "@/lib/server/weekend-bookings";
+import { tripResponse, tripFailure } from "@/lib/server/weekend-http";
 
 /**
  * POST /api/quotes — a server-computed price for a prospective booking
@@ -31,13 +35,17 @@ const asInt = (v: unknown): number | null =>
   typeof v === "number" && Number.isInteger(v) ? v : null;
 
 export async function POST(request: Request) {
+  if (!matchesRequestOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    body = await readBoundedJsonObject(request.body, 20 * 1024);
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
+  if (body.departureId !== undefined) {
+    try { return tripResponse(await quoteSharedTrip(body)); } catch (error) { return tripFailure(error); }
+  }
   const bookingType = body.bookingType;
   if (
     typeof bookingType !== "string" ||
@@ -56,7 +64,7 @@ export async function POST(request: Request) {
     // discountAmount + packagePricePerPerson are resolved server-side only.
   };
 
-  const vehicleTypeId = asInt(body.vehicleTypeId);
+  let vehicleTypeId = asInt(body.vehicleTypeId);
 
   // Per-person package pricing — price comes from the packages table, never the client.
   if (
@@ -64,9 +72,9 @@ export async function POST(request: Request) {
     (body.packageId != null || body.packageSlug != null)
   ) {
     const res = await getPool().query(
-      `SELECT price_per_person, duration_days
+      `SELECT price_per_person, duration_days, vehicle_type_id, max_persons
          FROM packages
-        WHERE is_deleted = false AND is_active = true
+        WHERE is_deleted = false AND is_active = true AND booking_mode IN ('private','both')
           AND (($1::int IS NOT NULL AND package_id = $1)
             OR ($2::text IS NOT NULL AND slug = $2))
         LIMIT 1`,
@@ -76,7 +84,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Package not found." }, { status: 404 });
     }
     trip.packagePricePerPerson = Number(res.rows[0].price_per_person);
-    if (trip.days === undefined) trip.days = Number(res.rows[0].duration_days);
+    trip.days = Number(res.rows[0].duration_days);
+    vehicleTypeId = Number(res.rows[0].vehicle_type_id);
+    if ((trip.passengers ?? 1) > Number(res.rows[0].max_persons)) {
+      return NextResponse.json({ error: "This package cannot accommodate that many passengers." }, { status: 400 });
+    }
   }
 
   const bookingTypeId = await resolveBookingTypeId(trip.bookingType);

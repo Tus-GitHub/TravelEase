@@ -12,6 +12,8 @@ import BookingStatusBadge from "@/components/booking/BookingStatusBadge";
 import { useAuth } from "@/context/AuthContext";
 
 interface BookingSummary {
+  departureId:string|null;
+  holdExpired:boolean;
   id: string;
   reference: string;
   status: string;
@@ -94,7 +96,7 @@ export default function ProfileBookingsPage() {
                           <BookingStatusBadge status={b.status} />
                         </div>
                         <p className="mt-1 text-sm capitalize text-muted">
-                          {b.bookingTypeCode.replace(/_/g, " ")} ·{" "}
+                          {b.departureId?'Weekend group trip':b.bookingTypeCode.replace(/_/g, " ")}{b.holdExpired?' · Hold expired':''} ·{" "}
                           {new Date(b.startDateTime).toLocaleDateString("en-IN", {
                             dateStyle: "medium",
                           })}

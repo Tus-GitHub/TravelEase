@@ -3,10 +3,45 @@
 Requested 2026-11-06. The user confirmed JSON content storage. Reuse the existing
 PostgreSQL database, admin authentication, theme/components and Cloudinary account.
 New table names/types below were initially approved on2026-11-06 for development.
-Migration028 is applied on dev, with the existing homepage/About content initialized
+Migration028 is applied on development and production, with homepage/About initialized
 as JSONB. The editor, renderer and development acceptance are complete. The user
-subsequently authorized production publication and the required schema rehearsal;
-release scope and verification are recorded in docs/CMS_RELEASE_2026-11-06.md.
+subsequently authorized production publication and the required schema rehearsal.
+Production is live, verified IN SYNC28/28; release scope and checks are recorded
+in docs/CMS_RELEASE_2026-11-06.md. Open /admin/pages on the production website to edit it.
+
+**Development upgrade, 2026-11-06:** Live catalogue sections and the destination
+picker described below are complete on development only. Production still serves
+the earlier16-section editor. Development now has29 migrations because the
+separately approved Weekend Trips schema was added; this is not production parity.
+
+## Live catalogue and link controls — development only
+
+Open Pages / CMS → Homepage (or a custom page) → Add section → Live catalogue.
+Choose Vehicles, Packages or Weekend Trips. The editor separates content/layout,
+admin selection rules, visitor filter switches, sort/card count/empty behavior and
+the section button. Filters irrelevant to a source disappear and are reset.
+
+Use grid or list,1–24 cards, optional category/destination/pickup/date/price/capacity
+rules, and individually enabled visitor controls. Visitors narrow the admin
+selection before sorting/count limits. Weekend availability refreshes every30
+seconds while visible, and checkout rechecks inventory transactionally. Vehicles
+use their catalogue availability setting; dated reservation availability remains
+part of normal checkout. Text/FAQ/manual-content sections need no live filters.
+
+Every button/card URL now has **Choose destination**: published site page, specific
+vehicle/package/Weekend Trip, supported filtered listing, current-page section or
+HTTPS website. Page/record/listing choices are checked on the server. Filtered
+vehicle links use category, packages use regionId, and Weekend Trips support their
+real date/pickup/destination/budget/seat filters. Manually typed safe paths remain
+supported; arbitrary query parameters do not create new behavior.
+
+No new CMS columns or tables. Old JSON, image fields, draft isolation, preview and
+revision restore still work. The full operator guide is docs/WEEKEND_TRIPS_PLAN.md.
+Validation:12 model groups;13 real HTTP checks plus Chrome editor/source switching,
+destination selection, preview/publish, all three catalogue sources, empty/filter
+behavior, old revision restore, mobile overflow and live seat-count refresh after
+cancellation. Temporary pages and fixtures were removed; existing Home/About were
+untouched. Typecheck/lint, optimized local build and dev schema29/checksums pass.
 
 ## Editing experience
 
@@ -151,6 +186,6 @@ when removed from a draft because an older publication/revision may still use th
   acceptance. The isolated test app was removed; regular localhost remains running.
 - Desktop/mobile visual review, typecheck/lint/whitespace checks, optimized isolated
   Next build and development schema/checksums (28 migrations) pass.
-- Production release is separately authorized; the existing production owner
+- Production release passed after separate authorization; the existing production owner
   connection requires no new role grants. Development content is not copied by
   deployment. The JSON editor requires no further service key.

@@ -1,4 +1,10 @@
 import { randomBytes } from "crypto";
+import type { PoolClient } from "pg";
+import { TripError } from "@/lib/weekend-trips";
+import { lockDeparture, tripTransaction } from "./weekend-trips";
+import { createSharedBooking } from "./weekend-bookings";
+import type { SharedTripSnapshot } from "./weekend-bookings";
+import { assertDriverWindow } from "./weekend-resources";
 import { getPool } from "./db";
 import type { PublicUser } from "./users";
 import {
@@ -22,6 +28,7 @@ import {
 import {
   bookingWindow,
   hasConflict,
+  lockVehicle,
   addBlock,
   releaseBookingBlock,
 } from "./availability";
@@ -68,7 +75,7 @@ export type TransitionResult =
       message: string;
     };
 
-export async function transitionBooking(input: {
+export interface TransitionInput {
   bookingId: string;
   toStatus: BookingStatus;
   user: PublicUser;
@@ -76,78 +83,110 @@ export async function transitionBooking(input: {
   /** Cancellation refund policy input (§7). Defaults to "customer" (policy
    *  applies); pass "operator" for a Jagdamba-initiated full refund. */
   refundInitiatedBy?: CancelInitiator;
-}): Promise<TransitionResult> {
-  const pool = getPool();
-  const row = (
-    await pool.query(
-      `SELECT user_id, assigned_agent_user_id, status, total_amount, start_datetime,
-              vehicle_id, end_datetime, duration_days, estimated_hours
-         FROM bookings WHERE booking_id = $1 AND is_deleted = false`,
-      [input.bookingId],
-    )
-  ).rows[0];
-  if (!row) return { ok: false, code: "not_found", message: "Booking not found." };
+}
+export interface BookingTransitionEvent { input: TransitionInput; from: BookingStatus }
+export async function notifyTransition(event: BookingTransitionEvent) {
+  const { input, from } = event;
+  await notifyBookingStatusChanged(input.bookingId, from, input.toStatus);
+  await logActivity({ userId: input.user.id, action: "booking.status_change", entityType: "booking", entityId: input.bookingId,
+    details: { from, to: input.toStatus, reason: input.reason ?? null } });
+}
+export async function transitionBooking(input: TransitionInput): Promise<TransitionResult> {
+  const events: BookingTransitionEvent[] = [];
+  const result = await tripTransaction(client => transitionBookingInTransaction(client, input, events));
+  for (const event of events) await notifyTransition(event);
+  return result;
+}
+/** One lifecycle for individual bookings and atomic departure operations.
+ * Shared lock order: departure -> booking -> resources. Notifications only after commit. */
+export async function transitionBookingInTransaction(client: PoolClient, input: TransitionInput, events: BookingTransitionEvent[], departureOperation = false): Promise<TransitionResult> {
+    const target = (await client.query("SELECT departure_id FROM bookings WHERE booking_id=$1 AND NOT is_deleted", [input.bookingId])).rows[0];
+    const departure = target?.departure_id ? await lockDeparture(client, target.departure_id) : null;
+    const row = (
+      await client.query(
+        `SELECT user_id, assigned_agent_user_id, status, total_amount, start_datetime,
+                vehicle_id, driver_id, end_datetime, duration_days, estimated_hours, departure_id,
+                seat_hold_expires_at, seat_hold_expires_at > clock_timestamp() AS hold_valid
+           FROM bookings WHERE booking_id = $1 AND is_deleted = false FOR UPDATE`,
+        [input.bookingId],
+      )
+    ).rows[0];
+    if (!row) return { ok: false, code: "not_found", message: "Booking not found." };
 
-  const actor = actorFor(input.user, row);
-  if (!actor) {
-    return { ok: false, code: "forbidden", message: "You can't change this booking." };
-  }
+    const actor = actorFor(input.user, row);
+    if (!actor) {
+      return { ok: false, code: "forbidden", message: "You can't change this booking." };
+    }
 
-  const from = row.status as BookingStatus;
-  if (from === input.toStatus) {
-    return {
-      ok: false,
-      code: "invalid_transition",
-      message: `Booking is already ${from}.`,
-    };
-  }
-  if (!canTransition(from, input.toStatus, actor)) {
-    return {
-      ok: false,
-      code: "invalid_transition",
-      message: `A ${from} booking can't move to ${input.toStatus}.`,
-    };
-  }
+    const from = row.status as BookingStatus;
+    if (from === input.toStatus) {
+      return {
+        ok: false,
+        code: "invalid_transition",
+        message: `Booking is already ${from}.`,
+      };
+    }
+    const operatorStopsOngoing = departure && departureOperation && actor === "admin" && from === "Ongoing" && input.toStatus === "Cancelled" && input.refundInitiatedBy === "operator";
+    if (!canTransition(from, input.toStatus, actor) && !operatorStopsOngoing) {
+      return {
+        ok: false,
+        code: "invalid_transition",
+        message: `A ${from} booking can't move to ${input.toStatus}.`,
+      };
+    }
 
-  // A paid booking can't be marked Refunded until its refund record is settled.
-  if (input.toStatus === "Refunded" && !(await refundIsClearForBooking(input.bookingId))) {
-    return {
-      ok: false,
-      code: "invalid_transition",
-      message: "Settle the refund (mark it paid or waived) before marking this booking Refunded.",
-    };
-  }
+    if (departure) {
+      if (["Ongoing", "Completed"].includes(input.toStatus) && !departureOperation) return { ok: false, code: "invalid_transition", message: "Start or complete the group from Weekend Trips." };
+      if (input.toStatus === "Confirmed") {
+        const { rows: [clock] } = await client.query("SELECT clock_timestamp() AS time");
+        if (!row.seat_hold_expires_at || new Date(row.seat_hold_expires_at) <= clock.time || !["open","guaranteed","closed"].includes(departure.status) || new Date(departure.booking_closes_at) <= clock.time)
+          return { ok: false, code: "invalid_transition", message: "This seat hold has expired or the trip is no longer accepting payment. Do not collect payment; arrange a new booking if seats are available." };
+        if (!(await client.query("SELECT 1 FROM vehicle_availability WHERE departure_id=$1 AND NOT is_deleted", [row.departure_id])).rowCount)
+          return { ok: false, code: "invalid_transition", message: "The group transport reservation is missing. Resolve it before confirming payment." };
+      }
+    }
 
-  // Cancelling a paid booking records what's owed back (§7).
-  const recordsRefund =
-    input.toStatus === "Cancelled" && (from === "Confirmed" || from === "Ongoing");
+    // A paid booking can't be marked Refunded until its refund record is settled.
+    if (input.toStatus === "Refunded" && !(await refundIsClearForBooking(input.bookingId, client))) {
+      return {
+        ok: false,
+        code: "invalid_transition",
+        message: "Settle the refund (mark it paid or waived) before marking this booking Refunded.",
+      };
+    }
 
-  // Availability (chunk 2.6) — a specific vehicle gets a 'booked' block on
-  // confirmation, released on cancel.
-  const win = bookingWindow({
-    startDateTime: new Date(row.start_datetime),
-    endDateTime: row.end_datetime ? new Date(row.end_datetime) : null,
-    durationDays: row.duration_days,
-    estimatedHours: row.estimated_hours != null ? Number(row.estimated_hours) : null,
-  });
-  const blocksVehicle =
-    input.toStatus === "Confirmed" && from === "PendingPayment" && row.vehicle_id != null;
-  const releasesVehicle =
-    input.toStatus === "Cancelled" &&
-    (from === "Confirmed" || from === "Ongoing") &&
-    row.vehicle_id != null;
+    // Cancelling a paid booking records what's owed back (§7).
+    const recordsRefund =
+      input.toStatus === "Cancelled" && (from === "Confirmed" || from === "Ongoing");
 
-  if (blocksVehicle && (await hasConflict(row.vehicle_id, win.start, win.end, input.bookingId))) {
-    return {
-      ok: false,
-      code: "invalid_transition",
-      message: "That vehicle is already booked or blocked for this window.",
-    };
-  }
+    // Availability (chunk 2.6) — a specific vehicle gets a 'booked' block on
+    // confirmation, released on cancel.
+    const win = bookingWindow({
+      startDateTime: new Date(row.start_datetime),
+      endDateTime: row.end_datetime ? new Date(row.end_datetime) : null,
+      durationDays: row.duration_days,
+      estimatedHours: row.estimated_hours != null ? Number(row.estimated_hours) : null,
+    });
+    const blocksVehicle =
+      !departure && input.toStatus === "Confirmed" && from === "PendingPayment" && row.vehicle_id != null;
+    const releasesVehicle =
+      !departure && input.toStatus === "Cancelled" &&
+      (from === "Confirmed" || from === "Ongoing") &&
+      row.vehicle_id != null;
 
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
+    if (blocksVehicle || releasesVehicle) await lockVehicle(client, row.vehicle_id);
+    if (blocksVehicle && (await hasConflict(row.vehicle_id, win.start, win.end, input.bookingId, client))) {
+      return {
+        ok: false,
+        code: "invalid_transition",
+        message: "That vehicle is already booked or blocked for this window.",
+      };
+    }
+    if (!departure && input.toStatus === "Confirmed" && row.driver_id) {
+      try { await assertDriverWindow(client, row.driver_id, win.start, win.end, input.bookingId); }
+      catch (error) { if (error instanceof TripError) return { ok: false, code: "invalid_transition", message: error.message }; throw error; }
+    }
+
     await client.query(
       `UPDATE bookings SET status = $1, updated_by = $2 WHERE booking_id = $3`,
       [input.toStatus, input.user.id, input.bookingId],
@@ -180,24 +219,9 @@ export async function transitionBooking(input: {
     if (releasesVehicle) {
       await releaseBookingBlock(client, input.bookingId, input.user.id);
     }
-    await client.query("COMMIT");
-  } catch (err) {
-    await client.query("ROLLBACK");
-    throw err;
-  } finally {
-    client.release();
-  }
-
-  // Notify the booking owner (chunk 2.2) — never throws, never blocks the result.
-  await notifyBookingStatusChanged(input.bookingId, from, input.toStatus);
-  await logActivity({
-    userId: input.user.id,
-    action: "booking.status_change",
-    entityType: "booking",
-    entityId: input.bookingId,
-    details: { from, to: input.toStatus, reason: input.reason ?? null },
-  });
-
+    if (departure && input.toStatus === "Cancelled") await client.query(`UPDATE trip_room_assignments SET is_deleted=true,is_active=false,updated_by=$2
+      WHERE booking_passenger_id IN (SELECT booking_passenger_id FROM booking_passengers WHERE booking_id=$1) AND NOT is_deleted`, [input.bookingId, input.user.id]);
+  events.push({ input, from });
   return { ok: true, status: input.toStatus };
 }
 
@@ -223,6 +247,9 @@ export interface BookingStatusEvent {
   changedAt: string;
 }
 export interface BookingSummary {
+  departureId: string | null;
+  seatHoldExpiresAt: string | null;
+  holdExpired: boolean;
   id: string;
   reference: string;
   status: BookingStatus;
@@ -233,6 +260,9 @@ export interface BookingSummary {
   createdAt: string;
 }
 export interface BookingDetail extends BookingSummary {
+  tripSnapshot: SharedTripSnapshot | null;
+  guide: { name: string; phone: string } | null;
+  roomAssignments: {traveller:string;hotel:string;roomLabel:string}[];
   userId: string;
   vehicleId: number | null;
   vehicleTypeId: number;
@@ -266,10 +296,14 @@ const DRIVER_VISIBLE_STATUSES: BookingStatus[] = ["Confirmed", "Ongoing", "Compl
 
 const SUMMARY_COLS = `
   b.booking_id, b.booking_reference, b.status, bt.code AS booking_type_code,
-  b.start_datetime, b.total_amount, b.currency, b.created_at`;
+  b.start_datetime, b.total_amount, b.currency, b.created_at, b.departure_id, b.seat_hold_expires_at,
+  (b.status='PendingPayment' AND b.seat_hold_expires_at<=clock_timestamp()) AS hold_expired`;
 
 function toSummary(r: Record<string, unknown>): BookingSummary {
   return {
+    departureId: (r.departure_id as string) ?? null,
+    seatHoldExpiresAt: r.seat_hold_expires_at ? new Date(r.seat_hold_expires_at as Date).toISOString() : null,
+    holdExpired: r.hold_expired === true,
     id: r.booking_id as string,
     reference: r.booking_reference as string,
     status: r.status as BookingStatus,
@@ -317,11 +351,14 @@ export async function getBookingForUser(
               b.pickup_city_id, b.drop_city_id, b.pickup_address, b.drop_address,
               b.end_datetime, b.passenger_count, b.estimated_distance_km, b.estimated_hours,
               b.duration_days, b.price_breakdown, b.subtotal, b.discount_amount, b.tax_amount,
-              b.assigned_agent_user_id, b.customer_notes,
+              b.assigned_agent_user_id, b.customer_notes, b.trip_snapshot,
+              g.name AS guide_name,g.phone AS guide_phone,
               dr.name AS driver_name, dr.phone AS driver_phone, dr.image_url AS driver_image_url
          FROM bookings b
          JOIN booking_types bt ON bt.booking_type_id = b.booking_type_id
          LEFT JOIN drivers dr ON dr.driver_id = b.driver_id
+         LEFT JOIN trip_departures td ON td.departure_id=b.departure_id
+         LEFT JOIN tour_guides g ON g.guide_id=td.guide_id
         WHERE b.booking_id = $1 AND b.is_deleted = false`,
       [bookingId],
     )
@@ -329,9 +366,9 @@ export async function getBookingForUser(
   if (!b) return null;
   if (!actorFor(user, b)) return null;
 
-  const [stops, passengers, history, refund, review] = await Promise.all([
+  const [stops, passengers, history, refund, review, rooms] = await Promise.all([
     pool.query(
-      `SELECT bs.tourist_spot_id, bs.city_id, bs.stop_order, bs.custom_label, ts.name
+      `SELECT bs.tourist_spot_id, bs.city_id, bs.stop_order, bs.custom_label, COALESCE(bs.custom_label,ts.name) AS name
          FROM booking_stops bs
          LEFT JOIN tourist_spots ts ON ts.tourist_spot_id = bs.tourist_spot_id
         WHERE bs.booking_id = $1 ORDER BY bs.stop_order`,
@@ -349,10 +386,16 @@ export async function getBookingForUser(
     ),
     getRefundForBooking(bookingId),
     getReviewForBooking(bookingId),
+    pool.query(`SELECT p.name AS traveller,s.hotel_name AS hotel,a.room_label AS "roomLabel" FROM trip_room_assignments a
+      JOIN booking_passengers p USING(booking_passenger_id) JOIN trip_stays s USING(stay_id)
+      WHERE p.booking_id=$1 AND NOT a.is_deleted AND a.is_active ORDER BY s.check_in,p.booking_passenger_id`,[bookingId]),
   ]);
 
   return {
     ...toSummary(b),
+    tripSnapshot: b.trip_snapshot ?? null,
+    guide: b.guide_name && DRIVER_VISIBLE_STATUSES.includes(b.status) ? {name:b.guide_name,phone:b.guide_phone} : null,
+    roomAssignments: rooms.rows,
     userId: b.user_id,
     vehicleId: b.vehicle_id,
     vehicleTypeId: b.vehicle_type_id,
@@ -403,6 +446,8 @@ export async function getBookingForUser(
 // ─── Create (plan.md §6 recompute, §33 snapshot) ────────────────────────────
 
 export interface CreateBookingInput {
+  departureId?: string;
+  clientRequestId?: string;
   bookingType: BookingTypeCode;
   vehicleId?: number | null;
   vehicleTypeId?: number;
@@ -448,6 +493,10 @@ export async function createBooking(
   input: CreateBookingInput,
   user: PublicUser,
 ): Promise<CreateBookingResult> {
+  if (input.departureId !== undefined) {
+    try { return { ok: true, bookingId: await createSharedBooking(input, user) }; }
+    catch (error) { if (error instanceof TripError) return { ok: false, status: error.status, message: error.message }; throw error; }
+  }
   if (!BOOKING_TYPE_CODES.includes(input.bookingType)) {
     return { ok: false, status: 400, message: "Unknown booking type." };
   }
@@ -471,9 +520,9 @@ export async function createBooking(
       : null;
     const pkg = (
       await pool.query(
-        `SELECT package_id, vehicle_type_id, price_per_person, duration_days
+        `SELECT package_id, vehicle_type_id, price_per_person, duration_days, max_persons
            FROM packages
-          WHERE is_deleted = false AND is_active = true
+          WHERE is_deleted = false AND is_active = true AND booking_mode IN ('private','both')
             AND ($1::int IS NOT NULL AND package_id = $1 OR slug = $2)
           LIMIT 1`,
         [asId, input.packageSlug ?? null],
@@ -482,8 +531,9 @@ export async function createBooking(
     if (!pkg) return { ok: false, status: 404, message: "Package not found." };
     packageId = pkg.package_id;
     packagePricePerPerson = Number(pkg.price_per_person);
-    vehicleTypeId = vehicleTypeId ?? pkg.vehicle_type_id;
-    durationDays = durationDays ?? pkg.duration_days;
+    vehicleTypeId = pkg.vehicle_type_id;
+    durationDays = pkg.duration_days;
+    if (passengerCount > pkg.max_persons) return { ok: false, status: 400, message: "This package cannot accommodate that many passengers." };
     packageStops = (
       await pool.query(
         `SELECT tourist_spot_id, stop_order FROM package_stops
@@ -497,15 +547,27 @@ export async function createBooking(
     return { ok: false, status: 400, message: "A vehicle type is required." };
   }
   const vt = await pool.query(
-    `SELECT 1 FROM vehicle_types WHERE vehicle_type_id = $1 AND is_deleted = false`,
+    `SELECT 1 FROM vehicle_types WHERE vehicle_type_id = $1 AND is_deleted = false AND is_active = true`,
     [vehicleTypeId],
   );
   if (!vt.rowCount) {
     return { ok: false, status: 400, message: "That vehicle type doesn't exist." };
   }
 
-  // A specific requested vehicle must be free for the trip window (chunk 2.6).
+  if (input.vehicleId != null && (!Number.isSafeInteger(input.vehicleId) || input.vehicleId < 1 || input.vehicleId > 2147483647)) {
+    return { ok: false, status: 400, message: "Choose a valid vehicle." };
+  }
+  // Resolve the actual vehicle before pricing; a client cannot attach a cheaper
+  // vehicle type to another vehicle or book an inactive/over-capacity vehicle.
   if (typeof input.vehicleId === "number") {
+    const selected = (await pool.query(`SELECT vehicle_type_id, seating_capacity FROM vehicles
+      WHERE vehicle_id=$1 AND is_deleted=false AND is_active=true AND is_available=true`, [input.vehicleId])).rows[0];
+    if (!selected || selected.vehicle_type_id !== vehicleTypeId) {
+      return { ok: false, status: 400, message: "Choose an available vehicle matching the selected type." };
+    }
+    if (passengerCount > selected.seating_capacity) {
+      return { ok: false, status: 400, message: "That vehicle cannot accommodate that many passengers." };
+    }
     const win = bookingWindow({
       startDateTime: start,
       endDateTime: input.endDateTime ? new Date(input.endDateTime) : null,
@@ -567,15 +629,6 @@ export async function createBooking(
   // server-side; a client discount is never trusted (§27).
   let couponId: number | null = null;
   const couponCode = input.couponCode?.trim();
-  if (couponCode) {
-    const res = await validateCoupon(couponCode, price.subtotal, user.id);
-    if (!res.ok) return { ok: false, status: 400, message: res.reason };
-    couponId = res.coupon.couponId;
-    price = calculatePrice(
-      { ...trip, discountAmount: res.coupon.discountAmount },
-      rule,
-    );
-  }
 
   const passengers = (Array.isArray(input.passengers) ? input.passengers : [])
     .filter((p) => p && typeof p.name === "string" && p.name.trim().length > 0)
@@ -590,52 +643,61 @@ export async function createBooking(
   let bookingId: string | null = null;
   try {
     await client.query("BEGIN");
-
-    for (let attempt = 0; attempt < 5 && !bookingId; attempt++) {
-      try {
-        const res = await client.query(
-          `INSERT INTO bookings
-             (booking_reference, user_id, booking_type_id, vehicle_id, vehicle_type_id,
-              package_id, pickup_city_id, drop_city_id, pickup_address, drop_address,
-              start_datetime, end_datetime, passenger_count, estimated_distance_km,
-              estimated_hours, duration_days, status, price_breakdown, subtotal,
-              discount_amount, tax_amount, total_amount, currency, customer_notes,
-              coupon_id, created_by, updated_by)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
-                   'PendingPayment',$17::jsonb,$18,$19,$20,$21,'INR',$22,$23,$24,$24)
-           RETURNING booking_id`,
-          [
-            reference(),
-            user.id,
-            bookingTypeId,
-            typeof input.vehicleId === "number" ? input.vehicleId : null,
-            vehicleTypeId,
-            packageId,
-            typeof input.pickupCityId === "number" ? input.pickupCityId : null,
-            typeof input.dropCityId === "number" ? input.dropCityId : null,
-            input.pickupAddress?.trim() || null,
-            input.dropAddress?.trim() || null,
-            start.toISOString(),
-            input.endDateTime ? new Date(input.endDateTime).toISOString() : null,
-            passengerCount,
-            posNum(input.estimatedDistanceKm) ?? null,
-            posNum(input.estimatedHours) ?? null,
-            posNum(durationDays) ?? null,
-            JSON.stringify(price),
-            price.subtotal,
-            price.discountAmount,
-            price.taxAmount,
-            price.totalAmount,
-            input.customerNotes?.trim() || null,
-            couponId,
-            user.id,
-          ],
-        );
-        bookingId = res.rows[0].booking_id;
-      } catch (err) {
-        if ((err as { code?: string }).code === "23505") continue; // reference clash — retry
-        throw err;
+    if (couponCode) {
+      const res = await validateCoupon(couponCode, price.subtotal, user.id, client);
+      if (!res.ok) {
+        await client.query("ROLLBACK");
+        return { ok: false, status: 400, message: res.reason };
       }
+      couponId = res.coupon.couponId;
+      price = calculatePrice(
+        { ...trip, discountAmount: res.coupon.discountAmount },
+        rule,
+      );
+    }
+
+    // A reference collision must not abort the surrounding coupon transaction.
+    for (let attempt = 0; attempt < 5 && !bookingId; attempt++) {
+      const res = await client.query(
+        `INSERT INTO bookings
+           (booking_reference, user_id, booking_type_id, vehicle_id, vehicle_type_id,
+            package_id, pickup_city_id, drop_city_id, pickup_address, drop_address,
+            start_datetime, end_datetime, passenger_count, estimated_distance_km,
+            estimated_hours, duration_days, status, price_breakdown, subtotal,
+            discount_amount, tax_amount, total_amount, currency, customer_notes,
+            coupon_id, created_by, updated_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
+                 'PendingPayment',$17::jsonb,$18,$19,$20,$21,'INR',$22,$23,$24,$24)
+         ON CONFLICT (booking_reference) DO NOTHING
+         RETURNING booking_id`,
+        [
+          reference(),
+          user.id,
+          bookingTypeId,
+          typeof input.vehicleId === "number" ? input.vehicleId : null,
+          vehicleTypeId,
+          packageId,
+          typeof input.pickupCityId === "number" ? input.pickupCityId : null,
+          typeof input.dropCityId === "number" ? input.dropCityId : null,
+          input.pickupAddress?.trim() || null,
+          input.dropAddress?.trim() || null,
+          start.toISOString(),
+          input.endDateTime ? new Date(input.endDateTime).toISOString() : null,
+          passengerCount,
+          posNum(input.estimatedDistanceKm) ?? null,
+          posNum(input.estimatedHours) ?? null,
+          posNum(durationDays) ?? null,
+          JSON.stringify(price),
+          price.subtotal,
+          price.discountAmount,
+          price.taxAmount,
+          price.totalAmount,
+          input.customerNotes?.trim() || null,
+          couponId,
+          user.id,
+        ],
+      );
+      bookingId = res.rows[0]?.booking_id ?? null;
     }
     if (!bookingId) throw new Error("could not allocate a booking reference");
 

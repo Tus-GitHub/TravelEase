@@ -17,6 +17,8 @@ import BookingStatusBadge from "@/components/booking/BookingStatusBadge";
 import { useAuth } from "@/context/AuthContext";
 import { useSiteContact } from "@/context/SiteContactContext";
 import { calculateRefund } from "@/lib/refund";
+import SharedBookingInfo from "@/components/weekend/SharedBookingInfo";
+import type { SharedTripSnapshot } from "@/lib/server/weekend-bookings";
 
 interface Stop {
   name: string | null;
@@ -54,6 +56,11 @@ interface Review {
   isPublished: boolean;
 }
 interface Booking {
+  departureId:string|null;
+  seatHoldExpiresAt:string|null;
+  tripSnapshot:SharedTripSnapshot|null;
+  guide:{name:string;phone:string}|null;
+  roomAssignments:{traveller:string;hotel:string;roomLabel:string}[];
   id: string;
   reference: string;
   status: string;
@@ -85,6 +92,9 @@ export default function BookingDetailPage() {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "notfound" | "error">("loading");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [now,setNow]=useState(Date.now);
+  useEffect(()=>{if(!booking?.seatHoldExpiresAt||booking.status!=='PendingPayment')return;const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[booking?.seatHoldExpiresAt,booking?.status]);
+  const holdExpired=!!booking?.seatHoldExpiresAt&&Date.parse(booking.seatHoldExpiresAt)<=now;
 
   useEffect(() => {
     if (!isLoading && !user) router.replace(`/login?redirect=/profile/bookings/${id}`);
@@ -160,10 +170,11 @@ export default function BookingDetailPage() {
               <h1 className="font-display text-2xl font-bold text-fg">{booking.reference}</h1>
               <BookingStatusBadge status={booking.status} />
             </div>
+            {booking.tripSnapshot&&<SharedBookingInfo snapshot={booking.tripSnapshot} status={booking.status} expiresAt={booking.seatHoldExpiresAt} expired={holdExpired} guide={booking.guide} rooms={booking.roomAssignments}/>}
 
             <Card padded hover={false} className="mt-5">
               <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                <Field label="Trip type" value={booking.bookingTypeCode.replace(/_/g, " ")} />
+                <Field label="Trip type" value={booking.departureId ? "Weekend group trip" : booking.bookingTypeCode.replace(/_/g, " ")} />
                 <Field
                   label="Starts"
                   value={new Date(booking.startDateTime).toLocaleString("en-IN", {
@@ -252,7 +263,7 @@ export default function BookingDetailPage() {
               </div>
             )}
 
-            {booking.status === 'Ongoing' && <DriverTracker bookingId={booking.id}/>}
+            {booking.status === 'Ongoing' && !booking.departureId && <DriverTracker bookingId={booking.id}/>}
             {booking.driver && (
               <div className="mt-5 rounded-xl border border-line bg-surface px-4 py-4 text-sm">
                 <p className="text-xs font-semibold uppercase tracking-wide text-faint">
@@ -276,7 +287,7 @@ export default function BookingDetailPage() {
               </div>
             )}
 
-            {booking.status === "PendingPayment" && (
+            {booking.status === "PendingPayment" && !holdExpired && (
               <div className="mt-5 rounded-xl border border-accent-400/40 bg-accent-50 px-4 py-4 text-sm dark:bg-accent-950/20">
                 <p className="font-semibold text-fg">Pay by phone to confirm</p>
                 <p className="mt-1 text-muted">

@@ -54,12 +54,14 @@ interface BookingRow {
   itinerary: string | null;
   driver_name: string | null;
   driver_phone: string | null;
+  departure_id: string | null;
+  seat_hold_expires_at: Date | null;
 }
 
 async function loadBookingRow(bookingId: string): Promise<BookingRow | null> {
   const result = await getPool().query(
     `SELECT b.booking_id, b.booking_reference, b.status, b.start_datetime, b.total_amount,
-            b.passenger_count, bt.code AS type_code,
+            b.passenger_count, bt.code AS type_code,b.departure_id,b.seat_hold_expires_at,
             u.user_id AS owner_user_id, u.email AS owner_email,
             dr.name AS driver_name, dr.phone AS driver_phone,
             (SELECT string_agg(COALESCE(ts.name, bs.custom_label, 'Stop'), ' → '
@@ -80,7 +82,8 @@ async function loadBookingRow(bookingId: string): Promise<BookingRow | null> {
 function toEmailInfo(row: BookingRow): BookingEmailInfo {
   return {
     reference: row.booking_reference,
-    tripType: tripLabel(row.type_code),
+    tripType: row.departure_id ? "Weekend group trip" : tripLabel(row.type_code),
+    paymentDeadline: row.departure_id && row.seat_hold_expires_at ? new Date(row.seat_hold_expires_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'medium',timeStyle:'short'}) + ' IST' : undefined,
     startsAt: when(new Date(row.start_datetime)),
     passengers: row.passenger_count,
     total: inr(Number(row.total_amount)),

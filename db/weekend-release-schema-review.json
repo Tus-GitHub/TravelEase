@@ -1,0 +1,5925 @@
+{
+  "target_database": "travel_weekend_release_check_20261106",
+  "target_branch": "development",
+  "purpose": "Schema-only rehearsal of production migration029 and cleanup; no customer data copied",
+  "production_migration": "029_weekend_trip_departures.sql",
+  "tables": [
+    {
+      "key": "activity_logs",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "booking_passengers",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "booking_status_history",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "booking_stops",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "booking_types",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "bookings",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "cities",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "cms_page_revisions",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "cms_pages",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "coupon_redemptions",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "coupons",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "customer_profiles",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "driver_locations",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "drivers",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "email_verification_tokens",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "notifications",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "package_stops",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "packages",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "password_reset_tokens",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "payouts",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "pricing_rules",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "refunds",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "regions",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "reviews",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "role_permissions",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "roles",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "saved_itineraries",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "schema_migrations",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "seasonal_pricing",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "sessions",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "site_settings",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "support_ticket_messages",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "support_tickets",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "tour_guides",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "tourist_spots",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "trip_departures",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "trip_room_assignments",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "trip_stays",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "user_auth_providers",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "users",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "vehicle_availability",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "vehicle_images",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "vehicle_types",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "vehicles",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    },
+    {
+      "key": "vendor_profiles",
+      "definition": {
+        "kind": "r",
+        "rls": false,
+        "forceRls": false,
+        "replicaIdentity": "d"
+      }
+    }
+  ],
+  "columns": [
+    {
+      "table": "activity_logs",
+      "column": "action",
+      "type": "character varying(100)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "activity_logs",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "activity_logs",
+      "column": "details",
+      "type": "jsonb",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "activity_logs",
+      "column": "entity_id",
+      "type": "character varying(50)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "activity_logs",
+      "column": "entity_type",
+      "type": "character varying(50)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "activity_logs",
+      "column": "ip_address",
+      "type": "character varying(45)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "activity_logs",
+      "column": "log_id",
+      "type": "bigint",
+      "notNull": true,
+      "default": "nextval('public.activity_logs_log_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "activity_logs",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_passengers",
+      "column": "age",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_passengers",
+      "column": "booking_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_passengers",
+      "column": "booking_passenger_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.booking_passengers_booking_passenger_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_passengers",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_passengers",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_passengers",
+      "column": "is_primary",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_passengers",
+      "column": "name",
+      "type": "character varying(200)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "booking_passengers",
+      "column": "phone",
+      "type": "character varying(30)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "booking_status_history",
+      "column": "booking_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_status_history",
+      "column": "booking_status_history_id",
+      "type": "bigint",
+      "notNull": true,
+      "default": "nextval('public.booking_status_history_booking_status_history_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_status_history",
+      "column": "changed_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_status_history",
+      "column": "changed_by_user_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_status_history",
+      "column": "from_status",
+      "type": "character varying(20)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "booking_status_history",
+      "column": "reason",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "booking_status_history",
+      "column": "to_status",
+      "type": "character varying(20)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "booking_stops",
+      "column": "booking_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_stops",
+      "column": "booking_stop_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.booking_stops_booking_stop_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_stops",
+      "column": "city_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_stops",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_stops",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_stops",
+      "column": "custom_label",
+      "type": "character varying(200)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "booking_stops",
+      "column": "stop_order",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_stops",
+      "column": "tourist_spot_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_types",
+      "column": "booking_type_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.booking_types_booking_type_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "booking_types",
+      "column": "code",
+      "type": "character varying(30)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "booking_types",
+      "column": "description",
+      "type": "character varying(300)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "booking_types",
+      "column": "name",
+      "type": "character varying(60)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "bookings",
+      "column": "assigned_agent_user_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "booking_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "booking_reference",
+      "type": "character varying(20)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "bookings",
+      "column": "booking_type_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "client_request_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "coupon_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "currency",
+      "type": "character(3)",
+      "notNull": true,
+      "default": "'INR'::bpchar",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "bookings",
+      "column": "customer_notes",
+      "type": "character varying(1000)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "bookings",
+      "column": "departure_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "discount_amount",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "driver_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "drop_address",
+      "type": "character varying(300)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "bookings",
+      "column": "drop_city_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "duration_days",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "end_datetime",
+      "type": "timestamp with time zone",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "estimated_distance_km",
+      "type": "numeric(8,2)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "estimated_hours",
+      "type": "numeric(6,2)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "package_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "passenger_count",
+      "type": "integer",
+      "notNull": true,
+      "default": "1",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "pickup_address",
+      "type": "character varying(300)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "bookings",
+      "column": "pickup_city_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "price_breakdown",
+      "type": "jsonb",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "seat_hold_expires_at",
+      "type": "timestamp with time zone",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "start_datetime",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "status",
+      "type": "character varying(20)",
+      "notNull": true,
+      "default": "'Draft'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "bookings",
+      "column": "subtotal",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "tax_amount",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "total_amount",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "trip_snapshot",
+      "type": "jsonb",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "vehicle_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "bookings",
+      "column": "vehicle_type_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "city_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.cities_city_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "display_order",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "is_airport",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "is_pickup_point",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "latitude",
+      "type": "numeric(9,6)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "longitude",
+      "type": "numeric(9,6)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "name",
+      "type": "character varying(100)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "cities",
+      "column": "region_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cities",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_page_revisions",
+      "column": "content",
+      "type": "jsonb",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_page_revisions",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_page_revisions",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_page_revisions",
+      "column": "page_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_page_revisions",
+      "column": "revision_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_page_revisions",
+      "column": "version",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_pages",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_pages",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_pages",
+      "column": "draft_content",
+      "type": "jsonb",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_pages",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_pages",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_pages",
+      "column": "page_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_pages",
+      "column": "published_at",
+      "type": "timestamp with time zone",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_pages",
+      "column": "published_content",
+      "type": "jsonb",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_pages",
+      "column": "slug",
+      "type": "character varying(160)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "cms_pages",
+      "column": "status",
+      "type": "character varying(16)",
+      "notNull": true,
+      "default": "'draft'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "cms_pages",
+      "column": "title",
+      "type": "character varying(200)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "cms_pages",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_pages",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "cms_pages",
+      "column": "version",
+      "type": "integer",
+      "notNull": true,
+      "default": "1",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "amount",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "booking_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "coupon_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "coupon_redemption_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.coupon_redemptions_coupon_redemption_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupon_redemptions",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "code",
+      "type": "character varying(40)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "coupons",
+      "column": "coupon_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.coupons_coupon_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "description",
+      "type": "character varying(200)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "coupons",
+      "column": "discount_type",
+      "type": "character varying(10)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "coupons",
+      "column": "discount_value",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "expires_at",
+      "type": "timestamp with time zone",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "max_discount",
+      "type": "numeric(10,2)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "min_booking_amount",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "per_user_limit",
+      "type": "integer",
+      "notNull": true,
+      "default": "1",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "starts_at",
+      "type": "timestamp with time zone",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "coupons",
+      "column": "usage_limit",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "address_line1",
+      "type": "character varying(200)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "customer_profiles",
+      "column": "address_line2",
+      "type": "character varying(200)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "customer_profiles",
+      "column": "city",
+      "type": "character varying(100)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "customer_profiles",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "customer_profile_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.customer_profiles_customer_profile_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "display_order",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "latitude",
+      "type": "numeric(9,6)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "longitude",
+      "type": "numeric(9,6)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "pincode",
+      "type": "character varying(10)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "customer_profiles",
+      "column": "preferred_tags",
+      "type": "jsonb",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "state",
+      "type": "character varying(100)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "customer_profiles",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "customer_profiles",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "driver_locations",
+      "column": "accuracy",
+      "type": "numeric(8,2)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "driver_locations",
+      "column": "booking_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "driver_locations",
+      "column": "driver_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "driver_locations",
+      "column": "lat",
+      "type": "numeric(9,6)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "driver_locations",
+      "column": "lng",
+      "type": "numeric(9,6)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "driver_locations",
+      "column": "location_id",
+      "type": "bigint",
+      "notNull": true,
+      "default": "nextval('public.driver_locations_location_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "driver_locations",
+      "column": "recorded_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "drivers",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "drivers",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "drivers",
+      "column": "driver_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.drivers_driver_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "drivers",
+      "column": "image_url",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "drivers",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "drivers",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "drivers",
+      "column": "licence_number",
+      "type": "character varying(60)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "drivers",
+      "column": "name",
+      "type": "character varying(150)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "drivers",
+      "column": "note",
+      "type": "character varying(300)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "drivers",
+      "column": "phone",
+      "type": "character varying(30)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "drivers",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "drivers",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "drivers",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "email_verification_tokens",
+      "column": "consumed_at",
+      "type": "timestamp with time zone",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "email_verification_tokens",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "email_verification_tokens",
+      "column": "expires_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "email_verification_tokens",
+      "column": "token_hash",
+      "type": "character(64)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "email_verification_tokens",
+      "column": "token_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "email_verification_tokens",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "notifications",
+      "column": "booking_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "notifications",
+      "column": "channel",
+      "type": "character varying(20)",
+      "notNull": true,
+      "default": "'email'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "notifications",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "notifications",
+      "column": "error",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "notifications",
+      "column": "kind",
+      "type": "character varying(50)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "notifications",
+      "column": "notification_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "notifications",
+      "column": "recipient",
+      "type": "character varying(320)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "notifications",
+      "column": "status",
+      "type": "character varying(20)",
+      "notNull": true,
+      "default": "'sent'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "notifications",
+      "column": "subject",
+      "type": "character varying(300)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "notifications",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "package_stops",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "package_stops",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "package_stops",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "package_stops",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "package_stops",
+      "column": "nights_here",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "package_stops",
+      "column": "package_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "package_stops",
+      "column": "package_stop_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.package_stops_package_stop_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "package_stops",
+      "column": "stop_order",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "package_stops",
+      "column": "tourist_spot_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "package_stops",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "package_stops",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "booking_mode",
+      "type": "character varying(16)",
+      "notNull": true,
+      "default": "'private'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "packages",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "display_order",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "duration_days",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "highlights",
+      "type": "jsonb",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "image_url",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "packages",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "max_persons",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "name",
+      "type": "character varying(150)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "packages",
+      "column": "package_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.packages_package_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "price_per_person",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "rating",
+      "type": "numeric(2,1)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "region_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "review_count",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "slug",
+      "type": "character varying(80)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "packages",
+      "column": "tag",
+      "type": "character varying(40)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "packages",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "packages",
+      "column": "vehicle_type_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "password_reset_tokens",
+      "column": "consumed_at",
+      "type": "timestamp with time zone",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "password_reset_tokens",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "password_reset_tokens",
+      "column": "expires_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "password_reset_tokens",
+      "column": "token_hash",
+      "type": "character(64)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "password_reset_tokens",
+      "column": "token_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "password_reset_tokens",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "booking_count",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "commission_amount",
+      "type": "numeric(12,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "commission_pct",
+      "type": "numeric(5,2)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "gross_amount",
+      "type": "numeric(12,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "method",
+      "type": "character varying(40)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "payouts",
+      "column": "net_amount",
+      "type": "numeric(12,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "notes",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "payouts",
+      "column": "payout_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "period_end",
+      "type": "date",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "period_start",
+      "type": "date",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "reference",
+      "type": "character varying(120)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "payouts",
+      "column": "status",
+      "type": "character varying(10)",
+      "notNull": true,
+      "default": "'pending'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "payouts",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "payouts",
+      "column": "vendor_profile_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "base_amount",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "booking_type_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "currency",
+      "type": "character(3)",
+      "notNull": true,
+      "default": "'INR'::bpchar",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "pricing_rules",
+      "column": "driver_allowance_per_day",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "effective_from",
+      "type": "date",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "effective_to",
+      "type": "date",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "extra_km_rate",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "flat_rate",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "included_km",
+      "type": "numeric(8,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "min_hours",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "min_km",
+      "type": "numeric(8,2)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "name",
+      "type": "character varying(150)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "pricing_rules",
+      "column": "night_charge",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "per_day_rate",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "per_hour_rate",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "per_km_rate",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "pricing_rule_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.pricing_rules_pricing_rule_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "priority",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "tax_percent",
+      "type": "numeric(5,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "pricing_rules",
+      "column": "vehicle_type_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "refunds",
+      "column": "amount",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "refunds",
+      "column": "booking_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "refunds",
+      "column": "charge_amount",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "refunds",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "refunds",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "refunds",
+      "column": "method",
+      "type": "character varying(40)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "refunds",
+      "column": "reason",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "refunds",
+      "column": "reference",
+      "type": "character varying(120)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "refunds",
+      "column": "refund_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "refunds",
+      "column": "status",
+      "type": "character varying(20)",
+      "notNull": true,
+      "default": "'pending'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "refunds",
+      "column": "tier",
+      "type": "character varying(12)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "refunds",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "refunds",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "regions",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "regions",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "regions",
+      "column": "display_order",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "regions",
+      "column": "image_url",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "regions",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "regions",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "regions",
+      "column": "name",
+      "type": "character varying(100)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "regions",
+      "column": "region_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.regions_region_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "regions",
+      "column": "state",
+      "type": "character varying(100)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "regions",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "regions",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "reviews",
+      "column": "body",
+      "type": "character varying(2000)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "reviews",
+      "column": "booking_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "reviews",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "reviews",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "reviews",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "reviews",
+      "column": "is_published",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "reviews",
+      "column": "rating",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "reviews",
+      "column": "review_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "reviews",
+      "column": "title",
+      "type": "character varying(120)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "reviews",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "reviews",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "reviews",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "role_permissions",
+      "column": "is_allowed",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "role_permissions",
+      "column": "role_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "role_permissions",
+      "column": "role_permission_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.role_permissions_role_permission_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "role_permissions",
+      "column": "section",
+      "type": "character varying(40)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "role_permissions",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "role_permissions",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "roles",
+      "column": "name",
+      "type": "character varying(30)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "roles",
+      "column": "role_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.roles_role_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "kind",
+      "type": "character varying(10)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "package_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "region_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "saved_itinerary_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "spot_ids",
+      "type": "jsonb",
+      "notNull": true,
+      "default": "'[]'::jsonb",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "title",
+      "type": "character varying(120)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "saved_itineraries",
+      "column": "vehicle_type_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "schema_migrations",
+      "column": "applied_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "schema_migrations",
+      "column": "migration_id",
+      "type": "character varying(255)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "booking_type_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "ends_on",
+      "type": "date",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "multiplier",
+      "type": "numeric(4,2)",
+      "notNull": true,
+      "default": "1.00",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "name",
+      "type": "character varying(120)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "priority",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "seasonal_pricing_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.seasonal_pricing_seasonal_pricing_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "starts_on",
+      "type": "date",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "seasonal_pricing",
+      "column": "vehicle_type_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "sessions",
+      "column": "expires_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "sessions",
+      "column": "token",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "sessions",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "site_settings",
+      "column": "setting_key",
+      "type": "character varying(60)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "site_settings",
+      "column": "setting_value",
+      "type": "character varying(300)",
+      "notNull": true,
+      "default": "''::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "site_settings",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "site_settings",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_ticket_messages",
+      "column": "author_role",
+      "type": "character varying(10)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "support_ticket_messages",
+      "column": "author_user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_ticket_messages",
+      "column": "body",
+      "type": "character varying(4000)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "support_ticket_messages",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_ticket_messages",
+      "column": "support_ticket_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_ticket_messages",
+      "column": "support_ticket_message_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_tickets",
+      "column": "booking_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_tickets",
+      "column": "category",
+      "type": "character varying(20)",
+      "notNull": true,
+      "default": "'general'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "support_tickets",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_tickets",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_tickets",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_tickets",
+      "column": "last_message_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_tickets",
+      "column": "reference",
+      "type": "character varying(14)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "support_tickets",
+      "column": "status",
+      "type": "character varying(12)",
+      "notNull": true,
+      "default": "'open'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "support_tickets",
+      "column": "subject",
+      "type": "character varying(160)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "support_tickets",
+      "column": "support_ticket_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_tickets",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_tickets",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "support_tickets",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tour_guides",
+      "column": "bio",
+      "type": "text",
+      "notNull": true,
+      "default": "''::text",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "tour_guides",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tour_guides",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tour_guides",
+      "column": "guide_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.tour_guides_guide_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tour_guides",
+      "column": "image_url",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "tour_guides",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tour_guides",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tour_guides",
+      "column": "languages",
+      "type": "jsonb",
+      "notNull": true,
+      "default": "'[]'::jsonb",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tour_guides",
+      "column": "name",
+      "type": "character varying(150)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "tour_guides",
+      "column": "phone",
+      "type": "character varying(30)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "tour_guides",
+      "column": "private_notes",
+      "type": "character varying(1000)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "tour_guides",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tour_guides",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tourist_spots",
+      "column": "city_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tourist_spots",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tourist_spots",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tourist_spots",
+      "column": "description",
+      "type": "character varying(1000)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "tourist_spots",
+      "column": "display_order",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tourist_spots",
+      "column": "image_url",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "tourist_spots",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tourist_spots",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tourist_spots",
+      "column": "latitude",
+      "type": "double precision",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tourist_spots",
+      "column": "longitude",
+      "type": "double precision",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tourist_spots",
+      "column": "name",
+      "type": "character varying(150)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "tourist_spots",
+      "column": "tag",
+      "type": "character varying(60)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "tourist_spots",
+      "column": "tourist_spot_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.tourist_spots_tourist_spot_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tourist_spots",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "tourist_spots",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "booking_closes_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "booking_opens_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "capacity",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "content",
+      "type": "jsonb",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "decision_deadline",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "departure_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "display_order",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "driver_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "ends_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "guide_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "is_featured",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "min_travellers",
+      "type": "integer",
+      "notNull": true,
+      "default": "1",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "package_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "payment_hold_minutes",
+      "type": "integer",
+      "notNull": true,
+      "default": "120",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "pickup_address",
+      "type": "character varying(300)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_departures",
+      "column": "pickup_city_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "price_per_person",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "private_notes",
+      "type": "character varying(2000)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_departures",
+      "column": "return_address",
+      "type": "character varying(300)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_departures",
+      "column": "slug",
+      "type": "character varying(160)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_departures",
+      "column": "staff_reserved_seats",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "starts_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "status",
+      "type": "character varying(16)",
+      "notNull": true,
+      "default": "'draft'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_departures",
+      "column": "tax_percent",
+      "type": "numeric(5,2)",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "title",
+      "type": "character varying(200)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_departures",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "vehicle_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_departures",
+      "column": "version",
+      "type": "integer",
+      "notNull": true,
+      "default": "1",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_room_assignments",
+      "column": "assignment_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_room_assignments",
+      "column": "booking_passenger_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_room_assignments",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_room_assignments",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_room_assignments",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_room_assignments",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_room_assignments",
+      "column": "private_notes",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_room_assignments",
+      "column": "room_label",
+      "type": "character varying(60)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_room_assignments",
+      "column": "stay_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_room_assignments",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_room_assignments",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "check_in",
+      "type": "date",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "check_out",
+      "type": "date",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "city_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "confirmation_status",
+      "type": "character varying(16)",
+      "notNull": true,
+      "default": "'pending'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_stays",
+      "column": "contact_name",
+      "type": "character varying(150)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_stays",
+      "column": "contact_phone",
+      "type": "character varying(30)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_stays",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "departure_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "hotel_address",
+      "type": "character varying(500)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_stays",
+      "column": "hotel_name",
+      "type": "character varying(200)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_stays",
+      "column": "image_url",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_stays",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "meal_plan",
+      "type": "character varying(200)",
+      "notNull": true,
+      "default": "''::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_stays",
+      "column": "occupancy_per_room",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "private_notes",
+      "type": "character varying(2000)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_stays",
+      "column": "public_notes",
+      "type": "character varying(1000)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_stays",
+      "column": "room_type",
+      "type": "character varying(120)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_stays",
+      "column": "rooms_reserved",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "staff_beds_reserved",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "stay_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "supplier_cost",
+      "type": "numeric(12,2)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "supplier_reference",
+      "type": "character varying(120)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "trip_stays",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "trip_stays",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "user_auth_providers",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "user_auth_providers",
+      "column": "email",
+      "type": "character varying(320)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "user_auth_providers",
+      "column": "provider",
+      "type": "character varying(30)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "user_auth_providers",
+      "column": "provider_user_id",
+      "type": "character varying(255)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "user_auth_providers",
+      "column": "user_auth_provider_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "user_auth_providers",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "users",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "users",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "users",
+      "column": "display_order",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "users",
+      "column": "email",
+      "type": "character varying(320)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "users",
+      "column": "email_verified_at",
+      "type": "timestamp with time zone",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "users",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "users",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "users",
+      "column": "name",
+      "type": "character varying(200)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "users",
+      "column": "password_hash",
+      "type": "character varying(400)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "users",
+      "column": "phone",
+      "type": "character varying(30)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "users",
+      "column": "role_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "1",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "users",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "users",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "users",
+      "column": "user_id",
+      "type": "uuid",
+      "notNull": true,
+      "default": "gen_random_uuid()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "booking_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "departure_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "ends_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "kind",
+      "type": "character varying(20)",
+      "notNull": true,
+      "default": "'blocked'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "note",
+      "type": "character varying(200)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "starts_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "vehicle_availability_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.vehicle_availability_vehicle_availability_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_availability",
+      "column": "vehicle_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_images",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_images",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_images",
+      "column": "display_order",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_images",
+      "column": "image_url",
+      "type": "character varying(500)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vehicle_images",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_images",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_images",
+      "column": "is_primary",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_images",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_images",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_images",
+      "column": "vehicle_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_images",
+      "column": "vehicle_image_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.vehicle_images_vehicle_image_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_types",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_types",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_types",
+      "column": "description",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vehicle_types",
+      "column": "display_order",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_types",
+      "column": "icon_name",
+      "type": "character varying(40)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vehicle_types",
+      "column": "image_url",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vehicle_types",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_types",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_types",
+      "column": "slug",
+      "type": "character varying(60)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vehicle_types",
+      "column": "title",
+      "type": "character varying(100)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vehicle_types",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_types",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicle_types",
+      "column": "vehicle_type_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.vehicle_types_vehicle_type_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "base_price_per_day",
+      "type": "numeric(10,2)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "display_order",
+      "type": "integer",
+      "notNull": true,
+      "default": "0",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "features",
+      "type": "jsonb",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "is_active",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "is_available",
+      "type": "boolean",
+      "notNull": true,
+      "default": "true",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "managed_by_user_id",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "name",
+      "type": "character varying(150)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vehicles",
+      "column": "rating",
+      "type": "numeric(2,1)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "registration_number",
+      "type": "character varying(20)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vehicles",
+      "column": "seating_capacity",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "vehicle_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.vehicles_vehicle_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "vehicle_type_id",
+      "type": "integer",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vehicles",
+      "column": "vendor_profile_id",
+      "type": "integer",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "address",
+      "type": "character varying(300)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "business_name",
+      "type": "character varying(160)",
+      "notNull": true,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "contact_email",
+      "type": "character varying(320)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "contact_name",
+      "type": "character varying(120)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "contact_phone",
+      "type": "character varying(30)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "created_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "created_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "is_deleted",
+      "type": "boolean",
+      "notNull": true,
+      "default": "false",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "notes",
+      "type": "character varying(500)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "payout_details",
+      "type": "character varying(400)",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "status",
+      "type": "character varying(12)",
+      "notNull": true,
+      "default": "'pending'::character varying",
+      "identity": "",
+      "generated": "",
+      "collation": "\"default\""
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "updated_at",
+      "type": "timestamp with time zone",
+      "notNull": true,
+      "default": "now()",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "updated_by",
+      "type": "uuid",
+      "notNull": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    {
+      "table": "vendor_profiles",
+      "column": "vendor_profile_id",
+      "type": "integer",
+      "notNull": true,
+      "default": "nextval('public.vendor_profiles_vendor_profile_id_seq'::regclass)",
+      "identity": "",
+      "generated": "",
+      "collation": null
+    }
+  ]
+}

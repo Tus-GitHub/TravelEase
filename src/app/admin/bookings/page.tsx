@@ -11,6 +11,9 @@ import { allowedTransitions, type BookingStatus } from "@/lib/bookingStatus";
 import BookingStatusBadge from "@/components/booking/BookingStatusBadge";
 
 interface AdminBooking {
+  departureId:string|null;
+  holdExpired:boolean;
+  seatHoldExpiresAt:string|null;
   id: string;
   reference: string;
   status: BookingStatus;
@@ -189,10 +192,10 @@ export default function AdminBookingsPage() {
             </thead>
             <tbody className="divide-y divide-line-subtle">
               {rows.map((b) => {
-                const nexts = allowedTransitions(b.status, "admin");
+                const nexts = allowedTransitions(b.status, "admin").filter(s=>!b.departureId||(!['Ongoing','Completed'].includes(s)&&!(s==='Confirmed'&&b.holdExpired)));
                 return (
                   <Fragment key={b.id}>
-                    <tr className="hover:bg-surface-hover/60">
+                    <tr id={b.id} className="scroll-mt-24 hover:bg-surface-hover/60">
                       <td className="px-4 py-3">
                         <button
                           type="button"
@@ -259,7 +262,7 @@ export default function AdminBookingsPage() {
                         <select
                           className={cellSelect}
                           value={b.driverId ?? ""}
-                          disabled={busyId === b.id}
+                          disabled={busyId === b.id || !!b.departureId}
                           onChange={(e) =>
                             act(b.id, {
                               driverId: e.target.value ? Number(e.target.value) : null,
@@ -285,6 +288,7 @@ export default function AdminBookingsPage() {
                       <tr className="bg-surface-muted/50">
                         <td colSpan={8} className="px-4 py-3 text-xs text-muted">
                           <div className="grid gap-1 sm:grid-cols-2">
+                            {b.departureId&&<span className="font-semibold">Weekend group trip{b.holdExpired?' · Seat hold expired':''}{b.seatHoldExpiresAt?` · Hold deadline ${new Date(b.seatHoldExpiresAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})} IST`:''}</span>}
                             <span>Phone: {b.customerPhone || "—"}</span>
                             <span>Passengers: {b.passengerCount}</span>
                             <span>Pickup: {b.pickupAddress || "—"}</span>

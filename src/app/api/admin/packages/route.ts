@@ -32,6 +32,8 @@ export async function POST(request: Request) {
   const durationDays = Number(body.durationDays);
   const maxPersons = Number(body.maxPersons);
   const pricePerPerson = Number(body.pricePerPerson);
+  const bookingMode = body.bookingMode ?? "private";
+  if (!["private", "shared", "both"].includes(String(bookingMode))) return NextResponse.json({ error: "Choose private, shared or both booking modes." }, { status: 400 });
 
   if (!Number.isInteger(regionId) || regionId <= 0) {
     return NextResponse.json({ error: "A valid region is required." }, { status: 400 });
@@ -61,6 +63,7 @@ export async function POST(request: Request) {
         durationDays,
         maxPersons,
         pricePerPerson,
+        bookingMode: bookingMode as "private" | "shared" | "both",
         tag: typeof body.tag === "string" ? body.tag.trim() : "",
         rating: optRating(body.rating),
       },

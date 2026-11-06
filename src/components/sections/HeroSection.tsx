@@ -114,6 +114,7 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
   return (
     <section
       ref={root}
+      id={cms ? `section-${cms.id}` : undefined}
       data-cms-section={cms?.id}
       className={`relative flex min-h-[100svh] items-center overflow-hidden pb-16 pt-28 lg:pt-32 ${light ? "text-fg" : "text-white"}`}
     >

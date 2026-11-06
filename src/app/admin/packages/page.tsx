@@ -34,6 +34,7 @@ interface PackageStop {
   nightsHere: number;
 }
 interface CataloguePackage {
+  bookingMode: "private" | "shared" | "both";
   id: number;
   regionId: number;
   regionName: string;
@@ -61,6 +62,7 @@ export default function AdminPackagesPage() {
 
   const form = useCrudForm({
     empty: {
+      bookingMode: "private",
       regionId: "",
       vehicleTypeId: "",
       name: "",
@@ -145,6 +147,9 @@ export default function AdminPackagesPage() {
             <FormField label="Name" icon="tag">
               <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Coorg Coffee Trail" />
             </FormField>
+            <FormField label="Booking mode" icon="users">
+              <select className={fieldBase} value={form.draft.bookingMode} onChange={e => form.patch({ bookingMode: e.target.value })}><option value="private">Private vehicle trips</option><option value="shared">Shared Friday departures</option><option value="both">Private and shared trips</option></select>
+            </FormField>
             <FormField label="Region" icon="map-pin">
               <select required value={form.draft.regionId} onChange={(e) => form.patch({ regionId: e.target.value })} className={`${fieldBase} appearance-none`}>
                 <option value="" disabled>Select region</option>
@@ -215,6 +220,7 @@ export default function AdminPackagesPage() {
                   onToggleExpand={() => setExpanded(expanded === p.id ? null : p.id)}
                   onEdit={() =>
                     form.startEdit(p.id, {
+                      bookingMode: p.bookingMode,
                       regionId: String(p.regionId),
                       vehicleTypeId: String(p.vehicleTypeId),
                       name: p.name,
@@ -363,6 +369,7 @@ function PackageRows({
 }
 
 function toBody(d: {
+  bookingMode: string;
   regionId: string;
   vehicleTypeId: string;
   name: string;
@@ -373,6 +380,7 @@ function toBody(d: {
   rating: string;
 }) {
   return {
+    bookingMode: d.bookingMode,
     regionId: Number(d.regionId),
     vehicleTypeId: Number(d.vehicleTypeId),
     name: d.name,

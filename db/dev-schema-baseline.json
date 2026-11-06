@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "recordedAt": "2026-11-05T19:06:33.329Z",
-  "note": "Observed development baseline; historical applied SQL bytes cannot be proven retroactively. Approved migration028 added on development; prior baseline archived; old definitions/checksums unchanged.",
+  "recordedAt": "2026-11-06T13:47:35.820Z",
+  "note": "Observed development baseline; historical applied SQL bytes cannot be proven retroactively. Approved migration028 added on development; prior baseline archived; old definitions/checksums unchanged. Approved development migration029; prior28 baseline archived. Four tables/six columns verified.",
   "hashes": {
     "001_create_auth_tables.sql": "49af6321b9ca6fd6d8671b1276a178e29eff488812dfbb90b3b97bbf0adf89d1",
     "002_create_vehicle_tables.sql": "93af44cafc8f775574671563122c99abe27f6d8c7347d70da589cf15aedbd92a",
@@ -30,7 +30,8 @@
     "025_driver_app.sql": "cbee303b76910e6f43b7840d2f064ba99636bccd4e442e087486e6a56d41d349",
     "026_driver_image.sql": "20aeaa4ea22a0e2ffbefc1dcf6b47bd2e2c247dc3defee967df76a120c4c88c5",
     "027_tourist_spot_coordinates.sql": "4581463be0f50d3a3a8c64776d473889651ceac1e8a976f1bb76d82e5791ee18",
-    "028_create_cms_pages.sql": "a3c21f818a0d457ec35d646d25a88e09937019753dadef0257d2db8f5886ec95"
+    "028_create_cms_pages.sql": "a3c21f818a0d457ec35d646d25a88e09937019753dadef0257d2db8f5886ec95",
+    "029_weekend_trip_departures.sql": "5a1c104e6342f3117c62f963d0f2e5153640dd36570c102d4a02066e8f4eba5f"
   },
   "snapshot": {
     "migrations": [
@@ -61,7 +62,8 @@
       "025_driver_app.sql",
       "026_driver_image.sql",
       "027_tourist_spot_coordinates.sql",
-      "028_create_cms_pages.sql"
+      "028_create_cms_pages.sql",
+      "029_weekend_trip_departures.sql"
     ],
     "tables": [
       {
@@ -362,7 +364,43 @@
         }
       },
       {
+        "key": "tour_guides",
+        "definition": {
+          "kind": "r",
+          "rls": false,
+          "forceRls": false,
+          "replicaIdentity": "d"
+        }
+      },
+      {
         "key": "tourist_spots",
+        "definition": {
+          "kind": "r",
+          "rls": false,
+          "forceRls": false,
+          "replicaIdentity": "d"
+        }
+      },
+      {
+        "key": "trip_departures",
+        "definition": {
+          "kind": "r",
+          "rls": false,
+          "forceRls": false,
+          "replicaIdentity": "d"
+        }
+      },
+      {
+        "key": "trip_room_assignments",
+        "definition": {
+          "kind": "r",
+          "rls": false,
+          "forceRls": false,
+          "replicaIdentity": "d"
+        }
+      },
+      {
+        "key": "trip_stays",
         "definition": {
           "kind": "r",
           "rls": false,
@@ -865,6 +903,17 @@
         }
       },
       {
+        "key": "bookings.client_request_id",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
         "key": "bookings.coupon_id",
         "definition": {
           "type": "integer",
@@ -917,6 +966,17 @@
           "identity": "",
           "generated": "",
           "collation": "\"default\""
+        }
+      },
+      {
+        "key": "bookings.departure_id",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
         }
       },
       {
@@ -1085,6 +1145,17 @@
         }
       },
       {
+        "key": "bookings.seat_hold_expires_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
         "key": "bookings.start_datetime",
         "definition": {
           "type": "timestamp with time zone",
@@ -1134,6 +1205,17 @@
           "type": "numeric(10,2)",
           "notNull": true,
           "default": "0",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "bookings.trip_snapshot",
+        "definition": {
+          "type": "jsonb",
+          "notNull": false,
+          "default": null,
           "identity": "",
           "generated": "",
           "collation": null
@@ -2523,6 +2605,17 @@
           "identity": "",
           "generated": "",
           "collation": null
+        }
+      },
+      {
+        "key": "packages.booking_mode",
+        "definition": {
+          "type": "character varying(16)",
+          "notNull": true,
+          "default": "'private'::character varying",
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
         }
       },
       {
@@ -4385,6 +4478,149 @@
         }
       },
       {
+        "key": "tour_guides.bio",
+        "definition": {
+          "type": "text",
+          "notNull": true,
+          "default": "''::text",
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "tour_guides.created_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "tour_guides.created_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "tour_guides.guide_id",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "nextval('public.tour_guides_guide_id_seq'::regclass)",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "tour_guides.image_url",
+        "definition": {
+          "type": "character varying(500)",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "tour_guides.is_active",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "true",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "tour_guides.is_deleted",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "false",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "tour_guides.languages",
+        "definition": {
+          "type": "jsonb",
+          "notNull": true,
+          "default": "'[]'::jsonb",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "tour_guides.name",
+        "definition": {
+          "type": "character varying(150)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "tour_guides.phone",
+        "definition": {
+          "type": "character varying(30)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "tour_guides.private_notes",
+        "definition": {
+          "type": "character varying(1000)",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "tour_guides.updated_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "tour_guides.updated_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
         "key": "tourist_spots.city_id",
         "definition": {
           "type": "integer",
@@ -4540,6 +4776,776 @@
       },
       {
         "key": "tourist_spots.updated_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.booking_closes_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.booking_opens_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.capacity",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.content",
+        "definition": {
+          "type": "jsonb",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.created_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.created_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.decision_deadline",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.departure_id",
+        "definition": {
+          "type": "uuid",
+          "notNull": true,
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.display_order",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "0",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.driver_id",
+        "definition": {
+          "type": "integer",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.ends_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.guide_id",
+        "definition": {
+          "type": "integer",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.is_active",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "true",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.is_deleted",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "false",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.is_featured",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "false",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.min_travellers",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "1",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.package_id",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.payment_hold_minutes",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "120",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.pickup_address",
+        "definition": {
+          "type": "character varying(300)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_departures.pickup_city_id",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.price_per_person",
+        "definition": {
+          "type": "numeric(10,2)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.private_notes",
+        "definition": {
+          "type": "character varying(2000)",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_departures.return_address",
+        "definition": {
+          "type": "character varying(300)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_departures.slug",
+        "definition": {
+          "type": "character varying(160)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_departures.staff_reserved_seats",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "0",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.starts_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.status",
+        "definition": {
+          "type": "character varying(16)",
+          "notNull": true,
+          "default": "'draft'::character varying",
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_departures.tax_percent",
+        "definition": {
+          "type": "numeric(5,2)",
+          "notNull": true,
+          "default": "0",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.title",
+        "definition": {
+          "type": "character varying(200)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_departures.updated_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.updated_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.vehicle_id",
+        "definition": {
+          "type": "integer",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_departures.version",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "1",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_room_assignments.assignment_id",
+        "definition": {
+          "type": "uuid",
+          "notNull": true,
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_room_assignments.booking_passenger_id",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_room_assignments.created_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_room_assignments.created_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_room_assignments.is_active",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "true",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_room_assignments.is_deleted",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "false",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_room_assignments.private_notes",
+        "definition": {
+          "type": "character varying(500)",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_room_assignments.room_label",
+        "definition": {
+          "type": "character varying(60)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_room_assignments.stay_id",
+        "definition": {
+          "type": "uuid",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_room_assignments.updated_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_room_assignments.updated_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.check_in",
+        "definition": {
+          "type": "date",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.check_out",
+        "definition": {
+          "type": "date",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.city_id",
+        "definition": {
+          "type": "integer",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.confirmation_status",
+        "definition": {
+          "type": "character varying(16)",
+          "notNull": true,
+          "default": "'pending'::character varying",
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_stays.contact_name",
+        "definition": {
+          "type": "character varying(150)",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_stays.contact_phone",
+        "definition": {
+          "type": "character varying(30)",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_stays.created_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.created_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.departure_id",
+        "definition": {
+          "type": "uuid",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.hotel_address",
+        "definition": {
+          "type": "character varying(500)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_stays.hotel_name",
+        "definition": {
+          "type": "character varying(200)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_stays.image_url",
+        "definition": {
+          "type": "character varying(500)",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_stays.is_active",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "true",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.is_deleted",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "false",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.meal_plan",
+        "definition": {
+          "type": "character varying(200)",
+          "notNull": true,
+          "default": "''::character varying",
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_stays.occupancy_per_room",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.private_notes",
+        "definition": {
+          "type": "character varying(2000)",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_stays.public_notes",
+        "definition": {
+          "type": "character varying(1000)",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_stays.room_type",
+        "definition": {
+          "type": "character varying(120)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_stays.rooms_reserved",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "0",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.staff_beds_reserved",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "0",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.stay_id",
+        "definition": {
+          "type": "uuid",
+          "notNull": true,
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.supplier_cost",
+        "definition": {
+          "type": "numeric(12,2)",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.supplier_reference",
+        "definition": {
+          "type": "character varying(120)",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "trip_stays.updated_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "trip_stays.updated_by",
         "definition": {
           "type": "uuid",
           "notNull": false,
@@ -4793,6 +5799,17 @@
       },
       {
         "key": "vehicle_availability.created_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "vehicle_availability.departure_id",
         "definition": {
           "type": "uuid",
           "notNull": false,
@@ -5982,6 +6999,20 @@
         }
       },
       {
+        "key": "bookings.weekend_booking_departure_fk",
+        "definition": {
+          "definition": "FOREIGN KEY (departure_id) REFERENCES public.trip_departures(departure_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "bookings.weekend_booking_snapshot",
+        "definition": {
+          "definition": "CHECK (trip_snapshot IS NULL OR jsonb_typeof(trip_snapshot) = 'object'::text)",
+          "validated": true
+        }
+      },
+      {
         "key": "cities.cities_city_id_not_null",
         "definition": {
           "definition": "NOT NULL city_id",
@@ -6948,6 +7979,13 @@
         }
       },
       {
+        "key": "packages.packages_booking_mode_not_null",
+        "definition": {
+          "definition": "NOT NULL booking_mode",
+          "validated": true
+        }
+      },
+      {
         "key": "packages.packages_created_at_not_null",
         "definition": {
           "definition": "NOT NULL created_at",
@@ -7084,6 +8122,13 @@
         "key": "packages.packages_vehicle_type_id_not_null",
         "definition": {
           "definition": "NOT NULL vehicle_type_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "packages.weekend_package_mode",
+        "definition": {
+          "definition": "CHECK (booking_mode::text = ANY (ARRAY['private'::character varying, 'shared'::character varying, 'both'::character varying]::text[]))",
           "validated": true
         }
       },
@@ -8334,6 +9379,104 @@
         }
       },
       {
+        "key": "tour_guides.tour_guides_bio_not_null",
+        "definition": {
+          "definition": "NOT NULL bio",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_created_at_not_null",
+        "definition": {
+          "definition": "NOT NULL created_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_created_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (created_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_guide_id_not_null",
+        "definition": {
+          "definition": "NOT NULL guide_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_is_active_not_null",
+        "definition": {
+          "definition": "NOT NULL is_active",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_is_deleted_not_null",
+        "definition": {
+          "definition": "NOT NULL is_deleted",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_languages_check",
+        "definition": {
+          "definition": "CHECK (jsonb_typeof(languages) = 'array'::text)",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_languages_not_null",
+        "definition": {
+          "definition": "NOT NULL languages",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_name_check",
+        "definition": {
+          "definition": "CHECK (length(TRIM(BOTH FROM name)) > 0)",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_name_not_null",
+        "definition": {
+          "definition": "NOT NULL name",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_phone_not_null",
+        "definition": {
+          "definition": "NOT NULL phone",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_pkey",
+        "definition": {
+          "definition": "PRIMARY KEY (guide_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_updated_at_not_null",
+        "definition": {
+          "definition": "NOT NULL updated_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "tour_guides.tour_guides_updated_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (updated_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
         "key": "tourist_spots.tourist_spots_city_id_fkey",
         "definition": {
           "definition": "FOREIGN KEY (city_id) REFERENCES public.cities(city_id)",
@@ -8419,6 +9562,643 @@
       },
       {
         "key": "tourist_spots.tourist_spots_updated_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (updated_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_booking_closes_at_not_null",
+        "definition": {
+          "definition": "NOT NULL booking_closes_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_booking_opens_at_not_null",
+        "definition": {
+          "definition": "NOT NULL booking_opens_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_capacity_check",
+        "definition": {
+          "definition": "CHECK (capacity >= 1 AND capacity <= 1000)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_capacity_not_null",
+        "definition": {
+          "definition": "NOT NULL capacity",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_check",
+        "definition": {
+          "definition": "CHECK (min_travellers >= 1 AND min_travellers <= capacity)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_check1",
+        "definition": {
+          "definition": "CHECK (ends_at > starts_at)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_check2",
+        "definition": {
+          "definition": "CHECK (booking_opens_at < booking_closes_at AND booking_closes_at < starts_at)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_check3",
+        "definition": {
+          "definition": "CHECK (decision_deadline > booking_opens_at AND decision_deadline <= booking_closes_at)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_content_check",
+        "definition": {
+          "definition": "CHECK (jsonb_typeof(content) = 'object'::text)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_content_not_null",
+        "definition": {
+          "definition": "NOT NULL content",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_created_at_not_null",
+        "definition": {
+          "definition": "NOT NULL created_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_created_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (created_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_decision_deadline_not_null",
+        "definition": {
+          "definition": "NOT NULL decision_deadline",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_departure_id_not_null",
+        "definition": {
+          "definition": "NOT NULL departure_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_display_order_not_null",
+        "definition": {
+          "definition": "NOT NULL display_order",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_driver_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (driver_id) REFERENCES public.drivers(driver_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_ends_at_not_null",
+        "definition": {
+          "definition": "NOT NULL ends_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_guide_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (guide_id) REFERENCES public.tour_guides(guide_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_is_active_not_null",
+        "definition": {
+          "definition": "NOT NULL is_active",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_is_deleted_not_null",
+        "definition": {
+          "definition": "NOT NULL is_deleted",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_is_featured_not_null",
+        "definition": {
+          "definition": "NOT NULL is_featured",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_min_travellers_not_null",
+        "definition": {
+          "definition": "NOT NULL min_travellers",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_package_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (package_id) REFERENCES public.packages(package_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_package_id_not_null",
+        "definition": {
+          "definition": "NOT NULL package_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_payment_hold_minutes_check",
+        "definition": {
+          "definition": "CHECK (payment_hold_minutes >= 5 AND payment_hold_minutes <= 1440)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_payment_hold_minutes_not_null",
+        "definition": {
+          "definition": "NOT NULL payment_hold_minutes",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_pickup_address_not_null",
+        "definition": {
+          "definition": "NOT NULL pickup_address",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_pickup_city_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (pickup_city_id) REFERENCES public.cities(city_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_pickup_city_id_not_null",
+        "definition": {
+          "definition": "NOT NULL pickup_city_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_pkey",
+        "definition": {
+          "definition": "PRIMARY KEY (departure_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_price_per_person_check",
+        "definition": {
+          "definition": "CHECK (price_per_person > 0::numeric)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_price_per_person_not_null",
+        "definition": {
+          "definition": "NOT NULL price_per_person",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_return_address_not_null",
+        "definition": {
+          "definition": "NOT NULL return_address",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_slug_check",
+        "definition": {
+          "definition": "CHECK (slug::text ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_slug_key",
+        "definition": {
+          "definition": "UNIQUE (slug)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_slug_not_null",
+        "definition": {
+          "definition": "NOT NULL slug",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_staff_reserved_seats_check",
+        "definition": {
+          "definition": "CHECK (staff_reserved_seats >= 0)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_staff_reserved_seats_not_null",
+        "definition": {
+          "definition": "NOT NULL staff_reserved_seats",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_starts_at_not_null",
+        "definition": {
+          "definition": "NOT NULL starts_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_status_check",
+        "definition": {
+          "definition": "CHECK (status::text = ANY (ARRAY['draft'::character varying, 'open'::character varying, 'guaranteed'::character varying, 'closed'::character varying, 'ongoing'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[]))",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_status_not_null",
+        "definition": {
+          "definition": "NOT NULL status",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_tax_percent_check",
+        "definition": {
+          "definition": "CHECK (tax_percent >= 0::numeric AND tax_percent <= 100::numeric)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_tax_percent_not_null",
+        "definition": {
+          "definition": "NOT NULL tax_percent",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_title_check",
+        "definition": {
+          "definition": "CHECK (length(TRIM(BOTH FROM title)) > 0)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_title_not_null",
+        "definition": {
+          "definition": "NOT NULL title",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_updated_at_not_null",
+        "definition": {
+          "definition": "NOT NULL updated_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_updated_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (updated_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_vehicle_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (vehicle_id) REFERENCES public.vehicles(vehicle_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_version_check",
+        "definition": {
+          "definition": "CHECK (version > 0)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_departures.trip_departures_version_not_null",
+        "definition": {
+          "definition": "NOT NULL version",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_assignment_id_not_null",
+        "definition": {
+          "definition": "NOT NULL assignment_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_booking_passenger_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (booking_passenger_id) REFERENCES public.booking_passengers(booking_passenger_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_booking_passenger_id_not_null",
+        "definition": {
+          "definition": "NOT NULL booking_passenger_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_created_at_not_null",
+        "definition": {
+          "definition": "NOT NULL created_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_created_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (created_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_is_active_not_null",
+        "definition": {
+          "definition": "NOT NULL is_active",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_is_deleted_not_null",
+        "definition": {
+          "definition": "NOT NULL is_deleted",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_pkey",
+        "definition": {
+          "definition": "PRIMARY KEY (assignment_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_room_label_check",
+        "definition": {
+          "definition": "CHECK (length(TRIM(BOTH FROM room_label)) > 0)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_room_label_not_null",
+        "definition": {
+          "definition": "NOT NULL room_label",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_stay_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (stay_id) REFERENCES public.trip_stays(stay_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_stay_id_not_null",
+        "definition": {
+          "definition": "NOT NULL stay_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_updated_at_not_null",
+        "definition": {
+          "definition": "NOT NULL updated_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_room_assignments.trip_room_assignments_updated_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (updated_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_check",
+        "definition": {
+          "definition": "CHECK (check_out > check_in)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_check_in_not_null",
+        "definition": {
+          "definition": "NOT NULL check_in",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_check_out_not_null",
+        "definition": {
+          "definition": "NOT NULL check_out",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_city_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (city_id) REFERENCES public.cities(city_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_confirmation_status_check",
+        "definition": {
+          "definition": "CHECK (confirmation_status::text = ANY (ARRAY['pending'::character varying, 'confirmed'::character varying, 'cancelled'::character varying]::text[]))",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_confirmation_status_not_null",
+        "definition": {
+          "definition": "NOT NULL confirmation_status",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_created_at_not_null",
+        "definition": {
+          "definition": "NOT NULL created_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_created_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (created_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_departure_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (departure_id) REFERENCES public.trip_departures(departure_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_departure_id_not_null",
+        "definition": {
+          "definition": "NOT NULL departure_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_hotel_address_not_null",
+        "definition": {
+          "definition": "NOT NULL hotel_address",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_hotel_name_not_null",
+        "definition": {
+          "definition": "NOT NULL hotel_name",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_is_active_not_null",
+        "definition": {
+          "definition": "NOT NULL is_active",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_is_deleted_not_null",
+        "definition": {
+          "definition": "NOT NULL is_deleted",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_meal_plan_not_null",
+        "definition": {
+          "definition": "NOT NULL meal_plan",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_occupancy_per_room_check",
+        "definition": {
+          "definition": "CHECK (occupancy_per_room >= 1 AND occupancy_per_room <= 20)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_occupancy_per_room_not_null",
+        "definition": {
+          "definition": "NOT NULL occupancy_per_room",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_pkey",
+        "definition": {
+          "definition": "PRIMARY KEY (stay_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_room_type_not_null",
+        "definition": {
+          "definition": "NOT NULL room_type",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_rooms_reserved_check",
+        "definition": {
+          "definition": "CHECK (rooms_reserved >= 0)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_rooms_reserved_not_null",
+        "definition": {
+          "definition": "NOT NULL rooms_reserved",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_staff_beds_reserved_check",
+        "definition": {
+          "definition": "CHECK (staff_beds_reserved >= 0)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_staff_beds_reserved_not_null",
+        "definition": {
+          "definition": "NOT NULL staff_beds_reserved",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_stay_id_not_null",
+        "definition": {
+          "definition": "NOT NULL stay_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_supplier_cost_check",
+        "definition": {
+          "definition": "CHECK (supplier_cost >= 0::numeric)",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_updated_at_not_null",
+        "definition": {
+          "definition": "NOT NULL updated_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "trip_stays.trip_stays_updated_by_fkey",
         "definition": {
           "definition": "FOREIGN KEY (updated_by) REFERENCES public.users(user_id)",
           "validated": true
@@ -8694,6 +10474,20 @@
         "key": "vehicle_availability.vehicle_availability_vehicle_id_not_null",
         "definition": {
           "definition": "NOT NULL vehicle_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "vehicle_availability.weekend_availability_departure_fk",
+        "definition": {
+          "definition": "FOREIGN KEY (departure_id) REFERENCES public.trip_departures(departure_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "vehicle_availability.weekend_availability_owner",
+        "definition": {
+          "definition": "CHECK (booking_id IS NULL OR departure_id IS NULL)",
           "validated": true
         }
       },
@@ -9488,6 +11282,30 @@
         }
       },
       {
+        "key": "idx_trip_departures_public",
+        "definition": {
+          "definition": "CREATE INDEX idx_trip_departures_public ON public.trip_departures USING btree (starts_at, status) WHERE ((NOT is_deleted) AND is_active)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "idx_trip_room_assignments_passenger",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX idx_trip_room_assignments_passenger ON public.trip_room_assignments USING btree (stay_id, booking_passenger_id) WHERE ((NOT is_deleted) AND is_active)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "idx_trip_stays_departure",
+        "definition": {
+          "definition": "CREATE INDEX idx_trip_stays_departure ON public.trip_stays USING btree (departure_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
         "key": "idx_uap_user_id",
         "definition": {
           "definition": "CREATE INDEX idx_uap_user_id ON public.user_auth_providers USING btree (user_id)",
@@ -9507,6 +11325,30 @@
         "key": "idx_veh_avail_vehicle",
         "definition": {
           "definition": "CREATE INDEX idx_veh_avail_vehicle ON public.vehicle_availability USING btree (vehicle_id, starts_at, ends_at)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "idx_weekend_availability_departure",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX idx_weekend_availability_departure ON public.vehicle_availability USING btree (departure_id) WHERE ((departure_id IS NOT NULL) AND (NOT is_deleted))",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "idx_weekend_bookings_departure",
+        "definition": {
+          "definition": "CREATE INDEX idx_weekend_bookings_departure ON public.bookings USING btree (departure_id, status)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "idx_weekend_bookings_request",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX idx_weekend_bookings_request ON public.bookings USING btree (user_id, client_request_id) WHERE (client_request_id IS NOT NULL)",
           "valid": true,
           "ready": true
         }
@@ -9712,9 +11554,49 @@
         }
       },
       {
+        "key": "tour_guides_pkey",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX tour_guides_pkey ON public.tour_guides USING btree (guide_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
         "key": "tourist_spots_pkey",
         "definition": {
           "definition": "CREATE UNIQUE INDEX tourist_spots_pkey ON public.tourist_spots USING btree (tourist_spot_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "trip_departures_pkey",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX trip_departures_pkey ON public.trip_departures USING btree (departure_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "trip_departures_slug_key",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX trip_departures_slug_key ON public.trip_departures USING btree (slug)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "trip_room_assignments_pkey",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX trip_room_assignments_pkey ON public.trip_room_assignments USING btree (assignment_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "trip_stays_pkey",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX trip_stays_pkey ON public.trip_stays USING btree (stay_id)",
           "valid": true,
           "ready": true
         }
@@ -9998,6 +11880,13 @@
         }
       },
       {
+        "key": "tour_guides.trg_tour_guides_updated_at",
+        "definition": {
+          "definition": "CREATE TRIGGER trg_tour_guides_updated_at BEFORE UPDATE ON public.tour_guides FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()",
+          "enabled": "O"
+        }
+      },
+      {
         "key": "tourist_spots.trg_tourist_spots_order_ins",
         "definition": {
           "definition": "CREATE TRIGGER trg_tourist_spots_order_ins BEFORE INSERT ON public.tourist_spots FOR EACH ROW EXECUTE FUNCTION public.maintain_display_order('display_order', 'city_id')",
@@ -10015,6 +11904,27 @@
         "key": "tourist_spots.trg_tourist_spots_updated_at",
         "definition": {
           "definition": "CREATE TRIGGER trg_tourist_spots_updated_at BEFORE UPDATE ON public.tourist_spots FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()",
+          "enabled": "O"
+        }
+      },
+      {
+        "key": "trip_departures.trg_trip_departures_updated_at",
+        "definition": {
+          "definition": "CREATE TRIGGER trg_trip_departures_updated_at BEFORE UPDATE ON public.trip_departures FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()",
+          "enabled": "O"
+        }
+      },
+      {
+        "key": "trip_room_assignments.trg_trip_room_assignments_updated_at",
+        "definition": {
+          "definition": "CREATE TRIGGER trg_trip_room_assignments_updated_at BEFORE UPDATE ON public.trip_room_assignments FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()",
+          "enabled": "O"
+        }
+      },
+      {
+        "key": "trip_stays.trg_trip_stays_updated_at",
+        "definition": {
+          "definition": "CREATE TRIGGER trg_trip_stays_updated_at BEFORE UPDATE ON public.trip_stays FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()",
           "enabled": "O"
         }
       },
@@ -10495,6 +12405,18 @@
         }
       },
       {
+        "key": "tour_guides_guide_id_seq",
+        "definition": {
+          "type": "integer",
+          "start": 1,
+          "min": 1,
+          "max": 2147483647,
+          "increment": 1,
+          "cycle": false,
+          "cache": 1
+        }
+      },
+      {
         "key": "tourist_spots_tourist_spot_id_seq",
         "definition": {
           "type": "integer",
@@ -10935,6 +12857,20 @@
         ]
       },
       {
+        "key": "tour_guides:neondb_owner",
+        "definition": [
+          "neondb_owner=arwdDxtm/neondb_owner",
+          "travel_app_dev=arwd/neondb_owner"
+        ]
+      },
+      {
+        "key": "tour_guides_guide_id_seq:neondb_owner",
+        "definition": [
+          "neondb_owner=rwU/neondb_owner",
+          "travel_app_dev=rU/neondb_owner"
+        ]
+      },
+      {
         "key": "tourist_spots:neondb_owner",
         "definition": [
           "neondb_owner=arwdDxtm/neondb_owner",
@@ -10946,6 +12882,27 @@
         "definition": [
           "neondb_owner=rwU/neondb_owner",
           "travel_app_dev=rU/neondb_owner"
+        ]
+      },
+      {
+        "key": "trip_departures:neondb_owner",
+        "definition": [
+          "neondb_owner=arwdDxtm/neondb_owner",
+          "travel_app_dev=arwd/neondb_owner"
+        ]
+      },
+      {
+        "key": "trip_room_assignments:neondb_owner",
+        "definition": [
+          "neondb_owner=arwdDxtm/neondb_owner",
+          "travel_app_dev=arwd/neondb_owner"
+        ]
+      },
+      {
+        "key": "trip_stays:neondb_owner",
+        "definition": [
+          "neondb_owner=arwdDxtm/neondb_owner",
+          "travel_app_dev=arwd/neondb_owner"
         ]
       },
       {

@@ -56,14 +56,21 @@ export function bookingWindow(args: {
   return { start, end: new Date(start.getTime() + ms) };
 }
 
+/** Serialize availability writers on the existing vehicle row. Call inside a transaction.
+ * Lock order for booking transitions: booking first, then vehicle. */
+export async function lockVehicle(client: PoolClient, vehicleId: number): Promise<void> {
+  await client.query("SELECT vehicle_id FROM vehicles WHERE vehicle_id = $1 FOR UPDATE", [vehicleId]);
+}
+
 /** True if `vehicleId` has any block overlapping [start, end), ignoring `exceptBookingId`. */
 export async function hasConflict(
   vehicleId: number,
   start: Date,
   end: Date,
   exceptBookingId?: string | null,
+  client?: PoolClient,
 ): Promise<boolean> {
-  const r = await getPool().query(
+  const r = await (client ?? getPool()).query(
     `SELECT 1 FROM vehicle_availability
       WHERE vehicle_id = $1 AND is_deleted = false
         AND starts_at < $3 AND $2 < ends_at
@@ -84,9 +91,9 @@ export async function unavailableVehicleIds(start: Date, end: Date): Promise<num
   return r.rows.map((x) => x.vehicle_id as number);
 }
 
-/** Insert a block. Pass a txn client when called from a booking transition. */
+/** Insert after lockVehicle + hasConflict, using the same transaction client. */
 export async function addBlock(
-  db: PoolClient | ReturnType<typeof getPool>,
+  db: PoolClient,
   args: {
     vehicleId: number;
     start: Date;
@@ -155,14 +162,31 @@ export async function createAdminBlock(
   if (input.kind !== "blocked" && input.kind !== "maintenance") {
     return { ok: false, message: "Kind must be 'blocked' or 'maintenance'." };
   }
-  const r = await getPool().query(
-    `INSERT INTO vehicle_availability
-       (vehicle_id, starts_at, ends_at, kind, note, created_by, updated_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $6)
-     RETURNING *`,
-    [vehicleId, start.toISOString(), end.toISOString(), input.kind, input.note?.trim() || null, actorId],
-  );
-  return { ok: true, block: toBlock(r.rows[0]) };
+  const client = await getPool().connect();
+  let committed = false;
+  try {
+    await client.query("BEGIN");
+    await lockVehicle(client, vehicleId);
+    if (await hasConflict(vehicleId, start, end, null, client)) {
+      return { ok: false, message: "That vehicle is already booked or blocked for this window." };
+    }
+    const r = await client.query(
+      `INSERT INTO vehicle_availability
+         (vehicle_id, starts_at, ends_at, kind, note, created_by, updated_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $6)
+       RETURNING *`,
+      [vehicleId, start.toISOString(), end.toISOString(), input.kind, input.note?.trim() || null, actorId],
+    );
+    await client.query("COMMIT");
+    committed = true;
+    return { ok: true, block: toBlock(r.rows[0]) };
+  } finally {
+    try {
+      if (!committed) await client.query("ROLLBACK");
+    } finally {
+      client.release();
+    }
+  }
 }
 
 export async function deleteAdminBlock(blockId: number, actorId: string): Promise<boolean> {

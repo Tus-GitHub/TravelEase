@@ -214,3 +214,38 @@ The enhanced db:check requires current development baseline/hash parity and eith
 full production parity or fresh isolated-replay proof bound to both endpoints,
 schemas and all SQL files. Evidence expires after48 hours; it cannot waive unrelated
 drift. Production migrations still run only through Vercel predeploy.
+
+## Weekend Trips and CMS catalogue — development only (2026-11-06)
+
+User approved migration029's exact four tables/six added columns on development
+only. It is applied and immutable; reviewed dev schema/grants/checksums pass29.
+Production was not contacted or changed for this work. No publish/merge/push ran.
+
+Completed admin Friday departures/guides/manual hotels, shared customer bookings,
+seat holds/idempotency, existing offline payments/refunds, room allocation and
+public/customer pages. CMS adds source/filter/visitor controls and link pickers in
+existing JSON. No additional service key, scheduler or CMS schema is required.
+Shared GPS, supplier hotel reservations, room upgrades and Razorpay remain excluded.
+
+Acceptance: optimized isolated Next build, typecheck/lint;8 weekend,12 CMS,42
+pricing,25 lifecycle and22 refund model cases; real dev shared inventory/expiry
+contention, rollback and10 existing private/coupon concurrency cases;30 Weekend
+HTTP checks plus13 CMS HTTP checks and full desktop/mobile Chrome journeys.
+The browser verifies live catalogue seat refresh after cancellation, frozen stops,
+two unrelated customer bookings, payment/guarantee/room privacy and refund payment.
+Synthetic data/pages/uploads removed; test email stayed local. Operator guide:
+docs/WEEKEND_TRIPS_PLAN.md. Repeatable full acceptance (installed Playwright module):
+
+```powershell
+node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/weekend-admin-acceptance.ts --dev --full --cms --built --browser-module=PATH_TO_PLAYWRIGHT
+npm run test:weekend-bookings
+npm run test:concurrency
+npm run db:check:dev
+```
+
+The --built option calls next build directly in an isolated local directory using
+the restricted DEVELOPMENT connection, then serves that build for the browser.
+It does not call vercel-build/predeploy or any production migration command.
+Publication requires separate user authorization for the production schema and
+reviewed application scope. Earlier unrelated dev-only work remains in this checkout;
+prepare/rehearse the intended release and run the normal parity gate when authorized.

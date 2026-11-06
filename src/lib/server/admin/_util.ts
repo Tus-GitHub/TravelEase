@@ -1,5 +1,6 @@
 import { getPool } from "../db";
 import { logActivity } from "../activity-log";
+import { protectedResourceMutation } from "../weekend-resources";
 
 /**
  * Partial UPDATE from a static camelCase->column map. Only keys present in
@@ -29,11 +30,11 @@ export async function applyPartialUpdate(
   cols.push(`updated_by = $${vals.length}`);
   vals.push(id);
 
-  const result = await getPool().query(
+  const result = await protectedResourceMutation(table,id,input,db => db.query(
     `UPDATE ${table} SET ${cols.join(", ")}
      WHERE ${idColumn} = $${vals.length} AND is_deleted = false`,
     vals,
-  );
+  ));
   const ok = (result.rowCount ?? 0) > 0;
   if (ok) {
     await logActivity({
@@ -53,11 +54,11 @@ export async function softDelete(
   id: number,
   actorId: string,
 ): Promise<boolean> {
-  const result = await getPool().query(
+  const result = await protectedResourceMutation(table,id,{isDeleted:true},db => db.query(
     `UPDATE ${table} SET is_deleted = true, updated_by = $1
      WHERE ${idColumn} = $2 AND is_deleted = false`,
     [actorId, id],
-  );
+  ));
   const ok = (result.rowCount ?? 0) > 0;
   if (ok) {
     await logActivity({

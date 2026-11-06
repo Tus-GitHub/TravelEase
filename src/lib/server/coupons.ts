@@ -26,22 +26,28 @@ const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 /**
  * @param userId  omit / null to skip the per-user limit (e.g. a public quote
  *                preview); the real limit is enforced at booking time.
+ * @param client open READ COMMITTED transaction for booking validation; keep it
+ *               open through recordRedemption and booking commit.
  */
 export async function validateCoupon(
   rawCode: string,
   subtotal: number,
   userId?: string | null,
+  client?: PoolClient,
 ): Promise<CouponResult> {
   const code = (rawCode ?? "").trim().toUpperCase();
   if (!code) return { ok: false, reason: "Enter a discount code." };
 
-  const pool = getPool();
+  // Booking callers supply an open transaction; lock before reading usage counts.
+  // Quote previews remain non-locking and cannot guarantee later availability.
+  const pool = client ?? getPool();
   const c = (
     await pool.query(
       `SELECT coupon_id, code, discount_type, discount_value, max_discount,
               min_booking_amount, usage_limit, per_user_limit, starts_at, expires_at
          FROM coupons
-        WHERE upper(code) = $1 AND is_deleted = false AND is_active = true`,
+        WHERE upper(code) = $1 AND is_deleted = false AND is_active = true
+        ${client ? "FOR UPDATE" : ""}`,
       [code],
     )
   ).rows[0];

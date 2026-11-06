@@ -16,6 +16,8 @@ import WhyChooseUs from "@/components/sections/WhyChooseUs";
 import Testimonials from "@/components/sections/Testimonials";
 import { listPublicPackages, listPublicRegions, toCardPackage, toBuilderRegion } from "@/lib/server/catalogue";
 import { cmsText, cmsItems, cmsHeading, type CmsDocument, type CmsSection } from "@/lib/cms";
+import { loadCatalogue } from '@/lib/server/cms-catalogue';
+import CatalogueBrowser from './CatalogueBrowser';
 
 function Paragraphs({ text }: { text: string }) {
   return <div className="space-y-4">{text.split(/\n\s*\n/).filter(Boolean).map((paragraph, i) => <p key={i} className="whitespace-pre-line text-muted">{paragraph}</p>)}</div>;
@@ -46,12 +48,14 @@ export default async function CmsRenderer({ document }: { document: CmsDocument 
   const hasBuilder = sections.some(section => section.type === "package-builder");
   const [packageRows, regionRows] = await Promise.all([hasPackages ? listPublicPackages() : [], hasBuilder ? listPublicRegions() : []]);
   const packages = packageRows.map(toCardPackage), regions = regionRows.map(toBuilderRegion);
+  const catalogueRows = new Map(await Promise.all(sections.filter(s => s.type === 'catalogue').map(async s => [s.id, await loadCatalogue(s.content)] as const)));
   return <main className={sections[0]?.type === "hero" ? "" : "pt-20"} data-cms-page>
     {!sections.some(section => section.type === "hero") && <h1 className="sr-only">{document.seo.title}</h1>}
     {sections.map(section => {
       switch (section.type) {
+        case 'catalogue': return <CatalogueBrowser key={section.id} section={section} initialRows={catalogueRows.get(section.id) ?? []} />;
         case "hero": return <HeroSection key={section.id} cms={section} />;
-        case "travel-band": { const photo = cmsText(section, "imageUrl") || (section.appearance.background === "image" ? section.appearance.imageUrl : ""); return <div key={section.id} data-cms-section={section.id}>{photo ? <div className="relative h-60"><Image src={photo} alt={cmsText(section, "imageAlt")} fill sizes="100vw" className="object-cover" /></div> : <TravelAnimationBand />}</div>; }
+        case "travel-band": { const photo = cmsText(section, "imageUrl") || (section.appearance.background === "image" ? section.appearance.imageUrl : ""); return <div key={section.id} id={`section-${section.id}`} data-cms-section={section.id}>{photo ? <div className="relative h-60"><Image src={photo} alt={cmsText(section, "imageAlt")} fill sizes="100vw" className="object-cover" /></div> : <TravelAnimationBand />}</div>; }
         case "destinations": return <DestinationMap key={section.id} cms={section} />;
         case "vehicle-categories": return <VehicleCategories key={section.id} cms={section} />;
         case "featured-vehicles": return <FeaturedVehicles key={section.id} cms={section} />;

@@ -6,6 +6,7 @@ const path = require('node:path');
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const next = require('next');
+const { spawn } = require('node:child_process');
 
 (async () => {
   assert(process.env.BOOKING_SMOKE_SERVER === 'dev-only' && !process.env.VERCEL);
@@ -21,12 +22,25 @@ const next = require('next');
   try { await fs.cp(path.join(root, 'public'), path.join(sandbox, 'public'), { recursive: true }); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   await fs.symlink(path.join(root, 'node_modules'), path.join(sandbox, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
-  for (const name of ['next.config.mjs', 'postcss.config.mjs', 'tailwind.config.ts', 'package.json']) await fs.copyFile(path.join(root, name), path.join(sandbox, name));
+  for (const name of ['next.config.mjs', 'postcss.config.mjs', 'tailwind.config.ts', 'package.json', '.eslintrc.json']) await fs.copyFile(path.join(root, name), path.join(sandbox, name));
   const config = JSON.parse(await fs.readFile(path.join(root, 'tsconfig.json'), 'utf8'));
   config.compilerOptions.incremental = false;
   config.include = ['next-env.d.ts', 'src/**/*.ts', 'src/**/*.tsx', '.next/types/**/*.ts'];
   await fs.writeFile(path.join(sandbox, 'tsconfig.json'), JSON.stringify(config));
-  const app = next({ dev: true, dir: sandbox, hostname: '127.0.0.1', port: 3103 });
+  const built = process.env.BOOKING_SMOKE_BUILD === '1';
+  if (built) {
+    // Direct framework build only: never invoke Vercel or its migration hook.
+    assert(process.env.VERCEL_ENV !== 'production' && !process.env.DATABASE_URL_PRODUCTION);
+    await new Promise((resolve, reject) => {
+      const build = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'build'], {
+        cwd: sandbox, env: process.env, stdio: 'inherit', windowsHide: true,
+      });
+      build.once('error', reject);
+      build.once('exit', code => code === 0 ? resolve() : reject(Error(`Local build failed (${code})`)));
+    });
+    process.send?.({ built: true });
+  }
+  const app = next({ dev: !built, dir: sandbox, hostname: '127.0.0.1', port: 3103 });
   await app.prepare();
   const server = http.createServer(app.getRequestHandler());
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(3103, '127.0.0.1', resolve); });

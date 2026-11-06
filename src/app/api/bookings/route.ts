@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/server/auth-guard";
+import { readBoundedJsonObject } from "@/lib/server/http-json";
+import { matchesRequestOrigin } from "@/lib/server/request-origin";
 import {
   createBooking,
   getBookingForUser,
@@ -23,10 +25,11 @@ export async function GET() {
 export async function POST(request: Request) {
   const auth = await requireUser();
   if (!auth.ok) return auth.response;
+  if (!matchesRequestOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
 
   let body: CreateBookingInput;
   try {
-    body = await request.json();
+    body = await readBoundedJsonObject(request.body, 64 * 1024) as unknown as CreateBookingInput;
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }

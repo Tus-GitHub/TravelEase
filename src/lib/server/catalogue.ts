@@ -227,7 +227,7 @@ const PACKAGE_SELECT = `
   FROM packages p
   JOIN regions r ON r.region_id = p.region_id AND r.is_deleted = false
   JOIN vehicle_types vt ON vt.vehicle_type_id = p.vehicle_type_id
-  WHERE p.is_deleted = false AND p.is_active = true`;
+  WHERE p.is_deleted = false AND p.is_active = true AND p.booking_mode IN ('private','both')`;
 
 const PACKAGE_STOPS_SELECT = `
   SELECT ps.package_id, ps.tourist_spot_id, ts.name, ts.tag, ts.description,
@@ -404,8 +404,8 @@ export async function listPublicRegions(): Promise<PublicRegion[]> {
       `SELECT c.region_id, ts.tourist_spot_id, ts.name, ts.tag, ts.description,
               ts.image_url, ts.city_id, c.name AS city_name
          FROM tourist_spots ts
-         JOIN cities c ON c.city_id = ts.city_id AND c.is_deleted = false
-        WHERE ts.is_deleted = false
+         JOIN cities c ON c.city_id = ts.city_id AND c.is_deleted = false AND c.is_active = true
+        WHERE ts.is_deleted = false AND ts.is_active = true
         ORDER BY ts.display_order, ts.tourist_spot_id`,
     ),
   ]);

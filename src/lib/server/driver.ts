@@ -47,7 +47,7 @@ export async function removeDriverLogin(id: number, actor: string) {
 const ASSIGNED = `FROM bookings b JOIN drivers d ON d.driver_id=b.driver_id
  JOIN users u ON u.user_id=d.user_id JOIN roles r ON r.role_id=u.role_id
  WHERE d.user_id=$1 AND r.name='driver' AND u.is_active AND NOT u.is_deleted
- AND d.is_active AND NOT d.is_deleted AND NOT b.is_deleted AND b.status IN ('Confirmed','Ongoing')`;
+ AND d.is_active AND NOT d.is_deleted AND NOT b.is_deleted AND b.departure_id IS NULL AND b.status IN ('Confirmed','Ongoing')`;
 export async function listDriverTrips(userId: string, id?: string) {
   if (id && !UUID.test(id)) return [];
   return (await getPool().query(`SELECT b.booking_id AS id,b.booking_reference AS reference,b.status,
@@ -86,7 +86,7 @@ export async function latestLocation(id: string, userId: string) {
     FROM driver_locations l JOIN bookings b ON b.booking_id=l.booking_id AND b.driver_id=l.driver_id
     JOIN drivers d ON d.driver_id=l.driver_id JOIN users u ON u.user_id=d.user_id
     JOIN roles r ON r.role_id=u.role_id
-    WHERE b.booking_id=$1 AND b.user_id=$2 AND NOT b.is_deleted AND b.status='Ongoing'
+    WHERE b.booking_id=$1 AND b.user_id=$2 AND NOT b.is_deleted AND b.departure_id IS NULL AND b.status='Ongoing'
     AND d.is_active AND NOT d.is_deleted AND u.is_active AND NOT u.is_deleted AND r.name='driver'
     AND l.recorded_at > now()-interval '10 minutes' ORDER BY l.recorded_at DESC,l.location_id DESC LIMIT 1`, [id,userId])).rows[0];
   return row ? {...row,lat:Number(row.lat),lng:Number(row.lng),accuracy:row.accuracy == null ? null : Number(row.accuracy)} : null;

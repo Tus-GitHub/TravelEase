@@ -6,6 +6,9 @@ import Icon from "@/components/common/Icon";
 import ActionDialog from "@/components/common/ActionDialog";
 import { cmsSafeImage, type CmsContent, type CmsField, type CmsItem } from "@/lib/cms";
 import { MAX_IMAGE_BYTES } from "@/lib/image-upload";
+import { catalogueDefaults, catalogueFieldApplies, catalogueFields, sourceLabels, type CatalogueSource } from '@/lib/cms-catalogue';
+import CmsLinkField from './CmsLinkField';
+import { useCmsControls } from './CmsControlsContext';
 
 export const cmsInput = "mt-2 w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-sm font-normal text-fg outline-none transition focus:border-accent-500 focus:ring-2 focus:ring-accent-500/15 disabled:opacity-60";
 export function CmsImageField({ label, value, onChange, onUpload, disabled = false, id }: {
@@ -39,13 +42,19 @@ export default function CmsFields({ fields, value, onChange, onUpload, prefix, d
   onUpload: (target: string, file: File) => Promise<void>; prefix: string; disabled?: boolean;
 }) {
   const [remove, setRemove] = useState<{ key: string; index: number } | null>(null);
+  const controls = useCmsControls();
   const set = (key: string, next: CmsContent[string]) => onChange({ ...value, [key]: next });
   function move(key: string, index: number, delta: number) {
     const next = [...value[key] as CmsItem[]]; [next[index], next[index + delta]] = [next[index + delta], next[index]]; set(key, next);
   }
   return <div className="space-y-6">
-    {fields.map(field => {
+    {fields.filter(field => !value.source || catalogueFieldApplies(field.key, String(value.source))).map(field => {
       const id = `${prefix}-${field.key}`, current = value[field.key];
+      if (field.type === 'url') return <CmsLinkField key={id} id={id} label={field.label} value={String(current ?? '')} disabled={disabled} onChange={next => set(field.key, next)} />;
+      if (value.source && ['category', 'region', 'pickup'].includes(field.key)) {
+        const options = field.key === 'category' ? controls.options?.categories : field.key === 'region' ? controls.options?.regions : controls.options?.cities;
+        return <label key={id} htmlFor={id} className="block text-sm font-semibold">{field.label}<select id={id} aria-label={field.label} className={cmsInput} value={String(current)} disabled={disabled || !controls.options} onChange={e => set(field.key, field.key === 'category' ? e.target.value : Number(e.target.value))}><option value={field.key === 'category' ? '' : 0}>All</option>{current && !options?.some(o => String(o.value) === String(current)) ? <option value={String(current)}>Unavailable saved selection</option> : null}{options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select>{controls.error && <span className="mt-2 block text-xs text-red-600">{controls.error} <button type="button" className="underline" onClick={controls.reload}>Retry</button></span>}</label>;
+      }
       if (field.type === "image") return <CmsImageField key={id} id={id} label={field.label} value={String(current ?? "")} disabled={disabled} onChange={next => set(field.key, next)} onUpload={file => onUpload(field.key, file)} />;
       if (field.type === "checkbox") return <label key={id} className="flex items-center gap-3 rounded-xl border border-line p-4 text-sm font-semibold"><input type="checkbox" className="h-4 w-4 accent-accent-500" checked={current === true} disabled={disabled} onChange={e => set(field.key, e.target.checked)} />{field.label}</label>;
       if (field.type === "items") {
@@ -64,8 +73,14 @@ export default function CmsFields({ fields, value, onChange, onUpload, prefix, d
       }
       return <label key={id} htmlFor={id} className="block text-sm font-semibold text-fg">{field.label}
         {field.type === "textarea" ? <textarea id={id} aria-label={field.label} value={String(current ?? "")} rows={field.key === "body" ? 7 : 3} maxLength={field.max} disabled={disabled} className={cmsInput + " resize-y"} onChange={e => set(field.key, e.target.value)} />
-          : field.type === "select" ? <select id={id} aria-label={field.label} value={String(current ?? "")} disabled={disabled} className={cmsInput} onChange={e => set(field.key, e.target.value)}>{field.options?.map(option => <option key={option} value={option}>{option}</option>)}</select>
-          : <input id={id} type={field.type === "number" ? "number" : "text"} value={String(current ?? "")} maxLength={field.max} disabled={disabled} className={cmsInput} onChange={e => set(field.key, field.type === "number" ? Number(e.target.value) : e.target.value)} />}
+          : field.type === "select" ? <select id={id} aria-label={field.label} value={String(current ?? "")} disabled={disabled} className={cmsInput} onChange={e => {
+            if (field.key !== 'source') { set(field.key, e.target.value); return; }
+            const next: CmsContent = { ...value, source: e.target.value };
+            for (const f of catalogueFields) if (!catalogueFieldApplies(f.key, e.target.value)) next[f.key] = catalogueDefaults[f.key];
+            if (value.buttonHref === '/' + value.source) { next.buttonHref = '/' + e.target.value; next.buttonLabel = 'View all ' + sourceLabels[e.target.value as CatalogueSource].toLowerCase(); }
+            onChange(next);
+          }}>{field.options?.map(option => <option key={option} value={option}>{field.key === 'source' ? sourceLabels[option as CatalogueSource] : option === 'recommended' && value.source === 'weekend-trips' ? 'Next departure first' : option.replaceAll('-', ' ')}</option>)}</select>
+          : <input id={id} type={field.type === "number" ? "number" : value.source && ['from', 'to'].includes(field.key) ? 'date' : "text"} min={field.type === 'number' ? field.key === 'count' ? 1 : 0 : undefined} max={field.type === 'number' ? field.max : undefined} value={String(current ?? "")} maxLength={field.max} disabled={disabled} className={cmsInput} onChange={e => set(field.key, field.type === "number" ? Number(e.target.value) : e.target.value)} />}
       </label>;
     })}
     {remove && <ActionDialog title="Remove this item?" description="It will be removed from your draft. The published page stays unchanged until you publish." confirmLabel="Remove item" danger onClose={() => setRemove(null)} onConfirm={async () => { set(remove.key, (value[remove.key] as CmsItem[]).filter((_, index) => index !== remove.index)); }} />}

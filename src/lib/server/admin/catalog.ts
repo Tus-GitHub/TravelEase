@@ -10,6 +10,7 @@ export interface PackageStop {
 }
 
 export interface CataloguePackage {
+  bookingMode: "private" | "shared" | "both";
   id: number;
   regionId: number;
   regionName: string;
@@ -27,6 +28,7 @@ export interface CataloguePackage {
 }
 
 interface PackageRow {
+  booking_mode: "private" | "shared" | "both";
   package_id: number;
   region_id: number;
   region_name: string;
@@ -44,6 +46,7 @@ interface PackageRow {
 
 function toPackage(r: PackageRow, stops: PackageStop[]): CataloguePackage {
   return {
+    bookingMode: r.booking_mode,
     id: r.package_id,
     regionId: r.region_id,
     regionName: r.region_name,
@@ -65,7 +68,7 @@ const P_SELECT = `
   SELECT p.package_id, p.region_id, r.name AS region_name,
          p.vehicle_type_id, vt.title AS vehicle_type_title,
          p.name, p.slug, p.duration_days, p.max_persons, p.price_per_person,
-         p.tag, p.rating, p.is_active
+         p.tag, p.rating, p.is_active, p.booking_mode
   FROM packages p
   JOIN regions r ON r.region_id = p.region_id
   JOIN vehicle_types vt ON vt.vehicle_type_id = p.vehicle_type_id
@@ -140,6 +143,7 @@ async function uniqueSlug(base: string): Promise<string> {
 }
 
 export interface PackageInput {
+  bookingMode?: "private" | "shared" | "both";
   regionId: number;
   vehicleTypeId: number;
   name: string;
@@ -158,8 +162,8 @@ export async function createPackage(
   const result = await getPool().query(
     `INSERT INTO packages
        (region_id, vehicle_type_id, name, slug, duration_days, max_persons,
-        price_per_person, tag, rating, highlights, created_by, updated_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '[]'::jsonb, $10, $10)
+        price_per_person, tag, rating, highlights, created_by, updated_by, booking_mode)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '[]'::jsonb, $10, $10, $11)
      RETURNING package_id`,
     [
       input.regionId,
@@ -172,6 +176,7 @@ export async function createPackage(
       input.tag || null,
       input.rating,
       actorId,
+      input.bookingMode ?? "private",
     ],
   );
   return (await getPackage(result.rows[0].package_id))!;
@@ -197,6 +202,7 @@ export async function updatePackage(
       tag: "tag",
       rating: "rating",
       isActive: "is_active",
+      bookingMode: "booking_mode",
     },
     actorId,
   );

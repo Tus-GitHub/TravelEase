@@ -6,6 +6,10 @@ import {
   type TransitionResult,
 } from "../bookings";
 import { notifyDriverAssigned } from "../notifications";
+import { tripTransaction } from "../weekend-trips";
+import { assertDriverWindow } from "../weekend-resources";
+import { bookingWindow } from "../availability";
+import { TripError } from "@/lib/weekend-trips";
 
 /**
  * Admin view of bookings (plan.md §36 chunk 1.13). Status changes still go
@@ -14,6 +18,9 @@ import { notifyDriverAssigned } from "../notifications";
  */
 
 export interface AdminBookingRow {
+  departureId:string|null;
+  holdExpired:boolean;
+  seatHoldExpiresAt:string|null;
   id: string;
   reference: string;
   status: BookingStatus;
@@ -48,7 +55,8 @@ export interface AdminBookingRow {
 
 const ADMIN_SELECT = `
   SELECT b.booking_id, b.booking_reference, b.status, bt.code AS booking_type_code,
-         b.start_datetime, b.total_amount, b.currency, b.created_at,
+         b.start_datetime, b.total_amount, b.currency, b.created_at,b.departure_id,b.seat_hold_expires_at,
+         (b.status='PendingPayment' AND b.seat_hold_expires_at<=clock_timestamp()) AS hold_expired,
          cu.name AS customer_name, cu.email AS customer_email, cu.phone AS customer_phone,
          b.assigned_agent_user_id, ag.name AS agent_name,
          vt.title AS vehicle_type_title, p.name AS package_name,
@@ -69,6 +77,7 @@ const ADMIN_SELECT = `
 
 function toRow(r: Record<string, unknown>): AdminBookingRow {
   return {
+    departureId:(r.departure_id as string)??null,holdExpired:r.hold_expired===true,seatHoldExpiresAt:r.seat_hold_expires_at?new Date(r.seat_hold_expires_at as Date).toISOString():null,
     id: r.booking_id as string,
     reference: r.booking_reference as string,
     status: r.status as BookingStatus,
@@ -111,35 +120,21 @@ export async function assignBookingDriver(
   driverId: number | null,
   actorId: string,
 ): Promise<AssignResult> {
-  const pool = getPool();
-  const b = await pool.query(
-    `SELECT status FROM bookings WHERE booking_id = $1 AND is_deleted = false`,
-    [bookingId],
-  );
-  if (!b.rowCount) return { ok: false, status: 404, message: "Booking not found." };
-
-  if (driverId !== null) {
-    const d = await pool.query(
-      `SELECT 1 FROM drivers WHERE driver_id = $1 AND is_deleted = false AND is_active = true`,
-      [driverId],
-    );
-    if (!d.rowCount) {
-      return { ok: false, status: 400, message: "That driver doesn't exist or is inactive." };
-    }
-  }
-
-  await pool.query(
-    `UPDATE bookings SET driver_id = $1, updated_by = $2 WHERE booking_id = $3`,
-    [driverId, actorId, bookingId],
-  );
-
-  // Tell the customer once the trip is Confirmed or later.
-  if (
-    driverId !== null &&
-    ["Confirmed", "Ongoing"].includes(b.rows[0].status as string)
-  ) {
-    await notifyDriverAssigned(bookingId);
-  }
+  let status: string;
+  try {
+    status = await tripTransaction(async client => {
+      const b = (await client.query("SELECT * FROM bookings WHERE booking_id=$1 AND NOT is_deleted FOR UPDATE",[bookingId])).rows[0];
+      if (!b) throw new TripError("Booking not found.",404);
+      if (b.departure_id) throw new TripError("Manage the group driver from Weekend Trips. Individual seat bookings cannot change the shared assignment.",409);
+      if (driverId !== null) {
+        const win = bookingWindow({startDateTime:new Date(b.start_datetime),endDateTime:b.end_datetime,durationDays:b.duration_days,estimatedHours:Number(b.estimated_hours)||null});
+        await assertDriverWindow(client,driverId,win.start,win.end,bookingId);
+      }
+      await client.query("UPDATE bookings SET driver_id=$1,updated_by=$2 WHERE booking_id=$3",[driverId,actorId,bookingId]);
+      return b.status as string;
+    });
+  } catch (error) { if (error instanceof TripError) return {ok:false,status:error.status,message:error.message}; throw error; }
+  if (driverId !== null && ["Confirmed","Ongoing"].includes(status)) await notifyDriverAssigned(bookingId);
   return { ok: true };
 }
 

@@ -102,43 +102,47 @@ export async function settleRefund(
   if (input.status !== "paid" && input.status !== "waived") {
     return { ok: false, status: 400, message: "Status must be 'paid' or 'waived'." };
   }
+  const method = input.method?.trim() || null;
+  const reference = input.reference?.trim() || null;
+  if ((method?.length ?? 0) > 40 || (reference?.length ?? 0) > 120) {
+    return { ok: false, status: 400, message: "Use at most 40 characters for the method and 120 for the reference." };
+  }
   const pool = getPool();
-  const current = (
-    await pool.query("SELECT status FROM refunds WHERE booking_id = $1", [bookingId])
-  ).rows[0];
-  if (!current) {
-    return { ok: false, status: 404, message: "No refund is recorded for this booking." };
-  }
-  if (current.status !== "pending") {
-    return { ok: false, status: 409, message: `Refund is already ${current.status}.` };
-  }
+  // PostgreSQL rechecks this predicate after a concurrent updater releases its
+  // row lock. Exactly one pending -> paid/waived update can win.
   const r = await pool.query(
     `UPDATE refunds
         SET status = $1, method = $2, reference = $3, updated_by = $4
-      WHERE booking_id = $5
+      WHERE booking_id = $5 AND status = 'pending'
       RETURNING *`,
     [
       input.status,
-      input.method?.trim() || null,
-      input.reference?.trim() || null,
+      method,
+      reference,
       actorId,
       bookingId,
     ],
   );
+  if (!r.rowCount) {
+    const current = (await pool.query("SELECT status FROM refunds WHERE booking_id = $1", [bookingId])).rows[0];
+    return current
+      ? { ok: false, status: 409, message: `Refund is already ${current.status}.` }
+      : { ok: false, status: 404, message: "No refund is recorded for this booking." };
+  }
   const refund = toView(r.rows[0]);
   await logActivity({
     userId: actorId,
     action: "refund.settle",
     entityType: "booking",
     entityId: bookingId,
-    details: { status: refund.status, amount: refund.amount, method: input.method?.trim() || null },
+    details: { status: refund.status, amount: refund.amount, method },
   });
   return { ok: true, refund };
 }
 
 /** True when the booking has no outstanding (pending, non-zero) refund. */
-export async function refundIsClearForBooking(bookingId: string): Promise<boolean> {
-  const r = await getPool().query(
+export async function refundIsClearForBooking(bookingId: string, client?: PoolClient): Promise<boolean> {
+  const r = await (client ?? getPool()).query(
     "SELECT amount, status FROM refunds WHERE booking_id = $1",
     [bookingId],
   );

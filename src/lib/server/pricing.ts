@@ -43,6 +43,8 @@ export interface TripInput {
   passengers?: number;
   /** Set when a curated package is sold per person — overrides the per-day math. */
   packagePricePerPerson?: number;
+  /** Scheduled shared departures advertise a final, tax-inclusive package rate. */
+  packagePriceIncludesTax?: boolean;
   /** Coupons etc. (Phase 2). Clamped to the adjusted subtotal. */
   discountAmount?: number;
   /** Seasonal pricing (2.8). 1.25 = +25% on the subtotal, before discount/tax. */
@@ -92,6 +94,18 @@ export function calculatePrice(
   const days = Math.max(1, Math.floor(num(trip.days)) || 1);
   const nights = Math.floor(num(trip.nights));
   const passengers = Math.max(1, Math.floor(num(trip.passengers)) || 1);
+
+  if (trip.bookingType === "package" && trip.packagePriceIncludesTax) {
+    const gross = money(num(trip.packagePricePerPerson) * passengers);
+    const rate = Math.min(num(rule.taxPercent), 100);
+    const subtotal = money(gross / (1 + rate / 100));
+    const taxAmount = money(gross - subtotal);
+    return { baseAmount: 0, vehicleAmount: 0, driverAllowance: 0, nightCharges: 0,
+      extraKmCharges: 0, packageAmount: subtotal, subtotal, seasonalAdjustment: 0,
+      discountAmount: 0, taxAmount, totalAmount: gross, currency: "INR",
+      breakdown: [{ label: "Inclusive trip (before tax)", amount: subtotal },
+        ...(taxAmount ? [{ label: `Included tax (${rate}%)`, amount: taxAmount }] : [])] };
+  }
 
   let baseAmount = 0;
   let vehicleAmount = 0;

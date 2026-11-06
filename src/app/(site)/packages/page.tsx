@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Section from "@/components/common/Section";
+import Button from "@/components/common/Button";
 import PackagesBrowser from "@/components/packages/PackagesBrowser";
 import { listPublicPackages, toCardPackage } from "@/lib/server/catalogue";
 
@@ -11,8 +12,10 @@ export const metadata: Metadata = {
     "Curated multi-day trips across India — chauffeur-driven, all-inclusive, with a transparent per-person price.",
 };
 
-export default async function PackagesPage() {
-  const packages = (await listPublicPackages()).map(toCardPackage);
+export default async function PackagesPage({ searchParams }: { searchParams: { regionId?: string } }) {
+  const rows = await listPublicPackages();
+  const regionId = /^\d+$/.test(searchParams.regionId || '') ? Number(searchParams.regionId) : 0;
+  const packages = rows.filter(p => !regionId || p.regionId === regionId).map(toCardPackage);
 
   return (
     <Section
@@ -28,6 +31,7 @@ export default async function PackagesPage() {
           No packages are published yet. Check back soon.
         </p>
       )}
+      {regionId > 0 && <div className="mt-6 text-center"><Button href="/packages" variant="outline" size="sm">View all destinations</Button></div>}
     </Section>
   );
 }

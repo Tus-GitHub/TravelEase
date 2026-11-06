@@ -1,6 +1,7 @@
 import { categories } from "../data/categories";
 import { features } from "../data/features";
 import { aboutIntro, aboutStats, aboutStory } from "../data/pages";
+import { catalogueFields, catalogueDefaults, validateCatalogueContent } from './cms-catalogue';
 
 export const CMS_MAX_BYTES = 256 * 1024;
 export const CMS_MAX_SECTIONS = 30;
@@ -30,6 +31,8 @@ export const CMS_ICONS = ["car", "bus", "family", "users", "plane", "shield-chec
 const icon: CmsField = { key: "icon", label: "Icon", type: "select", options: CMS_ICONS };
 const headingDefaults = (eyebrow: string, title: string, subtitle = "") => ({ eyebrow, title, subtitle });
 export const CMS_SECTIONS = {
+  catalogue: { label: 'Live catalogue', description: 'Choose Vehicles, Packages or Weekend Trips, curate the selection and choose the filters visitors can use.', repeatable: true,
+    fields: [...heading, ...catalogueFields, text('buttonLabel', 'Button text'), url('buttonHref', 'Button link')], defaults: { ...headingDefaults('Explore together', 'Find your next journey'), ...catalogueDefaults, buttonLabel: 'View all Friday trips', buttonHref: '/weekend-trips' } },
   hero: { label: "Homepage hero", description: "Signature animated hero, photo option, search and calls to action.", repeatable: false,
     fields: [text("brand", "Brand line"), text("title", "Main headline"), text("highlight", "Highlighted headline"), paragraph("subtitle", "Introduction"), photo("imageUrl", "Hero photo (optional)"), text("imageAlt", "Photo description"), text("primaryLabel", "Main button text"), url("primaryHref", "Main button link"), text("secondaryLabel", "Second button text"), url("secondaryHref", "Second button link"), { key: "showSearch", label: "Show trip search", type: "checkbox" }, { key: "showVehicle", label: "Show hero photo or animated vehicle", type: "checkbox" }, items([text("value", "Value"), text("label", "Label")])],
     defaults: { brand: "Jagdamba Travellers", title: "Your journey.", highlight: "Elevated.", subtitle: "Chauffeur-driven journeys across India, engineered around you — verified drivers, transparent fares, one seamless booking.", imageUrl: "", imageAlt: "Chauffeur-driven travel", primaryLabel: "Explore the fleet", primaryHref: "/vehicles", secondaryLabel: "Build a trip", secondaryHref: "/booking", showSearch: true, showVehicle: true, items: [{ value: "500+", label: "Vehicles" }, { value: "50K+", label: "Journeys" }, { value: "120+", label: "Cities" }, { value: "4.9", label: "Avg. rating" }] } },
@@ -101,7 +104,7 @@ export class CmsError extends Error {
   status: number;
   constructor(message: string, status = 400) { super(message); this.name = "CmsError"; this.status = status; }
 }
-const reserved = new Set(["api", "admin", "auth", "login", "signup", "forgot-password", "reset-password", "verify-email", "logout", "profile", "drive", "vehicles", "packages", "booking", "hotels", "contact", "help", "terms", "privacy", "policy", "cms-preview", "favicon", "robots", "sitemap", "_next", "images"]);
+const reserved = new Set(["api", "admin", "auth", "login", "signup", "forgot-password", "reset-password", "verify-email", "logout", "profile", "drive", "vehicles", "packages", "weekend-trips", "booking", "hotels", "contact", "help", "terms", "privacy", "policy", "cms-preview", "favicon", "robots", "sitemap", "_next", "images"]);
 export const cmsPath = (slug: string) => slug === "home" ? "/" : `/${slug}`;
 export function validateCmsSlug(value: unknown): string {
   if (typeof value !== "string" || value.length > 160 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) || reserved.has(value)) throw new CmsError("Choose a page address using lowercase letters, numbers and hyphens. This address may be reserved.");
@@ -182,7 +185,9 @@ export function validateCmsDocument(input: unknown): CmsDocument {
     const imageUrl = boundedText(appearance.imageUrl, 1000, "Background image");
     if (!cmsSafeImage(imageUrl) || (background === "image" && !imageUrl)) throw new CmsError("Choose a valid background image.");
     if (!Number.isSafeInteger(appearance.overlay) || Number(appearance.overlay) < 0 || Number(appearance.overlay) > 90) throw new CmsError("Background overlay must be between 0 and 90.");
-    return { id: section.id, type, visible: section.visible, appearance: { background, imageUrl, overlay: Number(appearance.overlay) }, content: validateFields(section.content, definition.fields) };
+    const content = validateFields(section.content, definition.fields);
+    if (type === 'catalogue') { try { validateCatalogueContent(content); } catch (error) { throw new CmsError((error as Error).message); } }
+    return { id: section.id, type, visible: section.visible, appearance: { background, imageUrl, overlay: Number(appearance.overlay) }, content };
   });
   if (!sections.some(section => section.visible)) throw new CmsError("Keep at least one section visible.");
   const title = boundedText(seo.title, 200, "SEO title"), label = boundedText(nav.label, 80, "Navigation label");

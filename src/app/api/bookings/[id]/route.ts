@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/server/auth-guard";
+import { readBoundedJsonObject } from "@/lib/server/http-json";
+import { matchesRequestOrigin } from "@/lib/server/request-origin";
 import { getPool } from "@/lib/server/db";
 import {
   getBookingForUser,
@@ -49,13 +51,14 @@ export async function PATCH(
 ) {
   const auth = await requireUser();
   if (!auth.ok) return auth.response;
+  if (!matchesRequestOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: "Booking not found." }, { status: 404 });
   }
 
   let body: { status?: unknown; reason?: unknown; customerNotes?: unknown };
   try {
-    body = await request.json();
+    body = await readBoundedJsonObject(request.body, 20 * 1024);
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }

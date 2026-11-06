@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { CMS_TYPES, cmsDefaultDocument, newCmsSection, validateCmsDocument, validateCmsSlug, cmsSafeImage, cmsSafeLink, cmsDocumentWithImage } from "../../src/lib/cms.ts";
 import { cmsNavigationLinks } from "../../src/lib/cms-navigation.ts";
+import { catalogueDefaults, catalogueFields, catalogueFieldApplies, catalogueFilters, filterCatalogue, sortCatalogue, tripCatalogueQuery, cmsSectionAnchor, type CatalogueRow } from '../../src/lib/cms-catalogue.ts';
 
 test("current homepage and About defaults survive JSON serialization", () => {
   for (const slug of ["home", "about", "our-services"]) {
@@ -15,6 +16,31 @@ test("every available section has valid defaults", () => {
     const doc = cmsDefaultDocument("services"); doc.sections = [newCmsSection(type)];
     assert.deepEqual(validateCmsDocument(doc), doc);
   }
+});
+test('catalogue documents reject invalid dates, limits, hidden source rules and unknown query fields', () => {
+  for (const update of [{ count: 0 }, { count: 25 }, { minPrice: 100, maxPrice: 50 }, { from: '2026-02-30' }, { from: '2026-12-01', to: '2026-11-01' }, { source: 'sql' }, { source: 'vehicles', pickup: 1 }, { source: 'packages', showDates: true }, { query: 'SELECT *' }]) {
+    const doc = cmsDefaultDocument('cms-test'); const section = newCmsSection('catalogue'); Object.assign(section.content, update); doc.sections = [section]; assert.throws(() => validateCmsDocument(doc));
+  }
+  for (const source of ['vehicles', 'packages', 'weekend-trips']) {
+    const doc = cmsDefaultDocument('cms-test'), section = newCmsSection('catalogue'); section.content.source = source;
+    for (const field of catalogueFields) if (!catalogueFieldApplies(field.key, source)) section.content[field.key] = catalogueDefaults[field.key];
+    doc.sections = [section]; assert.deepEqual(validateCmsDocument(doc), doc);
+  }
+});
+test('visitor filters narrow admin selection before sort/count, without mutating rows', () => {
+  const row: CatalogueRow = { id: 'a', title: 'Mountain Friday', href: '/weekend-trips/a', image: '', description: 'Together', price: 5000, priceLabel: '', seats: 4, available: true, featured: true, category: '', categoryLabel: '', region: 1, regionLabel: 'Mountains', pickup: 2, pickupLabel: 'Delhi', date: '2026-11-20', rating: 0 };
+  const rows = [row, { ...row, id: 'b', region: 3, price: 4000 }, { ...row, id: 'c', seats: 1, price: 6000 }, { ...row, id: 'd', date: '2026-11-27', available: false }];
+  const selected = filterCatalogue(rows, { region: 1, availableOnly: true });
+  assert.deepEqual(filterCatalogue(selected, { region: 3 }), []);
+  assert.deepEqual(filterCatalogue(selected, { minSeats: 2, maxPrice: 5500, search: 'mountain', pickup: 2, from: '2026-11-20', to: '2026-11-20' }).map(r => r.id), ['a']);
+  assert.deepEqual(sortCatalogue(selected, 'price-high', 'weekend-trips').map(r => r.id), ['c', 'a']);
+  assert.equal(rows[0], row); assert.equal(rows[0].id, 'a');
+  assert.deepEqual(catalogueFilters(catalogueDefaults), { category: '', region: 0, pickup: 0, from: '', to: '', minPrice: 0, maxPrice: 0, minSeats: 0, availableOnly: false, featuredOnly: false });
+});
+test('CMS trip filters use supported API names and anchors match built-in section IDs', () => {
+  const query = tripCatalogueQuery({ ...catalogueDefaults, pickup: 2, region: 3, minSeats: 4, maxPrice: 7000, featuredOnly: true, sort: 'price-low' });
+  assert.deepEqual(Object.fromEntries(query), { regionId: '3', cityId: '2', maxPrice: '7000', seats: '4', featured: 'true', sort: 'price-low' });
+  for (const [type, anchor] of [['hero', '#section-x'], ['features', '#why-us'], ['testimonials', '#reviews'], ['vehicle-categories', '#vehicles'], ['featured-vehicles', '#featured'], ['package-builder', '#build-package'], ['catalogue', '#section-x']] as const) assert.equal(cmsSectionAnchor(newCmsSection(type, 'x')), anchor);
 });
 test("unknown fields/types, duplicate IDs and duplicate interactive sections are rejected", () => {
   const doc = cmsDefaultDocument("home");
