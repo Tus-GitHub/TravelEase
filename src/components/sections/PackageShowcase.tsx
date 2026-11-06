@@ -10,8 +10,9 @@ import Spotlight from "@/components/motion/Spotlight";
 import { gsap, prefersReducedMotion } from "@/lib/motion";
 import { parallax, scaleReveal } from "@/lib/motion/presets";
 import type { TravelPackage } from "@/types";
+import { cmsHeading, type CmsSection } from "@/lib/cms";
 
-export default function PackageShowcase({ packages }: { packages: TravelPackage[] }) {
+export default function PackageShowcase({ packages, cms }: { packages: TravelPackage[]; cms?: CmsSection }) {
   const root = useRef<HTMLDivElement>(null);
   const featured = packages.slice(0, 3);
 
@@ -38,6 +39,7 @@ export default function PackageShowcase({ packages }: { packages: TravelPackage[
       eyebrow="Curated Journeys"
       title="Travel packages, cinematically planned"
       subtitle="Multi-day routes with a dedicated chauffeur, handpicked stays and the driving sorted."
+      {...cmsHeading(cms)}
     >
       <div ref={root} className="grid gap-6 md:grid-cols-3">
         {featured.map((p) => (

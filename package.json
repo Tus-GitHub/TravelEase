@@ -18,7 +18,12 @@
     "test:pricing": "node --experimental-strip-types db/tests/pricing.test.ts",
     "test:bookings": "node --experimental-strip-types db/tests/bookings.test.ts",
     "test:refund": "node --experimental-strip-types db/tests/refund.test.ts",
-    "publish": "node db/publish.js"
+    "publish": "node db/publish.js",
+    "db:check:dev": "node --env-file=.env.local db/check-dev.js",
+    "test:drift": "node --test db/tests/schema-drift.test.cjs db/tests/release-replay-proof.test.cjs",
+    "db:setup-dev-role": "node --experimental-strip-types --env-file=.env.local db/setup-dev-runtime-role.mjs --dev",
+    "test:cms": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/cms.test.ts",
+    "test:cms-acceptance": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/cms-acceptance.ts --dev"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

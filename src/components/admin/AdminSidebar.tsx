@@ -66,6 +66,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
           </Link>
         </li>
       ))}
+      {user.role === "admin" && <li><Link href="/admin/pages" onClick={onNavigate} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive("/admin/pages") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"}`}><Icon name="bookmark" className="h-5 w-5" />Pages / CMS</Link></li>}
       {user.role === "admin" && (
         <li>
           <Link

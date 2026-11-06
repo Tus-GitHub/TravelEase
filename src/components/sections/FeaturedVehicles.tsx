@@ -5,8 +5,9 @@ import Button from "@/components/common/Button";
 import TiltCard from "@/components/motion/TiltCard";
 import VehicleCard from "@/components/cards/VehicleCard";
 import { listPublicVehicles, toCardVehicle } from "@/lib/server/catalogue";
+import { cmsHeading, cmsText, type CmsSection } from "@/lib/cms";
 
-export default async function FeaturedVehicles() {
+export default async function FeaturedVehicles({ cms }: { cms?: CmsSection } = {}) {
   const featured = (await listPublicVehicles({ availableOnly: true }))
     .slice(0, 4)
     .map(toCardVehicle);
@@ -20,6 +21,7 @@ export default async function FeaturedVehicles() {
       eyebrow="Choose your ride"
       title="Designed for the journey"
       subtitle="Chauffeur-driven, immaculately kept, priced up front — pick the one that fits the trip."
+      {...cmsHeading(cms)}
     >
       <Grid cols={{ base: 1, sm: 2, lg: 4 }}>
         {featured.map((vehicle, i) => (
@@ -32,8 +34,8 @@ export default async function FeaturedVehicles() {
       </Grid>
 
       <div className="mt-12 text-center">
-        <Button href="/vehicles" variant="outline" size="lg" iconRight="arrow-right">
-          View All Vehicles
+        <Button href={cmsText(cms, "buttonHref", "/vehicles")} variant="outline" size="lg" iconRight="arrow-right">
+          {cmsText(cms, "buttonLabel", "View All Vehicles")}
         </Button>
       </div>
     </Section>

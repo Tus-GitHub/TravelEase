@@ -3,8 +3,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/common/Icon";
 
-export default function BrandedDialog({ brand = "Jagdamba Travellers", title, description, children, onClose, busy = false, compact = false }: {
-  brand?: string; title: string; description?: string; children: React.ReactNode; onClose: () => void; busy?: boolean; compact?: boolean;
+export default function BrandedDialog({ brand = "Jagdamba Travellers", title, description, children, onClose, busy = false, compact = false, wide = false }: {
+  brand?: string; title: string; description?: string; children: React.ReactNode; onClose: () => void; busy?: boolean; compact?: boolean; wide?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId(); const descriptionId = useId();
@@ -19,7 +19,7 @@ export default function BrandedDialog({ brand = "Jagdamba Travellers", title, de
   return createPortal(
     <dialog ref={ref} aria-labelledby={titleId} aria-describedby={description ? descriptionId : undefined}
       onCancel={(e) => { e.preventDefault(); e.stopPropagation(); if (!busy) onClose(); }}
-      className={`admin-dialog m-auto max-h-[92dvh] w-[calc(100%_-_2rem)] overflow-hidden rounded-3xl border border-line bg-surface p-0 text-left text-fg shadow-2xl ${compact ? "max-w-md" : "max-w-4xl"}`}>
+      className={`admin-dialog m-auto max-h-[92dvh] w-[calc(100%_-_2rem)] overflow-hidden rounded-3xl border border-line bg-surface p-0 text-left text-fg shadow-2xl ${compact ? "max-w-md" : wide ? "max-w-7xl" : "max-w-4xl"}`}>
       <div className="flex max-h-[92dvh] flex-col">
         <header className="relative shrink-0 overflow-hidden bg-primary-950 px-6 py-5 text-white sm:px-8 sm:py-6">
           <div aria-hidden className="absolute -right-12 -top-24 h-56 w-56 rounded-full border-[32px] border-white/5" />

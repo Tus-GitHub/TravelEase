@@ -1,4 +1,5 @@
 import SectionHeading from "./SectionHeading";
+import type { CmsSection } from "@/lib/cms";
 
 type Bg = "white" | "gray" | "primary";
 
@@ -10,6 +11,7 @@ const backgrounds: Record<Bg, string> = {
 };
 
 export interface SectionProps {
+  cms?: CmsSection;
   id?: string;
   bg?: Bg;
   eyebrow?: string;
@@ -33,11 +35,16 @@ export default function Section({
   subtitle,
   children,
   className = "",
+  cms,
 }: SectionProps) {
-  const inverted = bg === "primary";
+  const appearance = cms?.appearance;
+  const selected = appearance?.background ?? "default";
+  const actualBg = selected === "light" ? "white" : selected === "muted" ? "gray" : selected === "dark" || selected === "image" ? "primary" : bg;
+  const inverted = actualBg === "primary";
+  const photoStyle = selected === "image" && appearance ? { backgroundImage: `linear-gradient(rgba(4,7,15,${appearance.overlay / 100}),rgba(4,7,15,${appearance.overlay / 100})),url(${JSON.stringify(appearance.imageUrl)})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined;
 
   return (
-    <section id={id} className={`py-16 md:py-24 ${backgrounds[bg]} ${className}`}>
+    <section id={id ?? (cms ? `section-${cms.id}` : undefined)} style={photoStyle} data-cms-section={cms?.id} className={`py-16 md:py-24 ${backgrounds[actualBg]} ${selected === "dark" || selected === "image" ? "cms-dark" : ""} ${className}`}>
       <div className="section-container">
         {title && (
           <div className="mb-12 md:mb-16">

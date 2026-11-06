@@ -14,10 +14,12 @@ import PackageCard from "@/components/cards/PackageCard";
 import MapSpotSelector from "@/components/ui/MapSpotSelector";
 import { useAuth } from "@/context/AuthContext";
 import type { Region, TouristSpot, TravelPackage } from "@/types";
+import { cmsHeading, type CmsSection } from "@/lib/cms";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 interface PackageBuilderProps {
+  cms?: CmsSection;
   regions: Region[];
   packages: TravelPackage[];
 }
@@ -583,7 +585,7 @@ const stepVariants = {
 
 // ─── Main PackageBuilder section ──────────────────────────────────────────────
 
-export default function PackageBuilder({ regions, packages }: PackageBuilderProps) {
+export default function PackageBuilder({ regions, packages, cms }: PackageBuilderProps) {
   const router = useRouter();
   const { user } = useAuth();
   const [mode, setMode]               = useState<Mode>("packages");
@@ -669,6 +671,7 @@ export default function PackageBuilder({ regions, packages }: PackageBuilderProp
       eyebrow="Travel Packages"
       title="Plan Your Perfect Trip"
       subtitle="Pick from our curated packages or build your very own — your trip, your way."
+      {...cmsHeading(cms)}
     >
       {/* Tab switcher */}
       <TabSwitcher active={mode} onChange={(m) => { setMode(m); if (m === "custom") reset(); }} />

@@ -6,6 +6,7 @@ import Icon from "@/components/common/Icon";
 import { gsap, prefersReducedMotion } from "@/lib/motion";
 import { DURATION, EASE } from "@/lib/motion/presets";
 import type { IconName } from "@/types";
+import { cmsHeading, cmsItems, type CmsSection } from "@/lib/cms";
 
 const steps: { n: string; title: string; body: string; icon: IconName }[] = [
   { n: "01", title: "Plan", body: "Tell us the route, the dates and the kind of vehicle. Get a transparent, all-in quote.", icon: "map-pin" },
@@ -14,7 +15,8 @@ const steps: { n: string; title: string; body: string; icon: IconName }[] = [
   { n: "04", title: "Travel", body: "Door to door with a verified driver. Change plans mid-trip? We adjust, no drama.", icon: "arrow-right" },
 ];
 
-export default function HowItWorks() {
+export default function HowItWorks({ cms }: { cms?: CmsSection } = {}) {
+  const entries = (cmsItems(cms) as typeof steps | undefined) ?? steps;
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,6 +66,7 @@ export default function HowItWorks() {
       eyebrow="The Journey"
       title="Four steps, one seamless trip"
       subtitle="From first idea to arrival — planned around you, driven for you."
+      {...cmsHeading(cms)}
     >
       <div ref={root} className="relative mx-auto max-w-3xl">
         {/* connecting line */}
@@ -84,8 +87,8 @@ export default function HowItWorks() {
         </svg>
 
         <ol className="space-y-10">
-          {steps.map((s) => (
-            <li key={s.n} data-hiw="step" className="relative flex gap-6 pl-0">
+          {entries.map((s, i) => (
+            <li key={i} data-hiw="step" className="relative flex gap-6 pl-0">
               <div
                 data-hiw="dot"
                 className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-800 to-primary-950 text-white ring-1 ring-white/10 dark:from-primary-700 dark:to-primary-900"

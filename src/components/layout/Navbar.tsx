@@ -11,12 +11,17 @@ import ThemeToggle from "@/components/common/ThemeToggle";
 import UserMenu from "@/components/layout/UserMenu";
 import { navLinks } from "@/data/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { cmsNavigationLinks } from "@/lib/cms-navigation";
+import type { CmsNavItem } from "@/lib/server/cms";
 
 /**
  * Sticky, responsive navbar. Transparent over the hero, turns solid on scroll.
- * Collapses to a hamburger drawer below `md`.
+ * Collapses to a hamburger drawer below `lg`.
  */
-export default function Navbar() {
+export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[] } = {}) {
+  const links = cmsNavigationLinks(navLinks, cmsNavigation, "header");
+  const desktopLinks = links.length > 6 ? links.slice(0, 5) : links;
+  const moreLinks = links.length > 6 ? links.slice(5) : [];
   const [isScrolled, setIsScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -42,11 +47,11 @@ export default function Navbar() {
     setIsOpen(false);
   }, [pathname]);
 
-  // Only the homepage and /booking put a dark hero behind a transparent navbar.
-  const overDarkHero = pathname === "/" || pathname === "/booking";
+  // Published CMS pages can put a dark hero behind the transparent navbar.
+  const overDarkHero = (cmsNavigation ? cmsNavigation.some(page => page.href === pathname && page.darkHero) : pathname === "/") || pathname === "/booking";
   const solid = isScrolled || isOpen || !overDarkHero;
   const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
 
   return (
     <header
@@ -62,15 +67,15 @@ export default function Navbar() {
         <Logo inverted={!solid} />
 
         {/* Desktop links */}
-        <ul className="hidden items-center gap-8 md:flex">
-          {navLinks.map((link) => {
+        <ul className="hidden items-center gap-4 lg:flex xl:gap-8">
+          {desktopLinks.map((link) => {
             const active = isActive(link.href);
             return (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative rounded-sm text-sm font-medium outline-none transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-left after:bg-accent-500 after:transition-transform after:duration-300 hover:text-accent-500 hover:after:scale-x-100 focus-visible:text-accent-500 focus-visible:after:scale-x-100 focus-visible:ring-2 focus-visible:ring-accent-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
+                  className={`relative inline-block max-w-32 truncate rounded-sm text-sm font-medium outline-none transition-colors after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-full after:origin-left after:bg-accent-500 after:transition-transform after:duration-300 hover:text-accent-500 hover:after:scale-x-100 focus-visible:text-accent-500 focus-visible:after:scale-x-100 focus-visible:ring-2 focus-visible:ring-accent-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
                     active ? "after:scale-x-100" : "after:scale-x-0"
                   } ${
                     active
@@ -85,9 +90,10 @@ export default function Navbar() {
               </li>
             );
           })}
+          {moreLinks.length > 0 && <li className="relative"><details className="group" onKeyDown={e => { if (e.key === "Escape") { e.currentTarget.removeAttribute("open"); e.currentTarget.querySelector("summary")?.focus(); } }}><summary className={`cursor-pointer rounded-sm text-sm font-medium ${solid ? "text-fg" : "text-white/90"}`}>More</summary><ul className="absolute right-0 mt-4 max-h-80 w-56 overflow-y-auto rounded-2xl border border-line bg-surface p-2 shadow-xl">{moreLinks.map(link => <li key={link.href}><Link href={link.href} onClick={e => e.currentTarget.closest("details")?.removeAttribute("open")} className="block rounded-xl px-3 py-2.5 text-sm text-fg hover:bg-surface-muted">{link.label}</Link></li>)}</ul></details></li>}
         </ul>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           <ThemeToggle tone={solid ? "default" : "light"} />
           {isLoading ? null : user ? (
             <UserMenu user={user} onLogout={() => logout()} />
@@ -99,7 +105,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile actions */}
-        <div className="flex items-center gap-1 md:hidden">
+        <div className="flex items-center gap-1 lg:hidden">
           <ThemeToggle tone={solid ? "default" : "light"} />
           <button
             type="button"
@@ -115,12 +121,12 @@ export default function Navbar() {
 
       {/* Mobile drawer */}
       <div
-        className={`overflow-hidden border-t border-line-subtle bg-canvas transition-[max-height] duration-300 md:hidden ${
-          isOpen ? "max-h-96" : "max-h-0 border-transparent"
+        className={`overflow-x-hidden border-t border-line-subtle bg-canvas transition-[max-height] duration-300 lg:hidden ${
+          isOpen ? "max-h-[75dvh] overflow-y-auto" : "max-h-0 overflow-y-hidden border-transparent"
         }`}
       >
         <ul className="section-container flex flex-col gap-1 py-4">
-          {navLinks.map((link) => {
+          {links.map((link) => {
             const active = isActive(link.href);
             return (
               <li key={link.href}>

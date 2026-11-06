@@ -4,8 +4,9 @@ import AnimateInView from "@/components/common/AnimateInView";
 import TestimonialCard from "@/components/cards/TestimonialCard";
 import { testimonials } from "@/data/testimonials";
 import { listPublishedReviews, toTestimonial } from "@/lib/server/reviews";
+import { cmsHeading, type CmsSection } from "@/lib/cms";
 
-export default async function Testimonials() {
+export default async function Testimonials({ cms }: { cms?: CmsSection } = {}) {
   const real = (await listPublishedReviews(8)).map(toTestimonial);
   // Fall back to the seeded testimonials until real reviews come in.
   const items = real.length >= 3 ? real.slice(0, 4) : testimonials;
@@ -17,6 +18,7 @@ export default async function Testimonials() {
       eyebrow="Customer Experience"
       title="Loved by Travellers Everywhere"
       subtitle="Real stories from people who booked their journeys with us."
+      {...cmsHeading(cms)}
     >
       <Grid cols={{ base: 1, sm: 2, lg: 4 }}>
         {items.map((testimonial, i) => (

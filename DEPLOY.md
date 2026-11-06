@@ -143,3 +143,74 @@ forward migration to undo.)
 | Vercel Hobby | $0 | 100 GB bandwidth/mo. **Non-commercial use only** — a real paid-bookings launch needs Vercel Pro ($20/mo) or a move to Cloudflare Pages. |
 | Neon free | $0 | 0.5 GB storage; autosuspends when idle (~0.5s cold start on the next request). |
 | `*.vercel.app` domain | $0 forever | A custom domain (~$10–15/yr, bought elsewhere) attaches later in Vercel → Settings → Domains with no code change. |
+
+## JSON page CMS (development, 2026-11-06)
+
+Open `/admin/pages` through **Pages / CMS** in the admin sidebar. Homepage and
+About are initialized from the existing site content. Administrators can create
+custom pages, reuse Homepage/About layouts, edit text/photos/buttons/backgrounds,
+add/duplicate/reorder/hide sections, preview drafts, and publish with a custom
+confirmation dialog. Page settings include SEO and header/footer menu entries.
+The editor uses existing admin auth, theme components and Cloudinary configuration;
+no extra provider or dependency is required. Full guide/schema: docs/CMS_PLAN.md.
+
+JSON documents are stored in the two user-approved tables `cms_pages` and
+`cms_page_revisions`. Migration028 is applied on DEVELOPMENT only and must never
+be edited. `db/cms-setup-dev.mjs --dev` applied it after checking the previous27
+baseline/checksums, verified only reviewed additions, archived the old baseline
+to `db/dev-schema-baseline-before-cms.json`, and advanced the reviewed baseline
+to28. Narrow grants use the existing runtime role; future dev role setup retains
+SELECT/INSERT-only access to the revisions table. No production migration, grants,
+connection or deployment was performed.
+
+Draft and publication are separate JSON snapshots. A version check rejects stale
+updates, and publication plus its revision commits in one transaction. Restoring
+history replaces only the draft. Anonymous/customer requests cannot read drafts,
+preview them, upload, or publish. Public routes and navigation read only published
+active snapshots; site rendering is dynamic so menu changes need no rebuild.
+Homepage cannot be removed/unpublished; About may be unpublished but not removed.
+Custom addresses are fixed and cannot replace existing application routes.
+
+Images use the existing signed server upload, actual file signature validation and
+3 MB JPEG/PNG/WebP limit. Uploaded URLs are saved directly into the current draft.
+Removing a reference does not destroy an older Cloudinary image because history
+may use it. Document validation limits pages to30 sections/256 KiB, supported
+field shapes and safe image/link origins; content is rendered as escaped text and
+known components, never arbitrary HTML/scripts. No WordPress plugins/themes,
+raw HTML editor, blog/comments, scheduled publication or translation system.
+
+```powershell
+npm.cmd run test:cms
+npm.cmd run test:cms-acceptance -- "--browser-module=<absolute path to installed Playwright module>" "--artifacts=<optional screenshot directory>"
+npm.cmd run db:check:dev
+```
+
+The acceptance runner uses existing approved tables, temporary synthetic users
+and pages, a separate source/build copy on loopback3103, and one live Cloudinary
+development test image. It requires the existing dev Cloudinary credentials.
+Successful requests use real browser/API/DB/storage calls; no external email or
+booking/payment action occurs. Its fixtures, asset and temporary app are cleaned
+afterward; normal localhost remains available.
+
+Verified2026-11-06:9 model test groups and47 HTTP checks plus real browser/DB/storage
+assertions pass, including a forced revision-insert failure proving publication
+rollback. Desktop/mobile visual review, typecheck/lint/whitespace checks, an isolated
+optimized Next build, fixture cleanup and dev schema/checksums28 also pass.
+
+**CMS Publish on localhost publishes content to the DEVELOPMENT site only.** It
+is separate from deploying code to production. A later explicitly authorized
+release must still use the existing db:check/publish runbook; production migrations
+run automatically. Also review any restricted production role's grants for the new
+tables before release. Development draft/content edits are not copied to production
+by a code deployment; migration028 seeds the initial homepage/About snapshot there.
+
+
+## CMS release rehearsal (2026-11-06)
+
+User authorized production CMS publication, migration027 coordinate columns and
+a temporary DEVELOPMENT schema-only rehearsal. Rehearsal passed and its database
+was removed. See docs/CMS_RELEASE_2026-11-06.md for the exact scope and evidence.
+The enhanced db:check requires current development baseline/hash parity and either
+full production parity or fresh isolated-replay proof bound to both endpoints,
+schemas and all SQL files. Evidence expires after48 hours; it cannot waive unrelated
+drift. Production migrations still run only through Vercel predeploy.

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/components/common/Button";
 import Section from "@/components/common/Section";
+import { cmsHeading, type CmsSection } from "@/lib/cms";
 import { gsap, prefersReducedMotion } from "@/lib/motion";
 import { DURATION, EASE } from "@/lib/motion/presets";
 import { vehicles } from "@/data/vehicles";
@@ -31,7 +32,7 @@ function routeD(a: MapNode, b: MapNode) {
 
 const minPrice = Math.min(...vehicles.map((v) => v.pricePerDay));
 
-export default function DestinationMap() {
+export default function DestinationMap({ cms }: { cms?: CmsSection } = {}) {
   const root = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -97,6 +98,7 @@ export default function DestinationMap() {
       eyebrow="Explore India"
       title="Where will you go?"
       subtitle="Tap two cities to trace the route. Every journey is chauffeur-driven, door to door."
+      {...cmsHeading(cms)}
     >
       <div
         ref={root}

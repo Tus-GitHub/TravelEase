@@ -82,6 +82,19 @@
 }
 
 @layer components {
+  .cms-dark {
+    --c-canvas: 9 12 20;
+    --c-surface: 17 24 39;
+    --c-surface-muted: 13 18 30;
+    --c-surface-hover: 30 41 59;
+    --c-fg: 237 242 249;
+    --c-muted: 203 213 225;
+    --c-faint: 148 163 184;
+    --c-line: 51 65 85;
+    --c-line-subtle: 39 48 66;
+    color-scheme: dark;
+  }
+  .cms-dark dt { color: rgb(var(--c-fg)); }
   .admin-dialog::backdrop {
     background: rgb(9 12 20 / 0.65);
     backdrop-filter: blur(5px);

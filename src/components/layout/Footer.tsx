@@ -7,8 +7,11 @@ import { site } from "@/data/site";
 import { useSiteContact } from "@/context/SiteContactContext";
 import { footerLinkGroups, socialLinks } from "@/data/navigation";
 import type { IconName } from "@/types";
+import { cmsNavigationLinks } from "@/lib/cms-navigation";
+import type { CmsNavItem } from "@/lib/server/cms";
 
-export default function Footer() {
+export default function Footer({ cmsNavigation }: { cmsNavigation?: CmsNavItem[] } = {}) {
+  const groups = footerLinkGroups.map((group, index) => index === 0 ? { ...group, links: cmsNavigationLinks(group.links, cmsNavigation, "footer") } : group);
   const contact = useSiteContact();
   const contactItems: { icon: IconName; value: string; href?: string }[] = [
     { icon: "phone", value: contact.phone, href: `tel:${contact.phone.replace(/\s+/g, "")}` },
@@ -43,7 +46,7 @@ export default function Footer() {
           </div>
 
           {/* Link groups */}
-          {footerLinkGroups.map((group) => (
+          {groups.map((group) => (
             <div key={group.title}>
               <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-white">
                 {group.title}
