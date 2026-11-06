@@ -1,11 +1,12 @@
-# JSON page CMS — development implementation plan
+# JSON page CMS — implementation and editor guide
 
 Requested 2026-11-06. The user confirmed JSON content storage. Reuse the existing
 PostgreSQL database, admin authentication, theme/components and Cloudinary account.
-No production changes or publication are authorized. New table names/types below
-were approved by the user on2026-11-06 for DEVELOPMENT only. Migration028 is now
-applied on dev, with the existing homepage/About content initialized as JSONB.
-The editor, renderer and development acceptance are complete. Production is unchanged.
+New table names/types below were initially approved on2026-11-06 for development.
+Migration028 is applied on dev, with the existing homepage/About content initialized
+as JSONB. The editor, renderer and development acceptance are complete. The user
+subsequently authorized production publication and the required schema rehearsal;
+release scope and verification are recorded in docs/CMS_RELEASE_2026-11-06.md.
 
 ## Editing experience
 
@@ -150,5 +151,6 @@ when removed from a draft because an older publication/revision may still use th
   acceptance. The isolated test app was removed; regular localhost remains running.
 - Desktop/mobile visual review, typecheck/lint/whitespace checks, optimized isolated
   Next build and development schema/checksums (28 migrations) pass.
-- Production release, production-role grants and content migration remain separate
-  explicitly authorized work. The JSON editor requires no further service key.
+- Production release is separately authorized; the existing production owner
+  connection requires no new role grants. Development content is not copied by
+  deployment. The JSON editor requires no further service key.

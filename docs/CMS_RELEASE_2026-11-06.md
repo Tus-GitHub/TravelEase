@@ -1,7 +1,9 @@
 # CMS production release — 2026-11-06
 
-User authorized publishing the CMS/homepage editor. Preparation is in progress;
-no production schema change, Git push or deployment has occurred.
+User authorized publishing the CMS/homepage editor and the additional schema
+items below. The isolated migration rehearsal and CMS acceptance are complete.
+The production rollout uses the existing publish script and Vercel predeploy;
+the final deployment and database parity are checked after the push.
 
 ## Exact release scope
 
@@ -56,3 +58,18 @@ so the existing production connection behavior remains unchanged. Secrets were
 not printed or modified. Publishing still uses npm run publish from development,
 with production migrations applied by Vercel predeploy, followed by live checks
 and a final db:check.
+
+## Exact release validation
+
+Earlier development-only application work is preserved in a separate local Git
+stash during publication. The release contains no changes to existing auth,
+booking or contact handlers. The CMS-only source passes9 model test groups,
+23 drift/proof tests and47 HTTP checks plus real Chrome/API/development
+PostgreSQL/Cloudinary assertions. All synthetic records and the uploaded test
+image were removed and absence verified. The isolated optimized Next build,
+including TypeScript and lint, passed. Its temporary files were removed without
+affecting the regular localhost build cache.
+
+Production verification checks the deployment commit, live Homepage/About,
+anonymous CMS access restrictions and database parity. Development content is
+not copied to production; migration028 initializes the two default public pages.
