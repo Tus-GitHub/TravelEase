@@ -55,6 +55,7 @@ export default function AdminSettingsPage() {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setMsg(null);
     try {
@@ -69,7 +70,7 @@ export default function AdminSettingsPage() {
       } else {
         setData(d.item);
         setOpen(false);
-        setMsg({ kind: "ok", text: "Saved. Live within a minute." });
+        setMsg({ kind: "ok", text: "Saved. New contact messages use the saved inbox immediately. Public contact details may take a few minutes to refresh." });
       }
     } catch {
       setMsg({ kind: "err", text: "Couldn't reach the server." });
@@ -89,7 +90,7 @@ export default function AdminSettingsPage() {
       label: "Contact / pay-by-phone number",
       hint: "Shown on the booking confirmation page, the booking detail page, the confirmation + status emails, and the site footer.",
     },
-    { key: "contactEmail", label: "Support email", hint: "Footer and contact page.", type: "email" },
+    { key: "contactEmail", label: "Support email / contact inbox", hint: "Receives website contact messages and appears publicly in the footer and contact page. Replies go to the visitor's email. Clearing this field disables contact-form delivery.", type: "email" },
     { key: "contactAddress", label: "Office address", hint: "Footer and contact page." },
     {
       key: "vendorCommissionPct",
@@ -104,7 +105,7 @@ export default function AdminSettingsPage() {
       <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Site settings</h1>
         <p className="text-sm text-muted">
-          Contact details customers see. Leave a field blank to use the built-in default.
+          Manage your contact inbox and public business details. Other blank contact fields use the built-in defaults.
         </p>
       </AdminPageHeader>
 
@@ -118,7 +119,7 @@ export default function AdminSettingsPage() {
         <>
         <Card padded hover={false} className="max-w-3xl">
           <div className="mb-5 flex items-center justify-between gap-4"><h2 className="font-display text-lg font-bold text-fg">Business details</h2><EditButton name="site settings" onClick={() => { if (data) setForm({ contactPhone: data.contactPhone, contactEmail: data.contactEmail, contactAddress: data.contactAddress, vendorCommissionPct: data.vendorCommissionPct }); setMsg(null); setOpen(true); }} /></div>
-          <dl className="grid gap-5 sm:grid-cols-2">{fields.map(f => <div key={f.key}><dt className="text-xs font-semibold text-muted">{f.label}</dt><dd className="mt-1 break-words text-sm text-fg">{data?.[f.key] || (data?.defaults as Record<string, string> | undefined)?.[f.key] || "Not set"}</dd></div>)}</dl>
+          <dl className="grid gap-5 sm:grid-cols-2">{fields.map(f => <div key={f.key}><dt className="text-xs font-semibold text-muted">{f.label}</dt><dd className="mt-1 break-words text-sm text-fg">{data?.[f.key] || (f.key === "contactEmail" ? "Not configured — contact delivery disabled" : (data?.defaults as Record<string, string> | undefined)?.[f.key] || "Not set")}</dd></div>)}</dl>
           {msg?.kind === "ok" && <p role="status" className="mt-4 text-sm text-emerald-600 dark:text-emerald-400">{msg.text}</p>}
         </Card>
         {open && <AdminEditor title="Edit site settings" onClose={() => setOpen(false)} busy={busy}>
@@ -131,13 +132,16 @@ export default function AdminSettingsPage() {
                   <input
                     className={fieldCls}
                     type={f.type ?? "text"}
+                    aria-label={f.label}
+                    disabled={busy}
+                    maxLength={f.key === "contactEmail" ? 254 : undefined}
                     value={form[f.key]}
                     placeholder={dflt ?? ""}
                     onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
                   />
                   <span className="mt-1 block text-xs text-faint">
                     {f.hint}
-                    {dflt ? ` Default: ${dflt}` : ""}
+                    {dflt && f.key !== "contactEmail" ? ` Default: ${dflt}` : ""}
                   </span>
                 </label>
               );
@@ -145,6 +149,7 @@ export default function AdminSettingsPage() {
 
             {msg && (
               <p
+                role={msg.kind === "err" ? "alert" : "status"}
                 className={`text-sm ${
                   msg.kind === "ok"
                     ? "text-emerald-600 dark:text-emerald-400"

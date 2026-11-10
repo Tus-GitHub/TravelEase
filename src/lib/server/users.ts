@@ -1,4 +1,5 @@
 import { randomBytes } from "crypto";
+import type { PoolClient } from "pg";
 import { getPool } from "./db";
 import { hashPassword, verifyPassword } from "./password";
 import { logActivity } from "./activity-log";
@@ -43,11 +44,12 @@ function toPublicUser(row: UserRow): PublicUser {
   };
 }
 
-export async function findUserByEmail(email: string): Promise<UserRow | undefined> {
-  const pool = getPool();
+export async function findUserByEmail(email: string, client?: PoolClient): Promise<UserRow | undefined> {
+  const pool = client ?? getPool();
   const result = await pool.query(
     `${USER_SELECT} WHERE u.email = $1 AND u.is_deleted = false AND u.is_active = true
-       AND (r.name <> 'driver' OR EXISTS (SELECT 1 FROM drivers d WHERE d.user_id=u.user_id AND d.is_active AND NOT d.is_deleted))`,
+       AND (r.name <> 'driver' OR EXISTS (SELECT 1 FROM drivers d WHERE d.user_id=u.user_id AND d.is_active AND NOT d.is_deleted))
+       ${client ? "FOR UPDATE OF u" : ""}`,
     [email.trim().toLowerCase()],
   );
   return result.rows[0];
@@ -128,8 +130,8 @@ export async function createFederatedUser(
 }
 
 /** Marks the account's email confirmed. No-op if it was already verified. */
-export async function markEmailVerified(userId: string): Promise<void> {
-  const pool = getPool();
+export async function markEmailVerified(userId: string, client?: PoolClient): Promise<void> {
+  const pool = client ?? getPool();
   await pool.query(
     `UPDATE users SET email_verified_at = now()
      WHERE user_id = $1 AND email_verified_at IS NULL`,
@@ -138,8 +140,8 @@ export async function markEmailVerified(userId: string): Promise<void> {
 }
 
 /** Overwrites the password hash (password-reset flow). Caller proves ownership. */
-export async function setUserPassword(userId: string, password: string): Promise<void> {
-  const pool = getPool();
+export async function setUserPassword(userId: string, password: string, client?: PoolClient): Promise<void> {
+  const pool = client ?? getPool();
   await pool.query(`UPDATE users SET password_hash = $1 WHERE user_id = $2`, [
     hashPassword(password),
     userId,
@@ -167,8 +169,9 @@ export async function updateUser(
 export async function verifyCredentials(
   email: string,
   password: string,
+  client?: PoolClient,
 ): Promise<PublicUser | null> {
-  const user = await findUserByEmail(email);
+  const user = await findUserByEmail(email, client);
   if (!user || !verifyPassword(password, user.password_hash)) return null;
   return toPublicUser(user);
 }

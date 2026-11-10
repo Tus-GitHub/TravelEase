@@ -1,5 +1,6 @@
 import { getPool } from "./db";
 import { site } from "@/data/site";
+import { ContactError, isContactMailbox } from "../contact";
 
 /**
  * Runtime-editable brand/contact details (migration 021, `site_settings`).
@@ -43,6 +44,14 @@ const TTL_MS = 60_000;
 
 export function invalidateSiteSettings(): void {
   cache = null;
+}
+
+/** Delivery must use an explicitly saved inbox, never a static fallback or stale cache. */
+export async function getContactInbox(): Promise<string> {
+  const { rows } = await getPool().query("SELECT setting_value FROM site_settings WHERE setting_key = 'contact_email'");
+  const inbox = String(rows[0]?.setting_value ?? "").trim();
+  if (!isContactMailbox(inbox)) throw new ContactError("The contact form is unavailable right now. Please use My Support or try again later.", 503);
+  return inbox;
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {

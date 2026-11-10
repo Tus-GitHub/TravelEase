@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { consumeAuthToken } from "@/lib/server/auth-tokens";
+import { redeemAuthToken } from "@/lib/server/auth-tokens";
 import { markEmailVerified } from "@/lib/server/users";
 import { createSession, SESSION_COOKIE } from "@/lib/server/session";
 import { appOrigin } from "@/lib/server/email";
@@ -14,14 +14,15 @@ export async function GET(request: Request) {
   const base = appOrigin();
   const token = new URL(request.url).searchParams.get("token");
 
-  const consumed = await consumeAuthToken("email_verification", token);
-  if (!consumed) {
+  const session = await redeemAuthToken("email_verification", token, async (userId, client) => {
+    await markEmailVerified(userId, client);
+    return createSession(userId, false, client);
+  });
+  if (!session) {
     return NextResponse.redirect(new URL("/login?verify=invalid", base));
   }
 
-  await markEmailVerified(consumed.userId);
-
-  const { token: sessionToken, maxAge } = await createSession(consumed.userId, false);
+  const { token: sessionToken, maxAge } = session;
   const response = NextResponse.redirect(new URL("/?verified=1", base));
   response.cookies.set(SESSION_COOKIE, sessionToken, {
     httpOnly: true,

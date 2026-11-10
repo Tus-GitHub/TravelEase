@@ -10,6 +10,7 @@ import PasswordField from "@/components/forms/PasswordField";
 import GoogleButton from "@/components/auth/GoogleButton";
 import { useAuth } from "@/context/AuthContext";
 import { isValidEmail } from "@/lib/validation";
+import { loginReturnPath } from "@/lib/auth-redirect";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,15 +47,18 @@ export default function LoginPage() {
   const handleResend = async () => {
     if (resendState === "sending") return;
     setResendState("sending");
+    setError(null);
     try {
-      await fetch("/api/auth/resend-verification", {
+      const response = await fetch("/api/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      if (!response.ok || (await response.json()).ok !== true) throw new Error("Request failed");
       setResendState("sent");
     } catch {
       setResendState("idle");
+      setError("Couldn't request a verification email. Please try again.");
     }
   };
 
@@ -90,7 +94,7 @@ export default function LoginPage() {
     // §34 — return the visitor to where they were (e.g. mid-booking). Relative
     // paths only, to avoid an open redirect.
     const raw = new URLSearchParams(window.location.search).get("redirect");
-    const dest = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+    const dest = loginReturnPath(raw);
     router.push(result.role === 'driver' ? '/drive' : dest);
   };
 

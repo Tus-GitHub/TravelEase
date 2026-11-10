@@ -1,5 +1,6 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { getSiteSettings } from "./site-settings";
+import { ContactError, isContactMailbox, type ContactInput } from "../contact";
 
 /**
  * Transactional email (plan.md §23). One thin service module: route handlers
@@ -11,21 +12,45 @@ import { getSiteSettings } from "./site-settings";
  */
 
 let cached: Transporter | null = null;
+let cachedContact: Transporter | null = null;
 
-function getTransporter(): Transporter {
-  if (cached) return cached;
+function getTransporter(forContact = false): Transporter {
+  const previous = forContact ? cachedContact : cached;
+  if (previous) return previous;
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
     throw new Error("SMTP is not configured (SMTP_HOST / SMTP_USER / SMTP_PASS).");
   }
   const port = Number(SMTP_PORT) || 587;
-  cached = nodemailer.createTransport({
+  const transport = nodemailer.createTransport({
     host: SMTP_HOST,
     port,
     secure: port === 465, // 465 = implicit TLS; 587 = STARTTLS
     auth: { user: SMTP_USER, pass: SMTP_PASS },
+    ...(forContact ? { requireTLS: port !== 465, connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 15_000, dnsTimeout: 10_000 } : {}),
   });
-  return cached;
+  if (forContact) cachedContact = transport; else cached = transport;
+  return transport;
+}
+
+export function requireContactMailConfig(): void {
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.EMAIL_FROM) {
+    throw new ContactError("The contact form is unavailable right now. Please use My Support or try again later.", 503);
+  }
+}
+
+/** Fixed admin inbox and verified sender; the visitor is Reply-To only. No autoresponse. */
+export async function sendContactMessage(to: string, input: ContactInput, reference: string): Promise<void> {
+  requireContactMailConfig();
+  if (!isContactMailbox(to) || !isContactMailbox(input.email)) throw new Error("Invalid contact mailbox");
+  const subject = `Contact enquiry: ${input.reason} — ${reference}`;
+  const text = `${reference}\n\nName: ${input.name}\nReply email: ${input.email}\nReason: ${input.reason}\n\n${input.message}\n\nSubmitted through the website contact form. Visitor details are unverified. Reply to this email to respond.`;
+  const html = `<html><body style="font-family:Arial,sans-serif;background:#f4f5f7;padding:24px"><div style="max-width:600px;margin:auto;background:#fff;border-radius:16px;overflow:hidden"><div style="background:#192653;color:white;padding:24px"><strong>Jagdamba Travellers</strong><h1 style="font-size:20px">New contact enquiry</h1><p>${esc(reference)}</p></div><div style="padding:24px;color:#182238"><p><strong>Name:</strong> ${esc(input.name)}<br><strong>Reply email:</strong> ${esc(input.email)}<br><strong>Reason:</strong> ${esc(input.reason)}</p><div style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(input.message)}</div><p style="font-size:12px;color:#64748b">Visitor details are unverified. Reply to this email to respond.</p></div></div></body></html>`;
+  const result = await getTransporter(true).sendMail({ from: fromAddress(), to: { name: "Jagdamba Travellers Support", address: to },
+    replyTo: { name: input.name, address: input.email }, subject, text, html, disableFileAccess: true, disableUrlAccess: true });
+  const accepted = Array.isArray(result.accepted) && result.accepted.some((recipient: string | { address?: string }) =>
+    (typeof recipient === "string" ? recipient : recipient.address)?.toLowerCase() === to.toLowerCase());
+  if (!accepted || result.rejected?.length) throw new Error("Contact email not accepted");
 }
 
 /** Canonical site origin for links in emails and redirects, no trailing slash. */

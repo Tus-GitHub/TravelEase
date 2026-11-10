@@ -27,7 +27,10 @@
     "test:weekend": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/weekend-trips.test.ts",
     "test:weekend-admin": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/weekend-admin-acceptance.ts --dev",
     "test:weekend-bookings": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/weekend-bookings.test.ts --dev",
-    "test:concurrency": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/concurrency.test.ts --dev"
+    "test:concurrency": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/concurrency.test.ts --dev",
+    "test:contact": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/contact.test.ts",
+    "test:contact-db": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/contact-settings.test.ts --dev",
+    "test:auth-acceptance": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/auth-acceptance.ts --dev"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

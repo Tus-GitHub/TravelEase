@@ -1,6 +1,7 @@
 import { getPool } from "../db";
 import { site } from "@/data/site";
 import { invalidateSiteSettings } from "../site-settings";
+import { ContactError, isContactMailbox } from "../../contact";
 
 /** Admin read/write for the `site_settings` key/value store (migration 021). */
 
@@ -44,6 +45,9 @@ export async function updateSiteSettings(
   input: Partial<Record<Field, string>> & { vendorCommissionPct?: string | number },
   actorId: string,
 ): Promise<AdminSiteSettings> {
+  if (input.contactEmail !== undefined && input.contactEmail.trim() && !isContactMailbox(input.contactEmail.trim())) {
+    throw new ContactError("Enter one valid support email address, or leave it blank to disable contact-form delivery.");
+  }
   const writes: [string, string][] = (Object.keys(COLUMN_FOR) as Field[])
     .filter((k) => typeof input[k] === "string")
     .map((k) => [COLUMN_FOR[k], (input[k] as string).trim().slice(0, 300)]);

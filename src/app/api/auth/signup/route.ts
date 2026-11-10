@@ -5,14 +5,12 @@ import { createAuthToken } from "@/lib/server/auth-tokens";
 import { sendVerificationEmail, appOrigin } from "@/lib/server/email";
 import { logActivity, clientIp } from "@/lib/server/activity-log";
 import { isValidEmail, isValidPhone, PASSWORD_MIN_LENGTH } from "@/lib/validation";
+import { readAuthBody } from "@/lib/server/auth-request";
 
 export async function POST(request: Request) {
-  let body: { name?: string; email?: string; phone?: string; password?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
-  }
+  const input = await readAuthBody(request);
+  if (!input.ok) return input.response;
+  const { body } = input;
 
   const name = body.name?.trim() ?? "";
   const email = body.email?.trim() ?? "";

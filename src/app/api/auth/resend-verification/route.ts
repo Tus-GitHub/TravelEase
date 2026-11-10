@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { findUserByEmail } from "@/lib/server/users";
-import { createAuthToken, hasRecentToken } from "@/lib/server/auth-tokens";
+import { createAuthTokenWithCooldown } from "@/lib/server/auth-tokens";
 import { sendVerificationEmail, appOrigin } from "@/lib/server/email";
 import { isValidEmail } from "@/lib/validation";
+import { readAuthBody } from "@/lib/server/auth-request";
 
 /**
  * Re-send the verification link. Always responds { ok: true } for a well-formed
@@ -10,12 +11,9 @@ import { isValidEmail } from "@/lib/validation";
  * (plan.md §25/§27). Silently throttled to one send per minute per account.
  */
 export async function POST(request: Request) {
-  let body: { email?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
-  }
+  const input = await readAuthBody(request);
+  if (!input.ok) return input.response;
+  const { body } = input;
 
   const email = body.email?.trim() ?? "";
   if (!isValidEmail(email)) {
@@ -25,8 +23,8 @@ export async function POST(request: Request) {
   const user = await findUserByEmail(email);
   if (user && user.email_verified_at == null) {
     try {
-      if (!(await hasRecentToken("email_verification", user.user_id, 60))) {
-        const token = await createAuthToken("email_verification", user.user_id);
+      const token = await createAuthTokenWithCooldown("email_verification", user.user_id, 60);
+      if (token) {
         await sendVerificationEmail(
           user.email,
           user.name,

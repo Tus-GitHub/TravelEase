@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import type { PoolClient } from "pg";
 import { getPool } from "./db";
 
 export const SESSION_COOKIE = "session_token";
@@ -12,12 +13,13 @@ const REMEMBERED_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 export async function createSession(
   userId: string,
   remember = false,
+  client?: PoolClient,
 ): Promise<{ token: string; maxAge: number | undefined }> {
   const ttl = remember ? REMEMBERED_SESSION_TTL_MS : SESSION_TTL_MS;
   const token = randomUUID();
   const expiresAt = new Date(Date.now() + ttl);
 
-  const pool = getPool();
+  const pool = client ?? getPool();
   await pool.query("INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, $3)", [
     token,
     userId,
@@ -55,7 +57,7 @@ export async function destroySession(token: string | undefined): Promise<void> {
 }
 
 /** Invalidates every session for a user — used after a password reset. */
-export async function destroyAllSessionsForUser(userId: string): Promise<void> {
-  const pool = getPool();
+export async function destroyAllSessionsForUser(userId: string, client?: PoolClient): Promise<void> {
+  const pool = client ?? getPool();
   await pool.query("DELETE FROM sessions WHERE user_id = $1", [userId]);
 }

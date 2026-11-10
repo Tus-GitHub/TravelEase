@@ -249,3 +249,52 @@ It does not call vercel-build/predeploy or any production migration command.
 Publication requires separate user authorization for the production schema and
 reviewed application scope. Earlier unrelated dev-only work remains in this checkout;
 prepare/rehearse the intended release and run the normal parity gate when authorized.
+
+
+## Contact delivery and authentication release — 2026-11-10
+
+Only public contact delivery, its admin inbox editor, and email/password
+authentication fixes are included. No migrations or new environment variables.
+Other local integrations, support changes and runtime hardening remain excluded.
+Release evidence: docs/CONTACT_AUTH_RELEASE_2026-11-10.md.
+
+### Contact inbox and delivery
+
+Admin -> Site settings -> Edit -> Support email / contact inbox controls the
+existing site_settings.contact_email key. Each submission reads the saved inbox
+immediately. It is also the public support email. Missing/invalid/blank settings
+disable sending; no static fallback address receives messages. Configure the
+production inbox in Admin if needed; development settings are not copied.
+
+The existing production SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS and EMAIL_FROM
+variables are reused. Visitor email is Reply-To only. No autoresponse or support
+ticket is created. Contact SMTP requires TLS and has bounded connection waits.
+The UI shows a reference after SMTP accepts the intended recipient, retains input
+on failure and warns on uncertain delivery. SMTP acceptance does not prove Inbox
+receipt. There are no automatic retries.
+
+The guest endpoint validates origin, bounded JSON, names, plain mailbox, known
+reason, message length, submission UUID and honeypot. Warm-instance duplicate and
+rate controls are bounded; they do not coordinate across instances or provide
+durable delivery. Existing My Support remains separate.
+
+### Authentication
+
+Verification/reset token redemption and account/session changes now share one
+transaction and user lock. Successful reset retires all outstanding reset and
+verification links and sessions. Password login uses the same lock. Concurrent
+resend issuance enforces the one-minute per-account cooldown. JSON bodies are
+bounded and typed; mutations validate origin. Forms retain input and report
+retryable errors. Login return paths stay on-site. Google OAuth is unchanged.
+These changes do not add general login/signup/IP rate limiting.
+
+### Local verification
+
+Run npm run test:contact and npm run test:contact-db. The latter updates only
+existing DEVELOPMENT settings inside a transaction and rolls back every change.
+Run npm run test:auth-acceptance -- --built --browser-module=PATH_TO_PLAYWRIGHT
+for an isolated optimized build and real browser/API/development-database journey.
+The child server uses the existing restricted development runtime connection,
+has no production URL and sends mail only to its loopback sink. Synthetic users,
+sessions, tokens and activity rows are removed and absence checked. No DDL.
+Run typecheck/lint and the required db:check gate before and after publication.

@@ -33,15 +33,18 @@ export default function SignupPage() {
   const handleResend = async () => {
     if (!done || resendState === "sending") return;
     setResendState("sending");
+    setError(null);
     try {
-      await fetch("/api/auth/resend-verification", {
+      const response = await fetch("/api/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: done }),
       });
+      if (!response.ok || (await response.json()).ok !== true) throw new Error("Request failed");
       setResendState("sent");
     } catch {
       setResendState("idle");
+      setError("Couldn't request a verification email. Please try again.");
     }
   };
 
@@ -61,7 +64,8 @@ export default function SignupPage() {
     if (!isValidPhone(phone)) errs.phone = "Enter a valid phone number.";
     if (password.length < PASSWORD_MIN_LENGTH)
       errs.password = `Use at least ${PASSWORD_MIN_LENGTH} characters.`;
-    if (confirmPassword && password !== confirmPassword) errs.confirm = "Passwords don't match.";
+    if (!confirmPassword) errs.confirm = "Please confirm your password.";
+    else if (password !== confirmPassword) errs.confirm = "Passwords don't match.";
     return errs;
   };
 
@@ -108,6 +112,7 @@ export default function SignupPage() {
           expires in 24 hours.
         </div>
         <div className="mt-5 flex flex-col gap-3">
+          {error && <p role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-300">{error}</p>}
           <Button
             type="button"
             variant="glass"

@@ -9,6 +9,7 @@ import { isValidEmail } from "@/lib/validation";
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -21,18 +22,20 @@ export default function ForgotPasswordPage() {
       return;
     }
     setEmailError(null);
+    setError(null);
     setIsSubmitting(true);
     try {
-      await fetch("/api/auth/forgot-password", {
+      const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      if (!response.ok || (await response.json()).ok !== true) throw new Error("Request failed");
+      // The API gives the same response for existing and unknown accounts.
+      setSent(true);
     } catch {
-      // Show the same neutral confirmation regardless — the request is retryable.
-    }
-    setIsSubmitting(false);
-    setSent(true);
+      setError("Couldn't request a reset link. Please try again.");
+    } finally { setIsSubmitting(false); }
   };
 
   if (sent) {
@@ -72,6 +75,7 @@ export default function ForgotPasswordPage() {
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4" noValidate>
+        {error && <p role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-300">{error}</p>}
         <FormField
           label="Email"
           icon="mail"

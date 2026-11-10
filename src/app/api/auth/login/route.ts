@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
-import { verifyCredentials } from "@/lib/server/users";
-import { createSession, SESSION_COOKIE } from "@/lib/server/session";
+import { passwordLogin } from "@/lib/server/password-login";
+import { SESSION_COOKIE } from "@/lib/server/session";
 import { logActivity, clientIp } from "@/lib/server/activity-log";
+import { readAuthBody } from "@/lib/server/auth-request";
 
 export async function POST(request: Request) {
-  let body: { email?: string; password?: string; rememberMe?: boolean };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
-  }
+  const input = await readAuthBody(request);
+  if (!input.ok) return input.response;
+  const { body } = input;
 
   const email = body.email?.trim() ?? "";
   const password = body.password ?? "";
@@ -22,14 +20,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const user = await verifyCredentials(email, password);
-  if (!user) {
+  const result = await passwordLogin(email, password, rememberMe);
+  if (!result.ok && result.reason === "invalid") {
     return NextResponse.json(
       { error: "Invalid email or password." },
       { status: 401 },
     );
   }
-  if (!user.emailVerified) {
+  if (!result.ok) {
     return NextResponse.json(
       {
         error: "Verify your email to sign in — check your inbox for the link.",
@@ -39,7 +37,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { token, maxAge } = await createSession(user.id, rememberMe);
+  const { user, token, maxAge } = result;
   await logActivity({
     userId: user.id,
     action: "user.login",

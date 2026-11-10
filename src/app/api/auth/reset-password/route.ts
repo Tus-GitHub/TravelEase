@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { consumeAuthToken } from "@/lib/server/auth-tokens";
+import { redeemAuthToken } from "@/lib/server/auth-tokens";
 import { setUserPassword, markEmailVerified } from "@/lib/server/users";
 import { destroyAllSessionsForUser } from "@/lib/server/session";
 import { PASSWORD_MIN_LENGTH } from "@/lib/validation";
+import { readAuthBody } from "@/lib/server/auth-request";
 
 /**
  * Complete a password reset (plan.md §24). Consumes the single-use token, sets
@@ -10,12 +11,9 @@ import { PASSWORD_MIN_LENGTH } from "@/lib/validation";
  * reset also proves email ownership, so the account is marked verified.
  */
 export async function POST(request: Request) {
-  let body: { token?: string; password?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
-  }
+  const input = await readAuthBody(request);
+  if (!input.ok) return input.response;
+  const { body } = input;
 
   const token = body.token ?? "";
   const password = body.password ?? "";
@@ -27,17 +25,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const consumed = await consumeAuthToken("password_reset", token);
-  if (!consumed) {
+  const changed = await redeemAuthToken("password_reset", token, async (userId, client) => {
+    await setUserPassword(userId, password, client);
+    await markEmailVerified(userId, client);
+    await destroyAllSessionsForUser(userId, client);
+    return true;
+  });
+  if (!changed) {
     return NextResponse.json(
       { error: "This reset link is invalid or has expired. Request a new one." },
       { status: 400 },
     );
   }
-
-  await setUserPassword(consumed.userId, password);
-  await markEmailVerified(consumed.userId);
-  await destroyAllSessionsForUser(consumed.userId);
 
   return NextResponse.json({ ok: true });
 }
