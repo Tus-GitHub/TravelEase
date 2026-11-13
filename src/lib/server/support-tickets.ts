@@ -260,27 +260,27 @@ export async function addTicketMessage(
   if (body.length < 1) return { ok: false, status: 400, message: "Type a message." };
 
   const pool = getPool();
-  const t = (
-    await pool.query(
-      `SELECT user_id, status FROM support_tickets
-        WHERE support_ticket_id = $1 AND is_deleted = false`,
-      [ticketId],
-    )
-  ).rows[0];
-  if (!t) return { ok: false, status: 404, message: "Ticket not found." };
-  if (viewer.role !== "admin" && t.user_id !== viewer.id) {
-    return { ok: false, status: 404, message: "Ticket not found." };
-  }
-  if (t.status === "closed") {
-    return { ok: false, status: 409, message: "This ticket is closed. Open a new one." };
-  }
-
   const authorRole = roleOf(viewer);
   const nextStatus: TicketStatus = authorRole === "customer" ? "open" : "pending";
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    // Status updates lock this same row. Check after acquiring the lock so a
+    // reply cannot reopen a ticket closed while the request was waiting.
+    const t = (await client.query(
+      `SELECT user_id, status FROM support_tickets
+        WHERE support_ticket_id = $1 AND is_deleted = false FOR UPDATE`,
+      [ticketId],
+    )).rows[0];
+    if (!t || (viewer.role !== "admin" && t.user_id !== viewer.id)) {
+      await client.query("ROLLBACK");
+      return { ok: false, status: 404, message: "Ticket not found." };
+    }
+    if (t.status === "closed") {
+      await client.query("ROLLBACK");
+      return { ok: false, status: 409, message: "This ticket is closed. Open a new one." };
+    }
     await client.query(
       `INSERT INTO support_ticket_messages (support_ticket_id, author_user_id, author_role, body)
        VALUES ($1, $2, $3, $4)`,

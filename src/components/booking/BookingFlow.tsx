@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/common/Card";
@@ -182,29 +182,34 @@ export default function BookingFlow() {
     return body;
   }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours, couponCode, startDate]);
 
-  const quoteTimer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
     if (!meta) return;
-    clearTimeout(quoteTimer.current);
-    quoteTimer.current = setTimeout(async () => {
-      setQuoting(true);
+    const controller = new AbortController();
+    // Invalidate the old estimate immediately, including during the debounce.
+    setQuote(null);
+    setCouponInfo(null);
+    setCouponError(null);
+    setQuoting(true);
+    const timer = setTimeout(async () => {
       try {
         const res = await fetch("/api/quotes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(quoteBody),
+          signal: controller.signal,
         });
         const data = await res.json();
+        if (controller.signal.aborted) return;
         setQuote(res.ok ? data.quote : null);
         setCouponInfo(res.ok ? (data.coupon ?? null) : null);
         setCouponError(res.ok ? (data.couponError ?? null) : null);
       } catch {
-        setQuote(null);
+        if (!controller.signal.aborted) setQuote(null);
       } finally {
-        setQuoting(false);
+        if (!controller.signal.aborted) setQuoting(false);
       }
     }, 350);
-    return () => clearTimeout(quoteTimer.current);
+    return () => { clearTimeout(timer); controller.abort(); };
   }, [quoteBody, meta]);
 
   const currentUrlWithState = useCallback(() => {

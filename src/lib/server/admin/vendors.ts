@@ -336,20 +336,12 @@ export async function settlePayout(
     return { ok: false, status: 400, message: "Status must be 'paid' or 'void'." };
   }
   const pool = getPool();
-  const current = (
-    await pool.query(
-      `SELECT status FROM payouts WHERE payout_id = $1 AND is_deleted = false`,
-      [payoutId],
-    )
-  ).rows[0];
-  if (!current) return { ok: false, status: 404, message: "Payout not found." };
-  if (current.status !== "pending") {
-    return { ok: false, status: 409, message: `Payout is already ${current.status}.` };
-  }
-
-  await pool.query(
+  // PostgreSQL rechecks pending after waiting for a concurrent updater. Only
+  // the winning settlement may change payment details or emit a settle event.
+  const settled = await pool.query(
     `UPDATE payouts SET status = $1, method = $2, reference = $3, updated_by = $4
-      WHERE payout_id = $5`,
+      WHERE payout_id = $5 AND status = 'pending' AND is_deleted = false
+      RETURNING payout_id`,
     [
       input.status,
       input.method?.trim() || null,
@@ -358,6 +350,14 @@ export async function settlePayout(
       payoutId,
     ],
   );
+  if (!settled.rowCount) {
+    const current = (await pool.query(
+      "SELECT status FROM payouts WHERE payout_id = $1 AND is_deleted = false", [payoutId],
+    )).rows[0];
+    return current
+      ? { ok: false, status: 409, message: `Payout is already ${current.status}.` }
+      : { ok: false, status: 404, message: "Payout not found." };
+  }
   const r = await pool.query(`${P_SELECT} WHERE p.payout_id = $1`, [payoutId]);
   const payout = toPayout(r.rows[0]);
   await logActivity({
