@@ -5,6 +5,7 @@ import { getCmsPage, changeCmsPage } from "@/lib/server/cms";
 import { CmsError, CMS_MAX_BYTES, cmsDocumentWithImage } from "@/lib/cms";
 import { MAX_IMAGE_BYTES } from "@/lib/image-upload";
 import { uploadImage, discardUpload, ImageError } from "@/lib/server/cloudinary";
+import { uploadWasRolledBack } from "@/lib/server/upload-persistence";
 
 export const runtime = "nodejs";
 export async function POST(request: Request, { params }: { params: { id: string } }) {
@@ -40,10 +41,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
       const item = await changeCmsPage(params.id, { action: "save", version, title, draft: cmsDocumentWithImage(draft, sectionId, target, uploaded.url) }, auth.user.id);
       return NextResponse.json({ item, url: uploaded.url, publicId: uploaded.publicId }, { headers: { "Cache-Control": "no-store" } });
     } catch (error) {
-      // A connection can fail after COMMIT reaches the database. Never delete
-      // the image if its reference committed, or if that cannot be determined.
-      const saved = await getCmsPage(params.id).catch(() => null);
-      if (saved && !JSON.stringify(saved.draft).includes(uploaded.url)) {
+      // Only a confirmed pre-COMMIT rollback proves this new upload is unused.
+      // A later draft may omit an asset still used by publication or history.
+      if (uploadWasRolledBack(error)) {
         await discardUpload(uploaded.publicId).catch(() => console.error("CMS upload cleanup failed; inspect the new Cloudinary asset."));
       }
       throw error;

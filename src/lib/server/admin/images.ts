@@ -2,6 +2,7 @@ import type { PoolClient } from "pg";
 import { getPool } from "../db";
 import { ImageError } from "../cloudinary";
 import type { AdminImage, ImageKind } from "../../image-upload";
+import { markUploadRolledBack } from "../upload-persistence";
 
 // Identifiers are exclusively server-owned, never interpolated from request input.
 const tables = {
@@ -21,15 +22,23 @@ export async function listImages(kind: ImageKind, id: number): Promise<AdminImag
 
 async function locked<T>(kind: ImageKind, id: number, fn: (c: PoolClient) => Promise<T>) {
   const c = await getPool().connect();
+  let commitAttempted = false;
   try {
     await c.query("BEGIN");
     const [table, pk] = tables[kind];
     const row = await c.query(`SELECT ${pk} FROM ${table} WHERE ${pk}=$1 AND NOT is_deleted FOR UPDATE`, [id]);
     if (!row.rowCount) throw new ImageError("Record not found.", 404);
     const result = await fn(c);
+    commitAttempted = true;
     await c.query("COMMIT");
     return result;
-  } catch (err) { await c.query("ROLLBACK"); throw err; }
+  } catch (err) {
+    try {
+      await c.query("ROLLBACK");
+      if (!commitAttempted) markUploadRolledBack(err);
+    } catch { /* Unknown outcome: retain the asset and the original error. */ }
+    throw err;
+  }
   finally { c.release(); }
 }
 

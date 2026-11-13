@@ -3,6 +3,7 @@ import { getPool } from "./db";
 import { logActivity } from "./activity-log";
 import { CmsError, cmsDefaultDocument, cmsPath, validateCmsDocument, validateCmsSlug, type CmsDocument } from "../cms";
 import { isUniqueViolation } from "./db-errors";
+import { markUploadRolledBack } from "./upload-persistence";
 
 export interface CmsPageSummary {
   id: string; slug: string; title: string; status: "draft" | "published"; version: number;
@@ -54,6 +55,7 @@ export async function changeCmsPage(id: string, input: Record<string, unknown>, 
   if (action === "restore" && (typeof input.revisionId !== "string" || !UUID.test(input.revisionId))) throw new CmsError("Choose a valid revision.");
   const client = await getPool().connect();
   let saved: CmsPage | null = null;
+  let commitAttempted = false;
   try {
     await client.query("BEGIN");
     const result = await client.query("SELECT slug,version,draft_content FROM cms_pages WHERE page_id=$1 AND NOT is_deleted FOR UPDATE", [id]);
@@ -79,8 +81,15 @@ export async function changeCmsPage(id: string, input: Record<string, unknown>, 
       const savedRow = (await client.query(`SELECT ${selectSummary},draft_content FROM cms_pages WHERE page_id=$1`, [id])).rows[0];
       saved = { ...summary(savedRow), draft: validateCmsDocument(savedRow.draft_content) };
     }
+    commitAttempted = true;
     await client.query("COMMIT");
-  } catch (error) { await client.query("ROLLBACK"); throw error; }
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+      if (!commitAttempted) markUploadRolledBack(error);
+    } catch { /* Unknown outcome: retain any upload and the original error. */ }
+    throw error;
+  }
   finally { client.release(); }
   await logActivity({ userId: actor, action: `cms.${action}`, entityType: "cms_page", entityId: id });
   return saved;

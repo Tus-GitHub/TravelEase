@@ -70,40 +70,58 @@ export async function upsertReview(
     return { ok: false, status: 400, message: "Rating must be 1 to 5." };
   }
 
-  const pool = getPool();
-  const b = (
-    await pool.query(
-      `SELECT status, user_id FROM bookings WHERE booking_id = $1 AND is_deleted = false`,
-      [bookingId],
-    )
-  ).rows[0];
-  if (!b || b.user_id !== userId) {
-    return { ok: false, status: 404, message: "Booking not found." };
-  }
-  if (b.status !== "Completed") {
-    return {
-      ok: false,
-      status: 409,
-      message: "You can review a trip once it's completed.",
-    };
-  }
+  const pool = await getPool().connect();
+  try {
+    await pool.query("BEGIN");
+    const b = (
+      await pool.query(
+        `SELECT status, user_id FROM bookings WHERE booking_id = $1 AND is_deleted = false FOR UPDATE`,
+        [bookingId],
+      )
+    ).rows[0];
+    if (!b || b.user_id !== userId) {
+      await pool.query("ROLLBACK");
+      return { ok: false, status: 404, message: "Booking not found." };
+    }
+    if (b.status !== "Completed") {
+      await pool.query("ROLLBACK");
+      return {
+        ok: false,
+        status: 409,
+        message: "You can review a trip once it's completed.",
+      };
+    }
 
-  const r = await pool.query(
-    `INSERT INTO reviews (booking_id, user_id, rating, title, body, created_by, updated_by)
-     VALUES ($1, $2, $3, $4, $5, $2, $2)
-     ON CONFLICT (booking_id) DO UPDATE SET
-       rating = EXCLUDED.rating, title = EXCLUDED.title, body = EXCLUDED.body,
-       is_deleted = false, updated_by = EXCLUDED.updated_by
-     RETURNING booking_id`,
-    [
-      bookingId,
-      userId,
-      rating,
-      input.title?.trim().slice(0, 120) || null,
-      input.body?.trim().slice(0, 2000) || null,
-    ],
-  );
-  return { ok: true, review: (await getReviewForBooking(r.rows[0].booking_id))! };
+    const r = await pool.query(
+      `INSERT INTO reviews (booking_id, user_id, rating, title, body, created_by, updated_by)
+       VALUES ($1, $2, $3, $4, $5, $2, $2)
+       ON CONFLICT (booking_id) DO UPDATE SET
+         rating = EXCLUDED.rating, title = EXCLUDED.title, body = EXCLUDED.body,
+         updated_by = EXCLUDED.updated_by
+       WHERE reviews.is_deleted = false AND reviews.user_id = EXCLUDED.user_id
+       RETURNING booking_id`,
+      [
+        bookingId,
+        userId,
+        rating,
+        input.title?.trim().slice(0, 120) || null,
+        input.body?.trim().slice(0, 2000) || null,
+      ],
+    );
+    if (!r.rowCount) {
+      await pool.query("ROLLBACK");
+      return { ok: false, status: 409, message: "This review was removed and can no longer be edited." };
+    }
+    // Keep the upsert's row lock through hydration so concurrent moderation
+    // cannot turn a successful response into { review: null }.
+    const saved = await pool.query(`${SELECT} WHERE rv.booking_id=$1 AND NOT rv.is_deleted`, [bookingId]);
+    const review = toView(saved.rows[0]);
+    await pool.query("COMMIT");
+    return { ok: true, review };
+  } catch (error) {
+    await pool.query("ROLLBACK");
+    throw error;
+  } finally { pool.release(); }
 }
 
 // ─── Public reads ──────────────────────────────────────────────────────────

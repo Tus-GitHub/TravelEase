@@ -1,7 +1,6 @@
 import { getPool } from "../db";
 import { applyPartialUpdate, softDelete } from "./_util";
 import { logActivity } from "../activity-log";
-import { getSiteSettings } from "../site-settings";
 
 /**
  * Vendor marketplace (Phase 3 chunk 3.5) — admin-managed vendor businesses, the
@@ -267,7 +266,8 @@ export type GenerateResult =
  * Build (or refresh) payout rows for one calendar month: for every approved
  * vendor, tally Completed trips on their vehicles whose start_datetime falls in
  * the month, apply the current global commission %, and upsert one payout row.
- * Rows already `paid` are left untouched.
+ * The month lock precedes all reads. Refresh zero totals as well; settled and
+ * deleted statements are immutable. All vendors commit as one batch.
  */
 export async function generatePayouts(
   month: string,
@@ -276,51 +276,64 @@ export async function generatePayouts(
   const range = monthRange(month);
   if (!range) return { ok: false, message: "Give a month as YYYY-MM." };
 
-  const pool = getPool();
-  const pct = (await getSiteSettings()).vendorCommissionPct;
+  const pool = await getPool().connect();
+  try {
+    await pool.query("BEGIN");
+    await pool.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [`payout-generation:${range.start}`]);
+    // Financial snapshots must not use another instance's minute-old settings
+    // cache. Read only after acquiring the generation lock, on this transaction.
+    const setting = (await pool.query("SELECT setting_value FROM site_settings WHERE setting_key='vendor_commission_pct'")).rows[0];
+    const rawPct = Number(setting?.setting_value);
+    const pct = Number.isFinite(rawPct) && rawPct >= 0 && rawPct <= 100 ? rawPct : 0;
 
-  const tally = await pool.query(
-    `SELECT vp.vendor_profile_id,
-            count(b.booking_id)::int AS n,
-            coalesce(sum(b.total_amount), 0) AS gross
-       FROM vendor_profiles vp
-       JOIN vehicles ve ON ve.vendor_profile_id = vp.vendor_profile_id AND ve.is_deleted = false
-       JOIN bookings b ON b.vehicle_id = ve.vehicle_id
-        AND b.is_deleted = false AND b.status = ${PAYABLE_STATUS}
-        AND b.start_datetime >= $1 AND b.start_datetime < $2
-      WHERE vp.is_deleted = false AND vp.status = 'approved'
-      GROUP BY vp.vendor_profile_id`,
-    [range.start, range.end],
-  );
-
-  for (const row of tally.rows) {
-    const gross = money(Number(row.gross));
-    const commission = money((gross * pct) / 100);
-    const net = money(gross - commission);
-    await pool.query(
-      `INSERT INTO payouts
-         (vendor_profile_id, period_start, period_end, booking_count, gross_amount,
-          commission_pct, commission_amount, net_amount, created_by, updated_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
-       ON CONFLICT (vendor_profile_id, period_start, period_end) DO UPDATE SET
-         booking_count = EXCLUDED.booking_count,
-         gross_amount = EXCLUDED.gross_amount,
-         commission_pct = EXCLUDED.commission_pct,
-         commission_amount = EXCLUDED.commission_amount,
-         net_amount = EXCLUDED.net_amount,
-         updated_by = EXCLUDED.updated_by
-       WHERE payouts.status = 'pending'`,
-      [row.vendor_profile_id, range.start, range.end, row.n, gross, pct, commission, net, actorId],
+    const tally = await pool.query(
+      `SELECT vp.vendor_profile_id,
+              count(b.booking_id)::int AS n,
+              coalesce(sum(b.total_amount), 0) AS gross
+         FROM vendor_profiles vp
+         LEFT JOIN vehicles ve ON ve.vendor_profile_id = vp.vendor_profile_id AND ve.is_deleted = false
+         LEFT JOIN bookings b ON b.vehicle_id = ve.vehicle_id
+          AND b.is_deleted = false AND b.status = ${PAYABLE_STATUS}
+          AND b.start_datetime >= $1 AND b.start_datetime < $2
+        WHERE vp.is_deleted = false AND vp.status = 'approved'
+        GROUP BY vp.vendor_profile_id ORDER BY vp.vendor_profile_id`,
+      [range.start, range.end],
     );
-  }
 
-  const r = await pool.query(
-    `${P_SELECT}
-      WHERE p.is_deleted = false AND p.period_start = $1 AND p.period_end = $2
-      ORDER BY vp.business_name`,
-    [range.start, range.end],
-  );
-  return { ok: true, payouts: r.rows.map(toPayout), month };
+    for (const row of tally.rows) {
+      const gross = money(Number(row.gross));
+      const commission = money((gross * pct) / 100);
+      const net = money(gross - commission);
+      await pool.query(
+        `INSERT INTO payouts
+           (vendor_profile_id, period_start, period_end, booking_count, gross_amount,
+            commission_pct, commission_amount, net_amount, created_by, updated_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+         ON CONFLICT (vendor_profile_id, period_start, period_end) DO UPDATE SET
+           booking_count = EXCLUDED.booking_count,
+           gross_amount = EXCLUDED.gross_amount,
+           commission_pct = EXCLUDED.commission_pct,
+           commission_amount = EXCLUDED.commission_amount,
+           net_amount = EXCLUDED.net_amount,
+           updated_by = EXCLUDED.updated_by
+         WHERE payouts.status = 'pending' AND NOT payouts.is_deleted`,
+        [row.vendor_profile_id, range.start, range.end, row.n, gross, pct, commission, net, actorId],
+      );
+    }
+
+    const r = await pool.query(
+      `${P_SELECT}
+        WHERE p.is_deleted = false AND p.period_start = $1 AND p.period_end = $2
+        ORDER BY vp.business_name`,
+      [range.start, range.end],
+    );
+    const payouts = r.rows.map(toPayout);
+    await pool.query("COMMIT");
+    return { ok: true, payouts, month };
+  } catch (error) {
+    await pool.query("ROLLBACK");
+    throw error;
+  } finally { pool.release(); }
 }
 
 export type SettlePayoutResult =

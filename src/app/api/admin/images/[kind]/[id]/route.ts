@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/server/auth-guard";
 import { changeImage, listImages, saveImage } from "@/lib/server/admin/images";
 import { discardUpload, ImageError, imageStorageReady, uploadImage } from "@/lib/server/cloudinary";
 import { isImageKind, MAX_IMAGE_BYTES } from "@/lib/image-upload";
+import { uploadWasRolledBack } from "@/lib/server/upload-persistence";
 
 export const runtime = "nodejs";
 type Context = { params: { kind: string; id: string } };
@@ -50,7 +51,9 @@ async function handle(request: Request, { params }: Context) {
       const uploaded = await uploadImage(file);
       try { await saveImage(kind, id, uploaded.url, auth.user.id); }
       catch (err) {
-        await discardUpload(uploaded.publicId).catch(() => console.error("Image cleanup failed; remove the orphaned upload in Cloudinary."));
+        if (uploadWasRolledBack(err)) {
+          await discardUpload(uploaded.publicId).catch(() => console.error("Image cleanup failed; inspect the new Cloudinary asset."));
+        }
         throw err;
       }
     } else if (request.method === "PATCH") {
@@ -64,7 +67,7 @@ async function handle(request: Request, { params }: Context) {
   } catch (err) {
     if (err instanceof ImageError) return NextResponse.json({ error: err.message }, { status: err.status });
     console.error("Admin image operation failed", err instanceof Error ? err.name : "Unknown error");
-    return NextResponse.json({ error: "Unable to update images. Please try again." }, { status: 500 });
+    return NextResponse.json({ error: "Unable to confirm the image update. Reload the saved images before retrying." }, { status: 500 });
   }
 }
 
