@@ -3,6 +3,7 @@ import type { PoolClient } from "pg";
 import { getPool } from "./db";
 import { hashPassword, verifyPassword } from "./password";
 import { logActivity } from "./activity-log";
+import { withActiveAccount } from "./account-write";
 
 export interface PublicUser {
   id: string;
@@ -55,11 +56,12 @@ export async function findUserByEmail(email: string, client?: PoolClient): Promi
   return result.rows[0];
 }
 
-export async function findUserById(id: string): Promise<UserRow | undefined> {
-  const pool = getPool();
+export async function findUserById(id: string, client?: PoolClient): Promise<UserRow | undefined> {
+  const pool = client ?? getPool();
   const result = await pool.query(
     `${USER_SELECT} WHERE u.user_id = $1 AND u.is_deleted = false AND u.is_active = true
-       AND (r.name <> 'driver' OR EXISTS (SELECT 1 FROM drivers d WHERE d.user_id=u.user_id AND d.is_active AND NOT d.is_deleted))`,
+       AND (r.name <> 'driver' OR EXISTS (SELECT 1 FROM drivers d WHERE d.user_id=u.user_id AND d.is_active AND NOT d.is_deleted))
+       ${client ? "FOR UPDATE OF u" : ""}`,
     [id],
   );
   return result.rows[0];
@@ -105,11 +107,13 @@ export async function createUser(
 export async function createFederatedUser(
   name: string,
   email: string,
-): Promise<PublicUser> {
-  const pool = getPool();
+  client?: PoolClient,
+): Promise<PublicUser | null> {
+  const pool = client ?? getPool();
   const result = await pool.query(
     `INSERT INTO users (name, email, phone, password_hash, email_verified_at)
      VALUES ($1, $2, '', $3, now())
+     ON CONFLICT (email) DO NOTHING
      RETURNING user_id, name, email, phone, created_at`,
     [
       name.trim() || "Traveller",
@@ -118,6 +122,7 @@ export async function createFederatedUser(
     ],
   );
   const row = result.rows[0];
+  if (!row) return null;
   return {
     id: row.user_id,
     name: row.name,
@@ -131,21 +136,23 @@ export async function createFederatedUser(
 
 /** Marks the account's email confirmed. No-op if it was already verified. */
 export async function markEmailVerified(userId: string, client?: PoolClient): Promise<void> {
-  const pool = client ?? getPool();
-  await pool.query(
-    `UPDATE users SET email_verified_at = now()
-     WHERE user_id = $1 AND email_verified_at IS NULL`,
-    [userId],
-  );
+  await withActiveAccount(userId, async pool => {
+    await pool.query(
+      `UPDATE users SET email_verified_at = now()
+       WHERE user_id = $1 AND email_verified_at IS NULL`,
+      [userId],
+    );
+  }, client);
 }
 
 /** Overwrites the password hash (password-reset flow). Caller proves ownership. */
 export async function setUserPassword(userId: string, password: string, client?: PoolClient): Promise<void> {
-  const pool = client ?? getPool();
-  await pool.query(`UPDATE users SET password_hash = $1 WHERE user_id = $2`, [
-    hashPassword(password),
-    userId,
-  ]);
+  await withActiveAccount(userId, async pool => {
+    await pool.query(`UPDATE users SET password_hash = $1 WHERE user_id = $2`, [
+      hashPassword(password),
+      userId,
+    ]);
+  }, client);
 }
 
 // Self-service profile edit: name/phone only. Email is the login identity and
@@ -155,15 +162,17 @@ export async function updateUser(
   userId: string,
   name: string,
   phone: string,
+  client?: PoolClient,
 ): Promise<PublicUser | null> {
-  const pool = getPool();
-  await pool.query(`UPDATE users SET name = $1, phone = $2 WHERE user_id = $3`, [
-    name.trim(),
-    phone.trim(),
-    userId,
-  ]);
-  const row = await findUserById(userId);
-  return row ? toPublicUser(row) : null;
+  return withActiveAccount(userId, async pool => {
+    await pool.query(`UPDATE users SET name = $1, phone = $2 WHERE user_id = $3`, [
+      name.trim(),
+      phone.trim(),
+      userId,
+    ]);
+    const row = await findUserById(userId, pool);
+    return row ? toPublicUser(row) : null;
+  }, client);
 }
 
 export async function verifyCredentials(
@@ -177,7 +186,7 @@ export async function verifyCredentials(
 }
 
 /**
- * Irreversible self-service account deletion. One atomic statement:
+ * Irreversible self-service account deletion. Locks the user before cleanup:
  *   - drops the customer_profiles row (address, map pin, preferred tags — gone);
  *   - drops every session (signed out everywhere);
  *   - drops any outstanding email-verification / password-reset tokens;
@@ -188,24 +197,20 @@ export async function verifyCredentials(
  * Returns false when there was no live account with that id.
  */
 export async function deleteAccount(userId: string): Promise<boolean> {
-  const pool = getPool();
-  const result = await pool.query(
-    `WITH drop_profile AS (
-       DELETE FROM customer_profiles WHERE user_id = $1
-     ),
-     drop_sessions AS (
-       DELETE FROM sessions WHERE user_id = $1
-     ),
-     drop_verify AS (
-       DELETE FROM email_verification_tokens WHERE user_id = $1
-     ),
-     drop_reset AS (
-       DELETE FROM password_reset_tokens WHERE user_id = $1
-     ),
-     drop_saved AS (
-       DELETE FROM saved_itineraries WHERE user_id = $1
-     )
-     UPDATE users SET
+  const client = await getPool().connect();
+  let ok = false;
+  try {
+    await client.query("BEGIN");
+    const account = await client.query(
+      "SELECT user_id FROM users WHERE user_id=$1 AND NOT is_deleted FOR UPDATE", [userId],
+    );
+    if (account.rowCount) {
+      // Separate statements see writers that committed while we waited for the
+      // account lock. A data-modifying CTE would retain its earlier snapshot.
+      for (const table of ["customer_profiles", "sessions", "email_verification_tokens", "password_reset_tokens", "saved_itineraries"]) {
+        await client.query(`DELETE FROM ${table} WHERE user_id=$1`, [userId]);
+      }
+      await client.query(`UPDATE users SET
        is_deleted    = true,
        is_active     = false,
        name          = 'Deleted account',
@@ -213,10 +218,14 @@ export async function deleteAccount(userId: string): Promise<boolean> {
        email         = 'deleted+' || user_id::text || '@deleted.invalid',
        password_hash = 'deleted'
      WHERE user_id = $1 AND is_deleted = false
-     RETURNING user_id`,
-    [userId],
-  );
-  const ok = (result.rowCount ?? 0) > 0;
+     RETURNING user_id`, [userId]);
+      ok = true;
+    }
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally { client.release(); }
   if (ok) {
     await logActivity({
       userId,

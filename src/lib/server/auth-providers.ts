@@ -1,4 +1,6 @@
 import { getPool } from "./db";
+import type { PoolClient } from "pg";
+import { withActiveAccount } from "./account-write";
 
 /**
  * External auth identities linked to a Jagdamba Travellers user (plan.md §22). A thin
@@ -30,20 +32,28 @@ export async function findUserIdByProvider(
 /**
  * Links a provider identity to a user. Reaching here means the provider already
  * proved control of `providerUserId` (a completed OAuth round trip), so on
- * conflict we re-point the link to the resolved user rather than no-op — this
- * self-heals a stale row left behind by a closed-and-recreated account.
+ * conflict only a deleted owner's link can move to a new account. A live
+ * identity's ownership must never change as a side effect of email matching.
  */
 export async function linkProvider(
   userId: string,
   provider: AuthProvider,
   providerUserId: string,
   email: string | null,
+  client?: PoolClient,
 ): Promise<void> {
-  await getPool().query(
-    `INSERT INTO user_auth_providers (user_id, provider, provider_user_id, email)
-     VALUES ($1, $2, $3, $4)
-     ON CONFLICT (provider, provider_user_id)
-     DO UPDATE SET user_id = EXCLUDED.user_id, email = EXCLUDED.email`,
-    [userId, provider, providerUserId, email],
-  );
+  await withActiveAccount(userId, async db => {
+    const result = await db.query(
+      `INSERT INTO user_auth_providers (user_id, provider, provider_user_id, email)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (provider, provider_user_id)
+       DO UPDATE SET user_id = EXCLUDED.user_id, email = EXCLUDED.email
+         WHERE user_auth_providers.user_id = EXCLUDED.user_id
+            OR EXISTS (SELECT 1 FROM users old_owner
+                        WHERE old_owner.user_id=user_auth_providers.user_id AND old_owner.is_deleted)
+       RETURNING user_id`,
+      [userId, provider, providerUserId, email],
+    );
+    if (!result.rowCount) throw new Error("Provider identity is already linked.");
+  }, client);
 }

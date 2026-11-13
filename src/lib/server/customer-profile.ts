@@ -1,4 +1,6 @@
 import { getPool } from "./db";
+import type { PoolClient } from "pg";
+import { withActiveAccount } from "./account-write";
 
 /**
  * One row per customer (plan.md §12a). Agents/admins never get a row here.
@@ -47,8 +49,8 @@ function toCustomerProfile(row: CustomerProfileRow): CustomerProfile {
 
 // Every read against the audited domain tables must exclude soft-deleted rows
 // (plan.md §19a) — no shared query helper exists yet, so it's inline here.
-export async function getCustomerProfile(userId: string): Promise<CustomerProfile | null> {
-  const pool = getPool();
+export async function getCustomerProfile(userId: string, client?: PoolClient): Promise<CustomerProfile | null> {
+  const pool = client ?? getPool();
   const result = await pool.query(
     `SELECT ${PROFILE_COLUMNS} FROM customer_profiles
      WHERE user_id = $1 AND is_deleted = false`,
@@ -60,35 +62,37 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
 export async function upsertCustomerProfile(
   userId: string,
   input: CustomerProfile,
+  client?: PoolClient,
 ): Promise<CustomerProfile> {
-  const pool = getPool();
-  const result = await pool.query(
-    `INSERT INTO customer_profiles
-       (user_id, address_line1, address_line2, city, state, pincode, latitude, longitude, preferred_tags, created_by, updated_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $1, $1)
-     ON CONFLICT (user_id) DO UPDATE SET
-       address_line1  = EXCLUDED.address_line1,
-       address_line2  = EXCLUDED.address_line2,
-       city           = EXCLUDED.city,
-       state          = EXCLUDED.state,
-       pincode        = EXCLUDED.pincode,
-       latitude       = EXCLUDED.latitude,
-       longitude      = EXCLUDED.longitude,
-       preferred_tags = EXCLUDED.preferred_tags,
-       updated_by     = EXCLUDED.updated_by,
-       is_deleted     = false
-     RETURNING ${PROFILE_COLUMNS}`,
-    [
-      userId,
-      input.addressLine1.trim() || null,
-      input.addressLine2.trim() || null,
-      input.city.trim() || null,
-      input.state.trim() || null,
-      input.pincode.trim() || null,
-      input.latitude,
-      input.longitude,
-      JSON.stringify(input.preferredTags),
-    ],
-  );
-  return toCustomerProfile(result.rows[0]);
+  return withActiveAccount(userId, async pool => {
+    const result = await pool.query(
+      `INSERT INTO customer_profiles
+         (user_id, address_line1, address_line2, city, state, pincode, latitude, longitude, preferred_tags, created_by, updated_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $1, $1)
+       ON CONFLICT (user_id) DO UPDATE SET
+         address_line1  = EXCLUDED.address_line1,
+         address_line2  = EXCLUDED.address_line2,
+         city           = EXCLUDED.city,
+         state          = EXCLUDED.state,
+         pincode        = EXCLUDED.pincode,
+         latitude       = EXCLUDED.latitude,
+         longitude      = EXCLUDED.longitude,
+         preferred_tags = EXCLUDED.preferred_tags,
+         updated_by     = EXCLUDED.updated_by,
+         is_deleted     = false
+       RETURNING ${PROFILE_COLUMNS}`,
+      [
+        userId,
+        input.addressLine1.trim() || null,
+        input.addressLine2.trim() || null,
+        input.city.trim() || null,
+        input.state.trim() || null,
+        input.pincode.trim() || null,
+        input.latitude,
+        input.longitude,
+        JSON.stringify(input.preferredTags),
+      ],
+    );
+    return toCustomerProfile(result.rows[0]);
+  }, client);
 }

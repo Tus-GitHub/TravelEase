@@ -105,7 +105,7 @@ export async function transitionBookingInTransaction(client: PoolClient, input: 
     const row = (
       await client.query(
         `SELECT user_id, assigned_agent_user_id, status, total_amount, start_datetime,
-                vehicle_id, driver_id, end_datetime, duration_days, estimated_hours, departure_id,
+                vehicle_id, vehicle_type_id, passenger_count, driver_id, end_datetime, duration_days, estimated_hours, departure_id,
                 seat_hold_expires_at, seat_hold_expires_at > clock_timestamp() AS hold_valid
            FROM bookings WHERE booking_id = $1 AND is_deleted = false FOR UPDATE`,
         [input.bookingId],
@@ -175,6 +175,17 @@ export async function transitionBookingInTransaction(client: PoolClient, input: 
       row.vehicle_id != null;
 
     if (blocksVehicle || releasesVehicle) await lockVehicle(client, row.vehicle_id);
+    if (blocksVehicle) {
+      const vehicle = (await client.query(
+        `SELECT vehicle_id FROM vehicles WHERE vehicle_id=$1 AND NOT is_deleted
+           AND is_active AND is_available AND vehicle_type_id=$2 AND seating_capacity >= $3`,
+        [row.vehicle_id, row.vehicle_type_id, row.passenger_count],
+      )).rows[0];
+      if (!vehicle) return {
+        ok: false, code: "invalid_transition",
+        message: "That vehicle is no longer available or suitable for this booking. Resolve the vehicle issue before confirming payment.",
+      };
+    }
     if (blocksVehicle && (await hasConflict(row.vehicle_id, win.start, win.end, input.bookingId, client))) {
       return {
         ok: false,

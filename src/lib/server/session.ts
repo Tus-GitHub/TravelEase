@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import type { PoolClient } from "pg";
 import { getPool } from "./db";
+import { withActiveAccount } from "./account-write";
 
 export const SESSION_COOKIE = "session_token";
 
@@ -19,12 +20,13 @@ export async function createSession(
   const token = randomUUID();
   const expiresAt = new Date(Date.now() + ttl);
 
-  const pool = client ?? getPool();
-  await pool.query("INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, $3)", [
-    token,
-    userId,
-    expiresAt,
-  ]);
+  await withActiveAccount(userId, async pool => {
+    await pool.query("INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, $3)", [
+      token,
+      userId,
+      expiresAt,
+    ]);
+  }, client);
 
   return { token, maxAge: remember ? ttl / 1000 : undefined };
 }

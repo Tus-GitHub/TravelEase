@@ -2,7 +2,7 @@ import type { Pool, PoolClient } from "pg";
 import { TripError } from "@/lib/weekend-trips";
 import { DependentRowsError } from "./db-errors";
 import { getPool } from "./db";
-/** Prevent existing fleet editors from invalidating a published group reservation.
+/** Prevent fleet editors from invalidating group reservations or confirmed private trips.
  * Resource lock only; the departure query deliberately doesn't invert lock order. */
 export async function protectedResourceMutation<T>(table: string, id: number, input: Record<string,unknown>, work: (db: Pool | PoolClient) => Promise<T>): Promise<T> {
   if (table !== 'vehicles' && table !== 'drivers') return work(getPool());
@@ -12,6 +12,17 @@ export async function protectedResourceMutation<T>(table: string, id: number, in
     await db.query(`SELECT 1 FROM ${table} WHERE ${column}=$1 FOR UPDATE`,[id]);
     const trips=(await db.query(`SELECT capacity+staff_reserved_seats AS needed FROM trip_departures WHERE ${column}=$1 AND NOT is_deleted AND status IN ('open','guaranteed','closed','ongoing')`,[id])).rows;
     if (trips.length && (input.isDeleted === true || input.isActive === false || input.isAvailable === false || (typeof input.seatingCapacity === 'number' && trips.some(t=>(input.seatingCapacity as number) < t.needed)))) throw new DependentRowsError('This resource is reserved for a Weekend Trip. Resolve the departure before removing it or reducing its availability/capacity.');
+    if (table === 'vehicles') {
+      // Read without booking locks: confirmation locks booking -> vehicle.
+      // The common vehicle lock makes either the fleet edit or confirmation
+      // win, without reversing that order and introducing a deadlock.
+      const bookings=(await db.query(`SELECT passenger_count, vehicle_type_id FROM bookings
+        WHERE vehicle_id=$1 AND departure_id IS NULL AND NOT is_deleted AND status IN ('Confirmed','Ongoing')`,[id])).rows;
+      if (bookings.length && (input.isDeleted === true || input.isActive === false || input.isAvailable === false
+        || (typeof input.seatingCapacity === 'number' && bookings.some(b=>(input.seatingCapacity as number)<b.passenger_count))
+        || (typeof input.vehicleTypeId === 'number' && bookings.some(b=>input.vehicleTypeId!==b.vehicle_type_id))))
+        throw new DependentRowsError('This vehicle has a confirmed private trip. Resolve the booking before removing it or changing its availability, type or required capacity.');
+    }
     const result=await work(db); await db.query('COMMIT'); return result;
   } catch(error) { await db.query('ROLLBACK'); throw error; } finally { db.release(); }
 }

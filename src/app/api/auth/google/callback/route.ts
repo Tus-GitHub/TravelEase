@@ -1,16 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { randomBytes } from "crypto";
 import { appOrigin } from "@/lib/server/email";
-import { isUniqueViolation } from "@/lib/server/db-errors";
-import {
-  findUserByEmail,
-  createFederatedUser,
-  markEmailVerified,
-  setUserPassword,
-} from "@/lib/server/users";
-import { findUserIdByProvider, linkProvider } from "@/lib/server/auth-providers";
-import { createSession, SESSION_COOKIE } from "@/lib/server/session";
+import { finishGoogleLogin } from "@/lib/server/google-login";
+import { SESSION_COOKIE } from "@/lib/server/session";
 
 /**
  * Google OAuth callback (plan.md §21–22). Exchanges the code for an id_token,
@@ -120,40 +112,14 @@ export async function GET(request: Request) {
   const email = claims.email.trim().toLowerCase();
   const name = (claims.name ?? "").trim();
 
-  // 3. Resolve the Jagdamba Travellers user.
-  let userId = await findUserIdByProvider("google", googleId);
-
-  if (!userId) {
-    const existing = await findUserByEmail(email);
-    if (existing) {
-      userId = existing.user_id;
-      // An unverified pre-existing account could have been pre-registered by
-      // someone else with a password. Google just proved ownership, so mark it
-      // verified — and scramble that password so only Google / a fresh reset
-      // can get in.
-      if (existing.email_verified_at == null) {
-        await setUserPassword(userId, randomBytes(24).toString("hex"));
-      }
-      await markEmailVerified(userId);
-    } else {
-      try {
-        userId = (await createFederatedUser(name, email)).id;
-      } catch (err) {
-        if (isUniqueViolation(err)) {
-          userId = (await findUserByEmail(email))?.user_id ?? null;
-        } else {
-          console.error("google callback: user creation failed", err);
-          return bounce("google-failed");
-        }
-      }
-    }
-
-    if (!userId) return bounce("google-failed");
-    await linkProvider(userId, "google", googleId, email);
+  let session;
+  try {
+    session = await finishGoogleLogin(googleId, email, name);
+  } catch {
+    console.error("google callback: account resolution failed");
+    return bounce("google-failed");
   }
-
-  // 4. Ordinary session — no bespoke OAuth auth path (plan.md §21).
-  const { token, maxAge } = await createSession(userId, true);
+  const { token, maxAge } = session;
   const res = clearOauthCookies(NextResponse.redirect(new URL("/", appOrigin())));
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
