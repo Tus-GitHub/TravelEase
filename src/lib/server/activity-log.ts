@@ -13,6 +13,8 @@ import { getPool } from "./db";
 
 export const ACTIVITY_ACTIONS = [
   "user.login",
+  "user.mobile_link",
+  "user.mobile_unlink",
   "user.signup",
   "user.role_change",
   "user.account_delete",

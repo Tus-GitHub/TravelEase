@@ -10,6 +10,62 @@ Stack: **Vercel Hobby** (hosting, $0) + **Neon** (Postgres, $0) + the free `*.ve
 
 ## One-time setup
 
+### Authgear mobile OTP — Free plan only (2026-11-13)
+
+Email/password and Google keep using the existing local users and sessions. The
+new Mobile + OTP option uses Authgear's hosted phone verification and then issues
+the same local session. Existing accounts enable it once from **My account →
+Mobile OTP login** while signed in. A contact phone entered in a profile never
+automatically links accounts. Unknown mobile identities must sign in with email
+or Google and link first; phone-only registration is deliberately not added.
+
+Project `jagdamba-travellers` and the confidential OIDC application `Jagdamba
+Mobile OTP` were created on Free ($0), with no payment method or paid upgrade.
+Authgear currently disables India (+91) on this free project. The user-approved
+support request for India activation was submitted and acknowledged on 2026-11-13;
+it explicitly requests Free only, no billing, and confirmation of a hard stop at
+the free allowance. **India delivery and quota exhaustion behaviour remain
+unverified. Do not enable mobile login until those conditions are confirmed.**
+The published allowance is 100 combined SMS/WhatsApp messages/month, including
+resends; it does not cover 1,000 messages. Never enable paid SMS gateways,
+upgrades, automatic top-ups or billing to resolve an activation/quota failure.
+
+Local server-only configuration is in ignored `.env.local`:
+
+- `AUTHGEAR_ENDPOINT`: the project's `https://…authgear.cloud` origin.
+- `AUTHGEAR_CLIENT_ID` and `AUTHGEAR_CLIENT_SECRET`: confidential OIDC credentials.
+- `AUTHGEAR_MOBILE_ENABLED=false`: remains false pending India approval. Set true
+  only after Free-plan country access and quota behaviour are confirmed.
+
+Keep Authgear's login method **Mobile / Passwordless** for this provider. The
+application's email/password and Google flows remain separate and unchanged.
+No refresh tokens, management credentials, provider passwords or SMS codes are
+stored in the app. The encrypted browser flow uses PKCE, state, nonce and a
+10-minute expiry. ID-token signatures and claims are verified using `jose` and
+Authgear JWKS, with matching verified-phone UserInfo. Account linking is bound
+to the initiating local session. Replacing/removing mobile login revokes other
+local sessions. Identity conflicts never transfer a linked account.
+
+Currently authorized callbacks are localhost:3000, 127.0.0.1:3000 and
+127.0.0.1:3103, each with path `/api/auth/mobile/callback`. No production callback
+or Authgear credentials were added to Vercel. The user authorized publishing the
+login changes with mobile disabled: Production has `AUTHGEAR_MOBILE_ENABLED=false`.
+After India approval and free-quota confirmation, a separately authorized activation
+must add the exact HTTPS production callback and server credentials in the correct
+Vercel environment. Follow the normal isolated-release/publish runbook and keep
+other dirty local features excluded. No schema migration is
+needed: Authgear identities use existing `user_auth_providers` rows with provider
+`authgear` and an issuer-bound subject hash.
+
+Validation: `npm run test:authgear`, `npm run test:mobile-login` (development DB
+only), and `npm run test:auth-acceptance` with the documented local Playwright
+module/optional `--built`. The mock provider tests send no SMS; transaction tests
+create and remove synthetic accounts. They do not prove real Indian delivery.
+References: [pricing](https://www.authgear.com/pricing/),
+[OIDC](https://docs.authgear.com/get-started/oidc-provider),
+[UserInfo](https://docs.authgear.com/reference/apis/oauth-2.0-and-openid-connect-oidc/userinfo),
+[PKCE](https://docs.authgear.com/get-started/native-mobile-app/using-authgear-without-sdk-client-side).
+
 **Prereqs (done):** repo `Tus-GitHub/TravelEase` on GitHub; Neon project with `production` and
 `development` branches.
 

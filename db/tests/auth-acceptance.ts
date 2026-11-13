@@ -71,6 +71,7 @@ try {
   child = fork(path.resolve("db/tests/_booking-server.cjs"), [], { execArgv: [], silent: true, windowsHide: true,
     env: { ...process.env, DATABASE_URL_PRODUCTION: undefined, VERCEL_ENV: undefined, DATABASE_URL: runtime,
       BOOKING_SMOKE_BUILD: process.argv.includes("--built") ? "1" : "0", NODE_ENV: process.argv.includes("--built") ? "production" : "development", BOOKING_SMOKE_SERVER: "dev-only", APP_ORIGIN: base,
+      AUTHGEAR_MOBILE_ENABLED: "false",
       SMTP_HOST: "127.0.0.1", SMTP_PORT: String(sink.port), SMTP_USER: "test", SMTP_PASS: "test", EMAIL_FROM: "Auth acceptance <test@example.invalid>" } });
   for (const stream of [child.stdout, child.stderr]) stream?.on("data", chunk => { serverLog = (serverLog + chunk.toString()).slice(-6000); });
   await new Promise<void>((resolve, reject) => {
@@ -87,6 +88,28 @@ try {
   const page = await context.newPage();
   const pageErrors: string[] = [];
   page.on("pageerror", (e: Error) => pageErrors.push(redact(e.message)));
+  await page.goto(base + "/login", { waitUntil: "networkidle", timeout: 90_000 });
+  await page.getByRole("button", { name: "Mobile + OTP", exact: true }).click();
+  await page.getByRole("button", { name: "Continue with mobile OTP", exact: true }).waitFor();
+  assert.equal(await page.getByRole("link", { name: "Continue with Google", exact: true }).count(), 1);
+  if (artifacts) {
+    await mkdir(artifacts, { recursive: true });
+    await page.screenshot({ path: path.join(artifacts, "mobile-login-choice.png"), fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+    await page.screenshot({ path: path.join(artifacts, "mobile-login-phone.png"), fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+  }
+  await page.getByRole("button", { name: "Continue with mobile OTP", exact: true }).click();
+  await page.getByText("Mobile OTP is currently unavailable. Please use email and password or Google.", { exact: true }).waitFor();
+  await page.getByLabel("Email", { exact: true }).waitFor();
+  await page.getByLabel("Password", { exact: true }).waitFor();
+  await status(api("mobile", undefined, undefined, "https://outside.example"), 403, "Mobile linking rejects foreign origin");
+  await status(api("mobile/status", undefined, undefined, base, "GET"), 401, "Mobile settings require login");
+  await status(api("mobile/status", undefined, undefined, "https://outside.example", "DELETE"), 403, "Mobile removal rejects foreign origin");
+  const invalidMobile = await status(api("mobile/callback?code=forged&state=forged", undefined, undefined, base, "GET"), 303, "Missing mobile flow cannot create a session");
+  assert(!invalidMobile.headers.get("set-cookie")?.includes("session_token="));
+  console.log("PASS mobile choice, unavailable-SMS fallback, Google presence, and mobile endpoint guards.");
   await page.goto(base + "/signup", { waitUntil: "networkidle", timeout: 90_000 });
   await page.getByLabel("Full name", { exact: true }).fill("Auth acceptance");
   await page.getByLabel("Email", { exact: true }).fill(emails[0]);
@@ -127,6 +150,8 @@ try {
   console.log("PASS browser signup -> captured verification link -> verified session; unverified login blocked and link single-use.");
 
   await page.goto(base + "/profile", { waitUntil: "networkidle", timeout: 90_000 });
+  await page.getByRole("heading", { name: "Mobile OTP login", exact: true }).waitFor();
+  await page.getByText("Mobile OTP setup is not available yet.", { exact: true }).waitFor();
   await page.locator("section").getByRole("button", { name: "Logout", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await page.route("**/api/auth/logout", (route: { fulfill(options: object): Promise<void> }) => route.fulfill({ status: 503 }));

@@ -1,5 +1,7 @@
 "use client";
 
+import MobileLoginCard from "@/components/auth/MobileLoginCard";
+
 import { useEffect, useMemo, useState } from "react";
 import AccountEditor from "@/components/account/AccountEditor";
 import ActionDialog from "@/components/common/ActionDialog";
@@ -210,6 +212,8 @@ export default function ProfilePage() {
         </Card>
 
         {loggingOut && <ActionDialog title="Log out of your account?" description="Your bookings and saved trips will be here when you return." confirmLabel="Log out" onConfirm={async () => { await logout(); router.push("/"); }} onClose={() => setLoggingOut(false)} />}
+
+        <MobileLoginCard />
 
         <AccountCard
           account={account}

@@ -30,7 +30,9 @@
     "test:concurrency": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/concurrency.test.ts --dev",
     "test:contact": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/contact.test.ts",
     "test:contact-db": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/contact-settings.test.ts --dev",
-    "test:auth-acceptance": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/auth-acceptance.ts --dev"
+    "test:auth-acceptance": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/auth-acceptance.ts --dev",
+    "test:authgear": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/authgear.test.ts",
+    "test:mobile-login": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/mobile-login.test.ts --dev"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
@@ -45,7 +47,8 @@
     "react": "^18",
     "react-dom": "^18",
     "react-leaflet": "^4.2.1",
-    "three": "^0.169.0"
+    "three": "^0.169.0",
+    "jose": "^6.2.17"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.22",

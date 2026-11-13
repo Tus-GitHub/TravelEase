@@ -17,6 +17,7 @@ export default function LoginPage() {
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
+  const [method, setMethod] = useState<"email" | "mobile">("email");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -29,7 +30,15 @@ export default function LoginPage() {
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    if (p.get("notice") === "google-soon") {
+    const mobileNotices: Record<string, string> = {
+      "mobile-unavailable": "Mobile OTP is currently unavailable. Please use email and password or Google.",
+      "mobile-cancelled": "Mobile sign-in was cancelled. You can try again or use another sign-in option.",
+      "mobile-failed": "Mobile sign-in didn't complete. Try again, or use email and password or Google.",
+      "mobile-unlinked": "This mobile login isn't linked yet. Sign in with email or Google, then enable mobile OTP in My account.",
+    };
+    if (mobileNotices[p.get("notice") ?? ""]) {
+      setNotice(mobileNotices[p.get("notice")!]);
+    } else if (p.get("notice") === "google-soon") {
       setNotice("Google sign-in isn't configured yet — please continue with your email for now.");
     } else if (p.get("notice") === "google-cancelled") {
       setNotice("Google sign-in was cancelled.");
@@ -117,7 +126,26 @@ export default function LoginPage() {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4" noValidate>
+      <div className="mt-6 grid grid-cols-2 gap-2" role="group" aria-label="Sign-in method">
+        {(["email", "mobile"] as const).map((option) => (
+          <button key={option} type="button" aria-pressed={method === option}
+            onClick={() => setMethod(option)}
+            className={`rounded-xl border px-3 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 ${method === option ? "border-accent-400/60 bg-accent-400/15 text-accent-200" : "border-white/15 text-white/65 hover:bg-white/10"}`}>
+            {option === "email" ? "Email + password" : "Mobile + OTP"}
+          </button>
+        ))}
+      </div>
+
+      {method === "mobile" ? (
+        <div className="mt-5 space-y-4">
+          <p className="text-sm text-white/65">Enter your mobile number and verify the SMS code on the secure sign-in page.</p>
+          <Button fullWidth variant="accent" size="lg" onClick={() => {
+            const returnTo = loginReturnPath(new URLSearchParams(window.location.search).get("redirect"));
+            window.location.assign(`/api/auth/mobile?redirect=${encodeURIComponent(returnTo)}`);
+          }}>Continue with mobile OTP</Button>
+          <p className="text-xs leading-relaxed text-white/55">First time? Sign in with email or Google, then link your mobile number in My account. Email + password and Google remain available when SMS is unavailable.</p>
+        </div>
+      ) : <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4" noValidate>
         {error && (
           <p
             role="alert"
@@ -212,7 +240,7 @@ export default function LoginPage() {
         >
           {isSubmitting ? "Signing in…" : "Sign in"}
         </Button>
-      </form>
+      </form>}
 
       <div className="my-6 flex items-center gap-3 text-[11px] font-medium uppercase tracking-widest text-white/45">
         <span className="h-px flex-1 bg-white/12" />
