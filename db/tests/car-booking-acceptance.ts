@@ -8,6 +8,7 @@ import { mkdir, realpath, lstat, unlink, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import pg from "pg";
+import { isContactMailbox } from "../../src/lib/contact";
 import { runtimeDatabaseConfig } from "../../src/lib/server/db-config";
 import { localMailSink } from "./_local-smtp.mjs";
 
@@ -54,7 +55,8 @@ try{
     await pool.query("INSERT INTO sessions(token,user_id,expires_at) VALUES($1,$2,now()+interval '2 hours')",[tokens[i],ids[i]]);
   }
   vehicleType=(await pool.query("INSERT INTO vehicle_types(slug,title) VALUES($1,$2) RETURNING vehicle_type_id",[`car-${tag}`,`Car acceptance ${tag}`])).rows[0].vehicle_type_id;
-  sink=await localMailSink(emails);await new Promise<void>(resolve=>provider.listen(0,"127.0.0.1",resolve));
+  const configuredInbox=String((await pool.query("SELECT setting_value FROM site_settings WHERE setting_key='contact_email'")).rows[0]?.setting_value??"").trim();
+  sink=await localMailSink([...emails,...(isContactMailbox(configuredInbox)?[configuredInbox]:[])]);await new Promise<void>(resolve=>provider.listen(0,"127.0.0.1",resolve));
   const address=provider.address();assert(address&&typeof address!=="string");
   const preload=path.resolve("db/tests/_car-map-provider.cjs").replaceAll("\\","/");
   child=fork(path.resolve("db/tests/_booking-server.cjs"),[],{execArgv:[],silent:true,windowsHide:true,env:{...process.env,
@@ -150,7 +152,7 @@ finally{
   await sink?.close();await new Promise<void>(resolve=>provider.close(()=>resolve()));
   try{
     const bookings=(await pool.query("SELECT booking_id FROM bookings WHERE user_id=ANY($1::uuid[])",[ids])).rows.map(r=>r.booking_id);
-    for(const table of["notifications","activity_logs"])await pool.query(`DELETE FROM ${table} WHERE user_id=ANY($1::uuid[])`,[ids]);
+    for(const table of["notifications","activity_logs"])await pool.query(`DELETE FROM ${table} WHERE user_id=ANY($1::uuid[])${table==="notifications"?" OR booking_id=ANY($2::uuid[])":""}`,table==="notifications"?[ids,bookings]:[ids]);
     await pool.query("DELETE FROM vehicle_availability WHERE booking_id=ANY($1::uuid[])",[bookings]);
     await pool.query("DELETE FROM bookings WHERE user_id=ANY($1::uuid[])",[ids]);
     if(vehicle)await pool.query("DELETE FROM pricing_rules WHERE vehicle_id=$1",[vehicle]);

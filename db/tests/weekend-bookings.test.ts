@@ -138,7 +138,7 @@ try {
   await runtimePool.end();
   const client=await pool.connect();try {await client.query('BEGIN');
     await client.query("DELETE FROM trip_room_assignments WHERE stay_id IN(SELECT stay_id FROM trip_stays WHERE departure_id=ANY($1::uuid[]))",[departures]);
-    await client.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[])",[ids]);
+    await client.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[]) OR booking_id IN(SELECT booking_id FROM bookings WHERE user_id=ANY($1::uuid[]) OR created_by=ANY($1::uuid[]))",[ids]);
     await client.query("DELETE FROM activity_logs WHERE user_id=ANY($1::uuid[])",[ids]);
     await client.query("DELETE FROM vehicle_availability WHERE departure_id=ANY($1::uuid[])",[departures]);
     await client.query("DELETE FROM bookings WHERE user_id=ANY($1::uuid[])",[ids]);

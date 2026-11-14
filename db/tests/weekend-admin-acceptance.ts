@@ -217,7 +217,7 @@ finally {
       await cleanup.query("DELETE FROM trip_room_assignments WHERE stay_id IN (SELECT stay_id FROM trip_stays WHERE departure_id=ANY($1::uuid[]))", [departures]);
       await cleanup.query("DELETE FROM trip_stays WHERE departure_id=ANY($1::uuid[])", [departures]);
       await cleanup.query("DELETE FROM vehicle_availability WHERE departure_id=ANY($1::uuid[])", [departures]);
-      await cleanup.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[])",[ids]);
+      await cleanup.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[]) OR booking_id IN(SELECT booking_id FROM bookings WHERE user_id=ANY($1::uuid[]) OR created_by=ANY($1::uuid[]))",[ids]);
       await cleanup.query("DELETE FROM bookings WHERE created_by=ANY($1::uuid[])", [ids]);
       await cleanup.query("DELETE FROM trip_departures WHERE departure_id=ANY($1::uuid[])", [departures]);
       await cleanup.query("DELETE FROM tour_guides WHERE created_by=ANY($1::uuid[])", [ids]);

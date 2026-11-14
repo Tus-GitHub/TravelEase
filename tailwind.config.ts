@@ -42,6 +42,9 @@ const config: Config = {
           500: "#f59e0b",
           600: "#d97706",
           700: "#b45309",
+          800: "#92400e",
+          900: "#78350f",
+          950: "#451a03",
         },
         // Secondary "technology" accent — cyan/blue. Used sparingly (scroll
         // indicator head, glass edge-lights, data glyphs), never as a CTA colour.

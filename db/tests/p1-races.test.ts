@@ -396,7 +396,7 @@ try {
     // Include accounts created by Google before an assertion/failure could track them.
     const extra = (await pool.query("SELECT user_id FROM users WHERE email=ANY($1::text[])", [emails])).rows.map(r => r.user_id);
     const ids = [...new Set([...userIds, ...extra])];
-    await pool.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[])", [ids]);
+    await pool.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[]) OR booking_id IN(SELECT booking_id FROM bookings WHERE user_id=ANY($1::uuid[]) OR created_by=ANY($1::uuid[]))", [ids]);
     await pool.query("DELETE FROM activity_logs WHERE user_id=ANY($1::uuid[])", [ids]);
     await pool.query("DELETE FROM bookings WHERE booking_id=ANY($1::uuid[])", [bookingIds]);
     await pool.query("DELETE FROM saved_itineraries WHERE user_id=ANY($1::uuid[])", [ids]);

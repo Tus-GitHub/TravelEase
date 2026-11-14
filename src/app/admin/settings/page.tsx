@@ -90,7 +90,7 @@ export default function AdminSettingsPage() {
       label: "Contact / pay-by-phone number",
       hint: "Shown on the booking confirmation page, the booking detail page, the confirmation + status emails, and the site footer.",
     },
-    { key: "contactEmail", label: "Support email / contact inbox", hint: "Receives website contact messages and appears publicly in the footer and contact page. Replies go to the visitor's email. Clearing this field disables contact-form delivery.", type: "email" },
+    { key: "contactEmail", label: "Support email / contact inbox", hint: "Receives website contact messages and new booking alerts. Customer booking replies arrive here; replying to an admin booking alert contacts the customer. Also shown in the footer and contact page. Clearing this field disables contact delivery and admin booking alerts.", type: "email" },
     { key: "contactAddress", label: "Office address", hint: "Footer and contact page." },
     {
       key: "vendorCommissionPct",

@@ -166,7 +166,7 @@ try {
 } finally {
   await pool.query("DELETE FROM map_service_cache WHERE cache_key=$1",[routeId]);
   // Only this run's IDs; no existing catalogue/customer rows are modified.
-  await pool.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[])", [ids]);
+  await pool.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[]) OR booking_id IN(SELECT booking_id FROM bookings WHERE user_id=ANY($1::uuid[]) OR created_by=ANY($1::uuid[]))", [ids]);
   await pool.query("DELETE FROM activity_logs WHERE user_id=ANY($1::uuid[])", [ids]);
   await pool.query("DELETE FROM bookings WHERE user_id=ANY($1::uuid[])", [ids]);
   if (vt) {

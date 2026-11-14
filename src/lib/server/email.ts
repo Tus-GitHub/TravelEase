@@ -1,5 +1,5 @@
 import nodemailer, { type Transporter } from "nodemailer";
-import { getSiteSettings } from "./site-settings";
+import { getContactInbox, getSiteSettings } from "./site-settings";
 import { ContactError, isContactMailbox, type ContactInput } from "../contact";
 
 /**
@@ -7,15 +7,14 @@ import { ContactError, isContactMailbox, type ContactInput } from "../contact";
  * call the named helpers, never nodemailer directly, so the transport can change
  * without touching callers. SMTP config comes from env
  * (SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS / EMAIL_FROM); APP_ORIGIN
- * builds absolute links. Booking / payment emails
- * (sendBookingConfirmation, …) will be added here in later chunks.
+ * builds absolute links. Booking receipts and business alerts use this same transport.
  */
 
-let cached: Transporter | null = null;
-let cachedContact: Transporter | null = null;
+type MailChannel = "auth" | "contact" | "booking";
+const transports: Partial<Record<MailChannel, Transporter>> = {};
 
-function getTransporter(forContact = false): Transporter {
-  const previous = forContact ? cachedContact : cached;
+function getTransporter(channel: MailChannel = "auth"): Transporter {
+  const previous = transports[channel];
   if (previous) return previous;
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
@@ -27,9 +26,10 @@ function getTransporter(forContact = false): Transporter {
     port,
     secure: port === 465, // 465 = implicit TLS; 587 = STARTTLS
     auth: { user: SMTP_USER, pass: SMTP_PASS },
-    ...(forContact ? { requireTLS: port !== 465, connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 15_000, dnsTimeout: 10_000 } : {}),
+    ...(channel !== "auth" ? { connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 15_000, dnsTimeout: 10_000 } : {}),
+    ...(channel === "contact" ? { requireTLS: port !== 465 } : {}),
   });
-  if (forContact) cachedContact = transport; else cached = transport;
+  transports[channel] = transport;
   return transport;
 }
 
@@ -46,7 +46,7 @@ export async function sendContactMessage(to: string, input: ContactInput, refere
   const subject = `Contact enquiry: ${input.reason} — ${reference}`;
   const text = `${reference}\n\nName: ${input.name}\nReply email: ${input.email}\nReason: ${input.reason}\n\n${input.message}\n\nSubmitted through the website contact form. Visitor details are unverified. Reply to this email to respond.`;
   const html = `<html><body style="font-family:Arial,sans-serif;background:#f4f5f7;padding:24px"><div style="max-width:600px;margin:auto;background:#fff;border-radius:16px;overflow:hidden"><div style="background:#192653;color:white;padding:24px"><strong>Jagdamba Travellers</strong><h1 style="font-size:20px">New contact enquiry</h1><p>${esc(reference)}</p></div><div style="padding:24px;color:#182238"><p><strong>Name:</strong> ${esc(input.name)}<br><strong>Reply email:</strong> ${esc(input.email)}<br><strong>Reason:</strong> ${esc(input.reason)}</p><div style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(input.message)}</div><p style="font-size:12px;color:#64748b">Visitor details are unverified. Reply to this email to respond.</p></div></div></body></html>`;
-  const result = await getTransporter(true).sendMail({ from: fromAddress(), to: { name: "Jagdamba Travellers Support", address: to },
+  const result = await getTransporter("contact").sendMail({ from: fromAddress(), to: { name: "Jagdamba Travellers Support", address: to },
     replyTo: { name: input.name, address: input.email }, subject, text, html, disableFileAccess: true, disableUrlAccess: true });
   const accepted = Array.isArray(result.accepted) && result.accepted.some((recipient: string | { address?: string }) =>
     (typeof recipient === "string" ? recipient : recipient.address)?.toLowerCase() === to.toLowerCase());
@@ -136,7 +136,15 @@ async function sendBookingEmail(
   intro: string,
   rows: { label: string; value: string }[],
   cta: { label: string; url: string },
+  replyTo?: string | null,
 ): Promise<void> {
+  const bookingReplyTo = replyTo === undefined ? await getContactInbox().catch(() => null) : replyTo;
+  if (!isContactMailbox(to) || (bookingReplyTo && !isContactMailbox(bookingReplyTo))) {
+    throw new Error("Invalid booking email mailbox");
+  }
+  const replyNote = bookingReplyTo
+    ? "Questions about this booking? Reply to this email."
+    : "Questions about this booking? Use the contact details on your booking page.";
   const text = [
     heading,
     "",
@@ -145,12 +153,14 @@ async function sendBookingEmail(
     ...rows.map((r) => `${r.label}: ${r.value}`),
     "",
     `${cta.label}: ${cta.url}`,
+    "",
+    replyNote,
   ].join("\n");
 
   const rowsHtml = rows
     .map(
       (r) =>
-        `<tr><td style="padding:6px 0;font-size:13px;color:#9ca3af">${esc(r.label)}</td>` +
+        `<tr><td style="padding:6px 0;font-size:13px;color:#64748b">${esc(r.label)}</td>` +
         `<td style="padding:6px 0;font-size:13px;color:#0b1220;text-align:right;font-weight:600">${esc(r.value)}</td></tr>`,
     )
     .join("");
@@ -164,19 +174,27 @@ async function sendBookingEmail(
         <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#4b5563">${esc(intro)}</p>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e6e8eb;border-bottom:1px solid #e6e8eb;margin:0 0 22px">${rowsHtml}</table>
         <a href="${cta.url}" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:10px">${esc(cta.label)}</a>
-        <p style="margin:22px 0 0;font-size:12px;color:#9ca3af">Questions? Just reply to this email.</p>
+        <p style="margin:22px 0 0;font-size:12px;color:#64748b">${replyNote}</p>
       </td></tr>
     </table>
   </td></tr></table>
 </body></html>`;
 
-  await getTransporter().sendMail({ from: fromAddress(), to, subject, text, html });
+  const result = await getTransporter("booking").sendMail({ from: fromAddress(), to,
+    ...(bookingReplyTo ? { replyTo: bookingReplyTo } : {}), subject, text, html,
+    disableFileAccess: true, disableUrlAccess: true });
+  if ((Array.isArray(result.accepted) && !result.accepted.some((recipient: string | { address?: string }) =>
+    (typeof recipient === "string" ? recipient : recipient.address)?.toLowerCase() === to.toLowerCase())) || result.rejected?.length) {
+    throw new Error("Booking email not accepted by SMTP");
+  }
   if (process.env.NODE_ENV !== "production") {
     console.log(`[email] "${subject}" -> ${to}`);
   }
 }
 
 export interface BookingEmailInfo {
+  pickupAddress?: string;
+  dropAddress?: string;
   paymentDeadline?: string;
   reference: string;
   tripType: string; // human label, e.g. "Multi-day package"
@@ -199,6 +217,7 @@ const driverRows = (b: BookingEmailInfo) =>
 export async function sendBookingConfirmation(
   to: string,
   b: BookingEmailInfo,
+  replyTo?: string | null,
 ): Promise<void> {
   const { contact } = await getSiteSettings();
   const rows = [
@@ -206,6 +225,8 @@ export async function sendBookingConfirmation(
     { label: "Trip", value: b.tripType },
     { label: "Starts", value: b.startsAt },
     { label: "Passengers", value: String(b.passengers) },
+    ...(b.pickupAddress ? [{ label: "Pickup", value: b.pickupAddress }] : []),
+    ...(b.dropAddress ? [{ label: "Destination", value: b.dropAddress }] : []),
     ...(b.itinerary ? [{ label: "Itinerary", value: b.itinerary }] : []),
     { label: "Total", value: b.total },
       ...(b.paymentDeadline ? [{label:"Seat hold expires",value:b.paymentDeadline},{label:"Payment",value:"Contact us before this deadline. An expired hold does not reserve seats; check availability before paying."}] : []),
@@ -217,7 +238,34 @@ export async function sendBookingConfirmation(
     `Thanks for booking with Jagdamba Travellers. To confirm your trip, call ${contact.phone} and quote your reference ${b.reference} to pay — we'll confirm the booking as soon as payment is received.`,
     [...rows, ...driverRows(b), { label: "Pay by phone", value: contact.phone }],
     { label: "View booking", url: b.url },
+    replyTo,
   );
+}
+
+/** Separate business alert; replying contacts the booking owner, never spoofs their From address. */
+export async function sendAdminBookingNotification(
+  to: string,
+  customer: { email: string; name?: string; phone?: string | null },
+  b: BookingEmailInfo,
+): Promise<void> {
+  await sendBookingEmail(to, `New booking — ${b.reference}`, "New booking received",
+    "A new booking is awaiting payment confirmation. Reply to contact the customer, or open admin bookings using the reference below.",
+    [
+      { label: "Reference", value: b.reference },
+      { label: "Status", value: "Payment pending" },
+      { label: "Customer", value: customer.name || customer.email },
+      { label: "Customer email", value: customer.email },
+      ...(customer.phone ? [{ label: "Customer phone", value: customer.phone }] : []),
+      { label: "Trip", value: b.tripType },
+      { label: "Starts", value: b.startsAt },
+      { label: "Passengers", value: String(b.passengers) },
+      ...(b.pickupAddress ? [{ label: "Pickup", value: b.pickupAddress }] : []),
+      ...(b.dropAddress ? [{ label: "Destination", value: b.dropAddress }] : []),
+      ...(b.itinerary ? [{ label: "Itinerary", value: b.itinerary }] : []),
+      { label: "Total", value: b.total },
+      ...(b.paymentDeadline ? [{ label: "Seat hold expires", value: b.paymentDeadline }] : []),
+    ],
+    { label: "Open admin bookings", url: `${appOrigin()}/admin/bookings` }, customer.email);
 }
 
 /** Sent when a driver is assigned to an already-confirmed booking (chunk 2.9). */

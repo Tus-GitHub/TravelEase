@@ -11,6 +11,8 @@ interface FormFieldProps {
   label: string;
   icon: IconName;
   children: React.ReactNode;
+  /** Supporting copy belongs below the control so it cannot shift the leading icon. */
+  description?: React.ReactNode;
   /** When set, shows an inline error message and switches the field to its error state. */
   error?: string;
   /** When true (and no error), shows a subtle check — a quiet "looks good". */
@@ -22,19 +24,24 @@ interface FormFieldProps {
  * When `error` is set, the single control child is cloned to add
  * `aria-invalid` + `aria-describedby` so screen readers announce the message.
  */
-export default function FormField({ label, icon, children, error, valid }: FormFieldProps) {
+export default function FormField({ label, icon, children, description, error, valid }: FormFieldProps) {
   const errorId = useId();
+  const descriptionId = useId();
 
   const control =
-    error && isValidElement(children)
+    (error || description) && isValidElement(children)
       ? cloneElement(children as ReactElement, {
-          "aria-invalid": true,
-          "aria-describedby": errorId,
+          "aria-invalid": error ? true : children.props["aria-invalid"],
+          "aria-describedby": [
+            children.props["aria-describedby"],
+            description ? descriptionId : undefined,
+            error ? errorId : undefined,
+          ].filter(Boolean).join(" "),
         })
       : children;
 
   return (
-    <label className="group block text-left">
+    <label className="group block min-w-0 text-left">
       <span
         className={`mb-1.5 block text-xs font-semibold transition-colors duration-200 ${
           error
@@ -53,6 +60,7 @@ export default function FormField({ label, icon, children, error, valid }: FormF
       >
         <Icon
           name={icon}
+          aria-hidden
           className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${
             error ? "text-red-400" : "text-faint group-focus-within:text-primary-500"
           }`}
@@ -66,6 +74,11 @@ export default function FormField({ label, icon, children, error, valid }: FormF
           />
         )}
       </span>
+      {description && (
+        <span id={descriptionId} className="mt-1.5 block text-xs leading-relaxed text-muted">
+          {description}
+        </span>
+      )}
       {error && (
         <span
           id={errorId}

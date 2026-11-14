@@ -253,9 +253,23 @@ function VehiclesTab() {
                 placeholder="7"
               />
             </FormField>
-            <FormField label="Price / km (₹)" icon="tag">
-              <input aria-label="Price / km (₹)" type="number" min={0.01} max={999999} step={0.01} required value={form.draft.perKmRate} onChange={e=>form.patch({perKmRate:e.target.value})} className={fieldBase} placeholder="Set your per-kilometre fare"/>
-              <span className="mt-1 block text-xs text-muted">Changing this applies the rate to point-to-point, airport and outstation trips. Base fares, minimum km and tax can be managed in Car pricing.</span>
+            <FormField
+              label="Price / km (₹)"
+              icon="tag"
+              description="Applies to point-to-point, airport and outstation trips. Manage base fare, minimum km and tax in Car pricing."
+            >
+              <input
+                aria-label="Price / km (₹)"
+                type="number"
+                min={0.01}
+                max={999999}
+                step={0.01}
+                required
+                value={form.draft.perKmRate}
+                onChange={e => form.patch({ perKmRate: e.target.value })}
+                className={fieldBase}
+                placeholder="Enter rate"
+              />
             </FormField>
             <FormField label="Price / Day (₹)" icon="tag">
               <input

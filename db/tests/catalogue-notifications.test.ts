@@ -182,7 +182,7 @@ try{
     await pool.query("INSERT INTO pricing_rules(booking_type_id,vehicle_type_id,name,base_amount,created_by,updated_by) VALUES($1,$2,'Synthetic notification price',1000,$3,$3)",[bookingType,rootType,admin.id]);
     const n=mails.length;
     const result=await afterCommit(async()=>{const row=(await pool.query("SELECT booking_id FROM bookings WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1",[customer.id])).rows[0];await pool.query("UPDATE bookings SET total_amount=9999,passenger_count=7,status='Confirmed',driver_id=$2 WHERE booking_id=$1",[row.booking_id,driverB]);await pool.query("UPDATE users SET email=$2 WHERE user_id=$1",[customer.id,`late-${customer.id}@example.invalid`]);},()=>createBooking({bookingType:"point_to_point",vehicleTypeId:rootType,startDateTime:"2099-01-01T10:00:00Z",estimatedDistanceKm:10,routeId,pickupPoint,dropPoint},customer));
-    assert(result.ok);bookingIds.push(result.bookingId);assert.equal(mails.length,n+1);assert.equal(mails[n].to,customer.email);assert(text(mails[n]).includes("₹1,000"));assert(!text(mails[n]).includes("₹9,999"));assert(!text(mails[n]).includes("Replacement driver"));await pool.query("UPDATE users SET email=$2 WHERE user_id=$1",[customer.id,customer.email]);
+    assert(result.ok);bookingIds.push(result.bookingId);const receipts=mails.slice(n).filter(m=>m.to===customer.email);assert.equal(receipts.length,1);assert(text(receipts[0]).includes("₹1,000"));assert(!text(receipts[0]).includes("₹9,999"));assert(!text(receipts[0]).includes("Replacement driver"));await pool.query("UPDATE users SET email=$2 WHERE user_id=$1",[customer.id,customer.email]);
     pass("initial booking email snapshots original amount, passengers, recipient and driver visibility before later confirmation/edit");
   }
   {
@@ -215,7 +215,7 @@ try{
   try{
     await pool.query("DELETE FROM map_service_cache WHERE cache_key=$1",[routeId]);
       assert.equal((await pool.query("SELECT count(*)::int AS n FROM map_service_cache WHERE cache_key=$1",[routeId])).rows[0].n,0);
-    await pool.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[])",[userIds]);
+    await pool.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[]) OR booking_id IN(SELECT booking_id FROM bookings WHERE user_id=ANY($1::uuid[]) OR created_by=ANY($1::uuid[]))",[userIds]);
     await pool.query("DELETE FROM activity_logs WHERE user_id=ANY($1::uuid[])",[userIds]);
     await pool.query("DELETE FROM support_tickets WHERE user_id=ANY($1::uuid[])",[userIds]);
     await pool.query("DELETE FROM bookings WHERE user_id=ANY($1::uuid[])",[userIds]);

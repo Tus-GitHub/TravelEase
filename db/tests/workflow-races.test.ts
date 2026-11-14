@@ -130,7 +130,7 @@ try {
   console.log(`PASS ${checks} workflow race regression groups`);
 } finally {
   try {
-    await pool.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[])", [ids]);
+    await pool.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[]) OR booking_id IN(SELECT booking_id FROM bookings WHERE user_id=ANY($1::uuid[]) OR created_by=ANY($1::uuid[]))", [ids]);
     await pool.query("DELETE FROM activity_logs WHERE user_id=ANY($1::uuid[])", [ids]);
     await pool.query("DELETE FROM support_tickets WHERE support_ticket_id=ANY($1::uuid[])", [ticketIds]);
     if (vendorId) await pool.query("DELETE FROM vendor_profiles WHERE vendor_profile_id=$1", [vendorId]);

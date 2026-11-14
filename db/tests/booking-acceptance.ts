@@ -8,6 +8,7 @@ import { mkdir, realpath, lstat, unlink, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import pg from "pg";
+import { isContactMailbox } from "../../src/lib/contact";
 import { runtimeDatabaseConfig } from "../../src/lib/server/db-config.ts";
 import { localMailSink } from "./_local-smtp.mjs";
 
@@ -83,7 +84,8 @@ try {
     VALUES((SELECT region_id FROM regions WHERE NOT is_deleted AND is_active LIMIT 1),$1,'Booking acceptance package',$2,2,4,400) RETURNING package_id`, [vehicleType, runId])).rows[0].package_id;
   const couponCode = `VERIFY-${runId.slice(0, 24)}`.toUpperCase();
   coupon = (await pool.query("INSERT INTO coupons(code,discount_type,discount_value,usage_limit,per_user_limit) VALUES($1,'flat',100,1,1) RETURNING coupon_id", [couponCode])).rows[0].coupon_id;
-  sink = await localMailSink(actors.map(actor => actor.email));
+  const configuredInbox=String((await pool.query("SELECT setting_value FROM site_settings WHERE setting_key='contact_email'")).rows[0]?.setting_value??"").trim();
+  sink = await localMailSink([...actors.map(actor => actor.email),...(isContactMailbox(configuredInbox)?[configuredInbox]:[])]);
   child = fork(path.resolve("db/tests/_booking-server.cjs"), [], { execArgv: [], silent: true, windowsHide: true,
     env: { ...process.env, NODE_ENV: "development", BOOKING_SMOKE_SERVER: "dev-only", APP_ORIGIN: base,
       SMTP_HOST: "127.0.0.1", SMTP_PORT: String(sink.port), SMTP_USER: "test", SMTP_PASS: "test", EMAIL_FROM: "Booking smoke <smoke@example.invalid>" } });
@@ -243,7 +245,7 @@ try {
     try {
       await pool.query("DELETE FROM map_service_cache WHERE cache_key=$1", [routeId]);
       assert.equal((await pool.query("SELECT count(*)::int AS n FROM map_service_cache WHERE cache_key=$1",[routeId])).rows[0].n,0);
-      await pool.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[])", [userIds]);
+      await pool.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[]) OR booking_id IN(SELECT booking_id FROM bookings WHERE user_id=ANY($1::uuid[]) OR created_by=ANY($1::uuid[]))", [userIds]);
       await pool.query("DELETE FROM activity_logs WHERE user_id=ANY($1::uuid[])", [userIds]);
       await pool.query("DELETE FROM bookings WHERE user_id=ANY($1::uuid[])", [userIds]);
       if (packageId) await pool.query("DELETE FROM packages WHERE package_id=$1", [packageId]);

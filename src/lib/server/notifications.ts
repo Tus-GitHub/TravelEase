@@ -2,6 +2,7 @@ import type { PoolClient } from "pg";
 import { getPool } from "./db";
 import {
   sendBookingConfirmation,
+  sendAdminBookingNotification,
   sendBookingCancellation,
   sendBookingStatusUpdate,
   sendDriverAssigned,
@@ -9,6 +10,7 @@ import {
   appOrigin,
   type BookingEmailInfo,
 } from "./email";
+import { getContactInbox } from "./site-settings";
 import type { BookingStatus } from "@/lib/bookingStatus";
 
 /**
@@ -20,6 +22,7 @@ import type { BookingStatus } from "@/lib/bookingStatus";
 
 type NotificationKind =
   | "booking.confirmation"
+  | "booking.admin"
   | "booking.cancellation"
   | "booking.status"
   | "booking.driver"
@@ -30,7 +33,7 @@ const DRIVER_VISIBLE: BookingStatus[] = ["Confirmed", "Ongoing", "Completed"];
 
 const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 const when = (d: Date) =>
-  d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+  d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" }) + " IST";
 const tripLabel = (code: string) =>
   code.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -51,6 +54,10 @@ interface BookingRow {
   type_code: string;
   owner_user_id: string;
   owner_email: string;
+  owner_name?: string;
+  owner_phone?: string | null;
+  pickup_address?: string | null;
+  drop_address?: string | null;
   itinerary: string | null;
   driver_name: string | null;
   driver_phone: string | null;
@@ -70,7 +77,8 @@ export async function captureBookingNotification(bookingId: string, client: Pool
   const result = await client.query(
     `SELECT b.booking_id, b.booking_reference, b.status, b.start_datetime, b.total_amount,
             b.passenger_count, bt.code AS type_code,b.departure_id,b.seat_hold_expires_at,
-            u.user_id AS owner_user_id, u.email AS owner_email,
+            u.user_id AS owner_user_id, u.email AS owner_email, u.name AS owner_name, u.phone AS owner_phone,
+            b.pickup_address, b.drop_address,
             dr.name AS driver_name, dr.phone AS driver_phone, rf.amount AS refund_amount,
             (SELECT string_agg(COALESCE(ts.name, bs.custom_label, 'Stop'), ' → '
                                ORDER BY bs.stop_order)
@@ -104,6 +112,8 @@ function toEmailInfo(row: BookingRow): BookingEmailInfo {
     startsAt: when(new Date(row.start_datetime)),
     passengers: row.passenger_count,
     total: inr(Number(row.total_amount)),
+    pickupAddress: row.pickup_address ?? undefined,
+    dropAddress: row.drop_address ?? undefined,
     itinerary: row.itinerary ?? undefined,
     url: `${appOrigin()}/profile/bookings/${row.booking_id}`,
     driver:
@@ -118,6 +128,7 @@ async function log(
   kind: NotificationKind,
   subject: string,
   error?: string,
+  delivery?: { recipient: string; userId: string | null },
 ): Promise<void> {
   try {
     await getPool().query(
@@ -125,10 +136,10 @@ async function log(
          (user_id, booking_id, channel, kind, recipient, subject, status, error)
        VALUES ($1, $2, 'email', $3, $4, $5, $6, $7)`,
       [
-        row.owner_user_id,
+        delivery ? delivery.userId : row.owner_user_id,
         row.booking_id,
         kind,
-        row.owner_email,
+        delivery ? delivery.recipient : row.owner_email,
         subject.slice(0, 300),
         error ? "failed" : "sent",
         error ? error.slice(0, 500) : null,
@@ -146,13 +157,33 @@ export async function notifyBookingCreated(snapshot: BookingNotificationSnapshot
     row = snapshot?.row ?? null;
     if (!row) return;
     const subject = `Booking received — ${row.booking_reference}`;
-    try {
-      await sendBookingConfirmation(row.owner_email, snapshot!.info);
-      await log(row, "booking.confirmation", subject);
-    } catch (err) {
-      console.error("notifyBookingCreated: send failed", err);
-      await log(row, "booking.confirmation", subject, String(err));
-    }
+    const bookingRow = row;
+    const inbox = await getContactInbox().catch(() => null);
+    await Promise.all([
+      (async () => {
+        try {
+          await sendBookingConfirmation(bookingRow.owner_email, snapshot!.info, inbox);
+          await log(bookingRow, "booking.confirmation", subject);
+        } catch (err) {
+          console.error("notifyBookingCreated: customer send failed", err);
+          await log(bookingRow, "booking.confirmation", subject, String(err));
+        }
+      })(),
+      (async () => {
+        const adminSubject = `New booking — ${bookingRow.booking_reference}`;
+        const delivery = { recipient: inbox || "Not configured", userId: null };
+        try {
+          if (!inbox) throw new Error("Booking business inbox is not configured in Site settings.");
+          await sendAdminBookingNotification(inbox, {
+            email: bookingRow.owner_email, name: bookingRow.owner_name, phone: bookingRow.owner_phone,
+          }, snapshot!.info);
+          await log(bookingRow, "booking.admin", adminSubject, undefined, delivery);
+        } catch (err) {
+          console.error("notifyBookingCreated: admin send failed", err);
+          await log(bookingRow, "booking.admin", adminSubject, String(err), delivery);
+        }
+      })(),
+    ]);
   } catch (err) {
     console.error("notifyBookingCreated: unexpected", err);
   }
