@@ -5,7 +5,7 @@ import {
   type BookingStatus,
   type TransitionResult,
 } from "../bookings";
-import { notifyDriverAssigned } from "../notifications";
+import { notifyDriverAssigned, captureBookingNotification, type BookingNotificationSnapshot } from "../notifications";
 import { tripTransaction } from "../weekend-trips";
 import { assertDriverWindow } from "../weekend-resources";
 import { bookingWindow } from "../availability";
@@ -121,6 +121,7 @@ export async function assignBookingDriver(
   actorId: string,
 ): Promise<AssignResult> {
   let status: string;
+  let notification: BookingNotificationSnapshot | null = null;
   try {
     status = await tripTransaction(async client => {
       const b = (await client.query("SELECT * FROM bookings WHERE booking_id=$1 AND NOT is_deleted FOR UPDATE",[bookingId])).rows[0];
@@ -131,10 +132,11 @@ export async function assignBookingDriver(
         await assertDriverWindow(client,driverId,win.start,win.end,bookingId);
       }
       await client.query("UPDATE bookings SET driver_id=$1,updated_by=$2 WHERE booking_id=$3",[driverId,actorId,bookingId]);
+      if (driverId !== null && ["Confirmed","Ongoing"].includes(b.status)) notification = await captureBookingNotification(bookingId, client);
       return b.status as string;
     });
   } catch (error) { if (error instanceof TripError) return {ok:false,status:error.status,message:error.message}; throw error; }
-  if (driverId !== null && ["Confirmed","Ongoing"].includes(status)) await notifyDriverAssigned(bookingId);
+  if (driverId !== null && ["Confirmed","Ongoing"].includes(status)) await notifyDriverAssigned(notification);
   return { ok: true };
 }
 

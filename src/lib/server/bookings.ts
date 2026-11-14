@@ -16,6 +16,8 @@ import {
 import { resolveBookingTypeId, resolvePricingRule } from "./pricing-rules";
 import {
   notifyBookingCreated,
+  captureBookingNotification,
+  type BookingNotificationSnapshot,
   notifyBookingStatusChanged,
 } from "./notifications";
 import { validateCoupon, recordRedemption } from "./coupons";
@@ -84,10 +86,10 @@ export interface TransitionInput {
    *  applies); pass "operator" for a Jagdamba-initiated full refund. */
   refundInitiatedBy?: CancelInitiator;
 }
-export interface BookingTransitionEvent { input: TransitionInput; from: BookingStatus }
+export interface BookingTransitionEvent { input: TransitionInput; from: BookingStatus; notification: BookingNotificationSnapshot | null }
 export async function notifyTransition(event: BookingTransitionEvent) {
   const { input, from } = event;
-  await notifyBookingStatusChanged(input.bookingId, from, input.toStatus);
+  await notifyBookingStatusChanged(event.notification, from, input.toStatus);
   await logActivity({ userId: input.user.id, action: "booking.status_change", entityType: "booking", entityId: input.bookingId,
     details: { from, to: input.toStatus, reason: input.reason ?? null } });
 }
@@ -232,7 +234,7 @@ export async function transitionBookingInTransaction(client: PoolClient, input: 
     }
     if (departure && input.toStatus === "Cancelled") await client.query(`UPDATE trip_room_assignments SET is_deleted=true,is_active=false,updated_by=$2
       WHERE booking_passenger_id IN (SELECT booking_passenger_id FROM booking_passengers WHERE booking_id=$1) AND NOT is_deleted`, [input.bookingId, input.user.id]);
-  events.push({ input, from });
+  events.push({ input: { ...input, user: { ...input.user } }, from, notification: await captureBookingNotification(input.bookingId, client) });
   return { ok: true, status: input.toStatus };
 }
 
@@ -457,6 +459,10 @@ export async function getBookingForUser(
 // ─── Create (plan.md §6 recompute, §33 snapshot) ────────────────────────────
 
 export interface CreateBookingInput {
+  routeId?: string;
+  pickupPoint?: { lat: number; lng: number };
+  dropPoint?: { lat: number; lng: number };
+  expectedTotal?: number;
   departureId?: string;
   clientRequestId?: string;
   bookingType: BookingTypeCode;
@@ -515,6 +521,8 @@ export async function createBooking(
   if (Number.isNaN(start.getTime())) {
     return { ok: false, status: 400, message: "A valid start date/time is required." };
   }
+  if (start.getTime() <= Date.now()) return { ok: false, status: 400, message: "Choose a future travel date and time." };
+  if (input.endDateTime && (!Number.isFinite(new Date(input.endDateTime).getTime()) || new Date(input.endDateTime) <= start)) return { ok: false, status: 400, message: "Return time must be after pickup time." };
   const passengerCount = Math.max(1, Math.floor(posNum(input.passengerCount) ?? 1));
   const pool = getPool();
 
@@ -522,6 +530,25 @@ export async function createBooking(
   let packageId: number | null = null;
   let packagePricePerPerson: number | undefined;
   let vehicleTypeId = input.vehicleTypeId;
+  let verifiedRoute: import("../booking-route").BookingRoute | undefined;
+  if (input.vehicleId != null) {
+    try {
+      const { carTripFacts } = await import("./car-trip");
+      const facts = await carTripFacts({ vehicleId: input.vehicleId, vehicleTypeId, bookingType: input.bookingType,
+        passengers: passengerCount, routeId: input.routeId, pickupPoint: input.pickupPoint, dropPoint: input.dropPoint });
+      vehicleTypeId = facts.vehicleTypeId;
+      verifiedRoute = facts.route;
+      if (verifiedRoute) input = { ...input, estimatedDistanceKm: verifiedRoute.distanceKm, estimatedHours: verifiedRoute.durationHours };
+    } catch(error) {
+      const { MapServiceError } = await import("./map-services");
+      return { ok: false, status: error instanceof MapServiceError ? error.status : 503, message: error instanceof MapServiceError ? error.message : "Could not validate the car route." };
+    }
+  }
+  if(input.vehicleId==null&&["point_to_point","outstation","airport_transfer"].includes(input.bookingType)){
+    try{const {verifiedBookingRoute}=await import("./map-services");verifiedRoute=await verifiedBookingRoute(input.routeId,input.pickupPoint,input.dropPoint,input.bookingType==="outstation");
+      input={...input,estimatedDistanceKm:verifiedRoute.distanceKm,estimatedHours:verifiedRoute.durationHours};}
+    catch(error){const{MapServiceError}=await import("./map-services");return{ok:false,status:error instanceof MapServiceError?error.status:503,message:error instanceof MapServiceError?error.message:"Could not validate the road route."};}
+  }
   let durationDays = input.durationDays;
   let packageStops: { tourist_spot_id: number; stop_order: number }[] = [];
 
@@ -615,7 +642,7 @@ export async function createBooking(
   if (bookingTypeId == null) {
     return { ok: false, status: 500, message: "Booking type is not configured." };
   }
-  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId);
+  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId, input.vehicleId ?? null, start);
   if (!rule) {
     return { ok: false, status: 422, message: "No pricing is configured for this trip yet." };
   }
@@ -652,6 +679,7 @@ export async function createBooking(
 
   const client = await pool.connect();
   let bookingId: string | null = null;
+  let notification: BookingNotificationSnapshot | null = null;
   try {
     await client.query("BEGIN");
     if (couponCode) {
@@ -665,6 +693,11 @@ export async function createBooking(
         { ...trip, discountAmount: res.coupon.discountAmount },
         rule,
       );
+    }
+
+    if (input.expectedTotal !== undefined && (typeof input.expectedTotal !== "number" || !Number.isFinite(input.expectedTotal) || Math.abs(input.expectedTotal - price.totalAmount) > 0.009)) {
+      await client.query("ROLLBACK");
+      return { ok: false, status: 409, message: "The fare has changed. Review the refreshed quote before confirming." };
     }
 
     // A reference collision must not abort the surrounding coupon transaction.
@@ -698,7 +731,7 @@ export async function createBooking(
           posNum(input.estimatedDistanceKm) ?? null,
           posNum(input.estimatedHours) ?? null,
           posNum(durationDays) ?? null,
-          JSON.stringify(price),
+          JSON.stringify({ ...price, ...(verifiedRoute ? { route: { ...verifiedRoute, geometry: undefined } } : {}) }),
           price.subtotal,
           price.discountAmount,
           price.taxAmount,
@@ -765,6 +798,7 @@ export async function createBooking(
       [bookingId, user.id],
     );
 
+    notification = await captureBookingNotification(bookingId!, client);
     await client.query("COMMIT");
   } catch (err) {
     await client.query("ROLLBACK");
@@ -776,7 +810,7 @@ export async function createBooking(
   if (!bookingId) throw new Error("booking id was not assigned");
 
   // Confirmation email (chunk 2.2) — non-blocking, never throws.
-  await notifyBookingCreated(bookingId);
+  await notifyBookingCreated(notification);
   await logActivity({
     userId: user.id,
     action: "booking.create",

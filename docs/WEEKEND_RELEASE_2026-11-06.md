@@ -1,46 +1,56 @@
-# Weekend Trips production release — preparation
+# Weekend Trips and CMS production release — 2026-11-06
 
-Requested 2026-11-06. User authorized publishing Weekend Trips and CMS filter/link
-changes, including the known migration029 schema. Production remains on28;
-development is29. Production migration remains scheduled for Vercel predeploy after publishing.
+Published and verified. Commit736f8e2ed57361ae84361389b904953abc2e8d9e,
+Vercel deployment dpl_8BM36m2yTjD1QWZm7SkGErnjy2wd is READY and serves
+https://travelease-rouge.vercel.app. Git main and origin/main match that commit;
+working branch is development.
 
-The parity gate detects pending029 and requires fresh schema-only replay evidence.
-Executed db/weekend-release-replay.mjs and the exact45-table,
-551-column inventory db/weekend-release-schema-review.json. Temporary DEVELOPMENT
-name: travel_weekend_release_check_20261106. It copies schema only, replays029,
-compares the result to development, then deletes the temporary database and verifies
-absence. Production migration runs only automatically through Vercel deployment.
-User approved the exact temporary schema and cleanup. Rehearsal passed against
-production28 plus029:45 tables/551 columns match development, no customer data
-was copied, and the temporary database was deleted with absence verified. The
-fresh bound replay evidence makes db:check pass for the pending migration.
+## Released scope
 
-Release includes the shared departure/guide/hotel/room schema and operational UI,
-public/customer shared checkout, existing booking/pricing/refund/inventory integration,
-CMS catalogue models/renderer/editor/link resolver, package booking_mode and relevant
-navigation. Preserve unrelated local work when preparing the clean development
-release commit. Required booking concurrency and origin helpers are dependencies.
-Exclude hotel search/enquiry, AI itineraries, route optimization, dynamic contact,
-auth changes and unrelated database recovery tools from the application release.
-Mixed files requiring a targeted release version include email.ts (shared deadline
-wording only), navigation.ts (Weekend Trips links only), package pages (region filter
-and booking mode, no hotel/AI/route UI) and CMS destination options (no unpublished
-hotel destination). Dependency review/build of the exact release remains required.
+Friday group departures with inclusive per-person prices, driver/guide/vehicle
+assignments, manual hotel arrangements, room allocation, public/customer shared
+seat checkout and existing offline payment/cancellation/refund controls. CMS adds
+Live catalogue sources, selection rules, visitor filters, layouts/count/order,
+empty behavior and the published-page/record/filtered-listing/section/HTTPS picker.
+Earlier hotel API, AI itinerary, routing, contact/auth and unrelated hardening UI
+work remains local and unpublished. Necessary booking concurrency/origin helpers
+are included. No new credentials or providers were required. Supplier reservations,
+room upsells, shared-trip GPS and Razorpay remain deferred.
 
-Before publication: approve/run rehearsal, pass db:check, verify exact release
-checkout with typecheck/lint/tests/build, preserve other local changes, commit only
-release scope on development and run npm run publish. After Vercel READY, confirm
-production routes/access and rerun db:check for IN SYNC29/29. Restore and verify
-preserved local work. Record final commit/deployment and evidence here.
+## Schema and publication
 
-## Exact release validation
+User authorized production publication and explicitly approved temporary DEVELOPMENT
+travel_weekend_release_check_20261106 with the45-table/551-column schema inventory.
+The schema-only rehearsal copied no customer data, replayed029, matched development
+and deleted the temporary database with absence verified. Bound replay evidence
+passed the release gate. npm run publish merged development into main and pushed
+both branches; one initial DNS lookup failure stopped before any push and cleared
+on retry. Vercel predeploy automatically applied029; no manual production migration.
+Final db:check is IN SYNC29/29 with no definition differences.
 
-The curated release passed optimized isolated Next build, typecheck/lint,109 model
-cases (8 weekend,12 CMS,42 pricing,25 booking lifecycle,22 refund), shared-seat
-contention/expiry/rollback tests and10 private/coupon contention regressions.
-Full Chrome acceptance passed30 Weekend +13 CMS HTTP checks and browser/DB
-assertions: two customers, payment/guarantee/rooms, individual/group cancellation,
-refund settlement, frozen route snapshots, CMS all-source preview/publish/filters,
-old revision restore, mobile and live seat refresh. Synthetic fixtures/upload
-cleaned; email stayed local. Production CMS has no conflicting weekend-trips slug.
-Previous production:8457c8c / dpl_5CHh5XZ4sjyiz4LWnjmgkHN1wtds.
+## Verification and preservation
+
+Exact release: optimized isolated build, typecheck/lint,109 model cases, shared-seat
+contention/payment-expiry/bulk-rollback and10 private/coupon concurrency cases.
+Full Chrome/API/dev PostgreSQL acceptance:30 Weekend and13 CMS HTTP checks plus
+actual two-customer checkout/payment/guarantee/room/cancellation/refund flows,
+frozen route snapshots, catalogue all-source rendering, filters, preview/publish,
+old-revision restore, live seat refresh and mobile. Fixtures/upload cleaned and
+email confined to memory/loopback.
+
+Production read-only acceptance: listing/API200, invalid filter400, missing trip404,
+admin trips/guides/CMS options401; mobile has no horizontal overflow, admin/CMS
+routes redirect guests to login, zero browser runtime errors. Existing production
+CMS has no conflicting weekend-trips slug. No live bookings/pages/accounts created.
+Production starts with no development departures/pages copied; admin creates their
+real trips and publishes their own CMS content.
+
+Preserved all earlier local work using a hash backup and one temporary stash.
+Restored and byte-verified157 original files, retaining this updated release record,
+then deleted only that owned stash. Artifact backups remain available. Localhost
+returns200 for auth state and Weekend Trips after restoration. No secrets staged.
+
+Admin routes: /admin/weekend-trips, /admin/tour-guides and /admin/pages.
+Homepage section setup: Add section -> Live catalogue -> content source/rules ->
+visitor filters. Button link -> Choose destination. Operating guide:
+docs/WEEKEND_TRIPS_PLAN.md. Production CMS content is independent from development.

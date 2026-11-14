@@ -1,3 +1,4 @@
+import { spotCoordinates } from "@/lib/spot-coordinates";
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
 import { dbErrorResponse } from "@/lib/server/api-errors";
@@ -34,8 +35,12 @@ export async function PATCH(
   if (typeof body.tag === "string") input.tag = body.tag.trim();
   if (typeof body.description === "string") input.description = body.description.trim();
 
+  let coordinates;
+  try { coordinates = spotCoordinates(body); }
+  catch { return NextResponse.json({ error: "Set both latitude and longitude within valid ranges, or clear both." }, { status: 400 }); }
+
   try {
-    const item = await updateTouristSpot(id, input, auth.user.id);
+    const item = await updateTouristSpot(id, { ...input, ...coordinates }, auth.user.id);
     if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
     return NextResponse.json({ item });
   } catch (err) {

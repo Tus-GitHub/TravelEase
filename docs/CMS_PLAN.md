@@ -189,3 +189,22 @@ when removed from a draft because an older publication/revision may still use th
 - Production release passed after separate authorization; the existing production owner
   connection requires no new role grants. Development content is not copied by
   deployment. The JSON editor requires no further service key.
+
+
+## Weekend Trips/CMS production publication — 2026-11-06
+
+Released commit736f8e2 (Vercel dpl_8BM36m2yTjD1QWZm7SkGErnjy2wd READY).
+Production now includes Weekend Trips and CMS Live catalogue/filter/link controls.
+Approved schema-only development rehearsal was cleaned; automatic predeploy applied029.
+Final db:check IN SYNC29/29. Exact release build/tests and production read-only mobile,
+routes/login protections pass. Earlier unrelated development work restored and remains
+unpublished. No dev departures/CMS content copied. Full release record:
+docs/WEEKEND_RELEASE_2026-11-06.md.
+
+
+Production homepage content update (2026-11-06): CMS Home version2 now includes
+Weekend Trips as section7 after Travel Packages (id home-weekend-trips). Date and
+pickup filters enabled;6 grid cards ordered by nearest departure; View All Trips
+opens /weekend-trips. Helpful empty message retains controls until trips are
+published. Previous10 sections preserved; revision/audit and backup recorded.
+Live desktop/mobile controls/reset/navigation verified without browser errors.

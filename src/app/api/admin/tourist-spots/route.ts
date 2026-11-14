@@ -1,3 +1,4 @@
+import { spotCoordinates } from "@/lib/spot-coordinates";
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
 import { dbErrorResponse } from "@/lib/server/api-errors";
@@ -29,9 +30,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Spot name is required." }, { status: 400 });
   }
 
+  let coordinates;
+  try { coordinates = spotCoordinates(body); }
+  catch { return NextResponse.json({ error: "Set both latitude and longitude within valid ranges, or clear both." }, { status: 400 }); }
+
   try {
     const item = await createTouristSpot(
       {
+        ...coordinates,
         cityId,
         name,
         tag: typeof body.tag === "string" ? body.tag.trim() : "",

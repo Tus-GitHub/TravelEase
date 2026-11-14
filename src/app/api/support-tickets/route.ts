@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/server/auth-guard";
 import { createTicket, listTicketsForUser } from "@/lib/server/support-tickets";
+import { readBoundedJsonObject } from "@/lib/server/http-json";
+import { matchesRequestOrigin } from "@/lib/server/request-origin";
 
 /** GET /api/support-tickets — the caller's own tickets, most recent activity first. */
 export async function GET() {
@@ -16,10 +18,11 @@ export async function GET() {
 export async function POST(request: Request) {
   const auth = await requireUser();
   if (!auth.ok) return auth.response;
+  if (!matchesRequestOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    body = await readBoundedJsonObject(request.body, 20 * 1024);
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }

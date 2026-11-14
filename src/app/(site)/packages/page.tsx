@@ -24,6 +24,10 @@ export default async function PackagesPage({ searchParams }: { searchParams: { r
       title="Travel Packages"
       subtitle="Chauffeur-driven multi-day journeys with a fixed route, a set vehicle and an all-inclusive per-person price."
     >
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-surface p-5">
+        <p className="text-sm text-muted">Looking for a place to stay alongside your journey?</p>
+        <Button href="/hotels" variant="outline" size="sm" iconLeft="map-pin">Explore hotels</Button>
+      </div>
       {packages.length > 0 ? (
         <PackagesBrowser packages={packages} />
       ) : (

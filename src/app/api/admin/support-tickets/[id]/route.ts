@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
+import { readBoundedJsonObject } from "@/lib/server/http-json";
+import { matchesRequestOrigin } from "@/lib/server/request-origin";
 import {
   addTicketMessage,
   getTicketAdmin,
   setTicketStatus,
+  TicketLimitError,
 } from "@/lib/server/support-tickets";
 
 const UUID_RE =
@@ -34,13 +37,14 @@ export async function PATCH(
 ) {
   const auth = await requireRole("admin");
   if (!auth.ok) return auth.response;
+  if (!matchesRequestOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
   let body: { message?: unknown; status?: unknown };
   try {
-    body = await request.json();
+    body = await readBoundedJsonObject(request.body, 20 * 1024);
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
@@ -54,7 +58,12 @@ export async function PATCH(
   }
 
   if (typeof body.status === "string") {
-    const ok = await setTicketStatus(params.id, body.status, auth.user.id);
+    let ok: boolean;
+    try { ok = await setTicketStatus(params.id, body.status, auth.user.id); }
+    catch (error) {
+      if (error instanceof TicketLimitError) return NextResponse.json({ error: error.message }, { status: 409 });
+      throw error;
+    }
     if (!ok) return NextResponse.json({ error: "Invalid status or ticket." }, { status: 400 });
     const ticket = await getTicketAdmin(params.id, auth.user);
     return NextResponse.json({ ticket });

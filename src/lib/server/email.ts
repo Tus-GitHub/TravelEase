@@ -208,7 +208,7 @@ export async function sendBookingConfirmation(
     { label: "Passengers", value: String(b.passengers) },
     ...(b.itinerary ? [{ label: "Itinerary", value: b.itinerary }] : []),
     { label: "Total", value: b.total },
-    ...(b.paymentDeadline ? [{label:"Seat hold expires",value:b.paymentDeadline},{label:"Payment",value:"Contact us before this deadline. An expired hold does not reserve seats; check availability before paying."}] : []),
+      ...(b.paymentDeadline ? [{label:"Seat hold expires",value:b.paymentDeadline},{label:"Payment",value:"Contact us before this deadline. An expired hold does not reserve seats; check availability before paying."}] : []),
   ];
   await sendBookingEmail(
     to,

@@ -1,0 +1,105 @@
+{
+  "migration": "030_car_pricing_and_map_services.sql",
+  "sha256": "c18d8ba1a68738c6c0c586f1b7db72bf7c0d98bff2b0923ce87bbc47ecc63f01",
+  "reviewedAt": "2026-11-14T12:58:10.277Z",
+  "priorMigrations": 29,
+  "migrations": 30,
+  "approvedTables": [
+    "map_service_cache",
+    "map_service_usage"
+  ],
+  "approvedColumns": {
+    "pricing_rules.vehicle_id": [
+      "integer",
+      false,
+      null
+    ],
+    "map_service_cache.cache_key": [
+      "character(64)",
+      true,
+      null
+    ],
+    "map_service_cache.provider": [
+      "character varying(20)",
+      true,
+      null
+    ],
+    "map_service_cache.response": [
+      "jsonb",
+      true,
+      null
+    ],
+    "map_service_cache.expires_at": [
+      "timestamp with time zone",
+      true,
+      null
+    ],
+    "map_service_cache.created_at": [
+      "timestamp with time zone",
+      true,
+      "now()"
+    ],
+    "map_service_usage.provider": [
+      "character varying(20)",
+      true,
+      null
+    ],
+    "map_service_usage.usage_date": [
+      "date",
+      true,
+      null
+    ],
+    "map_service_usage.request_count": [
+      "integer",
+      true,
+      "0"
+    ],
+    "map_service_usage.last_request_at": [
+      "timestamp with time zone",
+      false,
+      null
+    ]
+  },
+  "indexes": [
+    "idx_pricing_rules_vehicle",
+    "idx_map_service_cache_expiry",
+    "map_service_cache_pkey",
+    "map_service_usage_pkey"
+  ],
+  "differences": [
+    "tables: unexpected map_service_cache",
+    "tables: unexpected map_service_usage",
+    "columns: unexpected map_service_cache.cache_key",
+    "columns: unexpected map_service_cache.created_at",
+    "columns: unexpected map_service_cache.expires_at",
+    "columns: unexpected map_service_cache.provider",
+    "columns: unexpected map_service_cache.response",
+    "columns: unexpected map_service_usage.last_request_at",
+    "columns: unexpected map_service_usage.provider",
+    "columns: unexpected map_service_usage.request_count",
+    "columns: unexpected map_service_usage.usage_date",
+    "columns: unexpected pricing_rules.vehicle_id",
+    "constraints: unexpected map_service_cache.map_service_cache_cache_key_not_null",
+    "constraints: unexpected map_service_cache.map_service_cache_created_at_not_null",
+    "constraints: unexpected map_service_cache.map_service_cache_expires_at_not_null",
+    "constraints: unexpected map_service_cache.map_service_cache_pkey",
+    "constraints: unexpected map_service_cache.map_service_cache_provider_check",
+    "constraints: unexpected map_service_cache.map_service_cache_provider_not_null",
+    "constraints: unexpected map_service_cache.map_service_cache_response_not_null",
+    "constraints: unexpected map_service_usage.map_service_usage_pkey",
+    "constraints: unexpected map_service_usage.map_service_usage_provider_check",
+    "constraints: unexpected map_service_usage.map_service_usage_provider_not_null",
+    "constraints: unexpected map_service_usage.map_service_usage_request_count_check",
+    "constraints: unexpected map_service_usage.map_service_usage_request_count_not_null",
+    "constraints: unexpected map_service_usage.map_service_usage_usage_date_not_null",
+    "constraints: unexpected pricing_rules.pricing_rules_vehicle_id_fkey",
+    "indexes: unexpected idx_map_service_cache_expiry",
+    "indexes: unexpected idx_pricing_rules_vehicle",
+    "indexes: unexpected map_service_cache_pkey",
+    "indexes: unexpected map_service_usage_pkey",
+    "grants: unexpected map_service_cache:neondb_owner",
+    "grants: unexpected map_service_usage:neondb_owner"
+  ],
+  "originalDefinitionsUnchanged": true,
+  "productionContacted": false
+}

@@ -5,7 +5,7 @@ import { calculatePrice, type PricingRuleInput } from "./pricing";
 import type { PublicUser } from "./users";
 import { getPool } from "./db";
 import { getAdminDeparture, lockDeparture, tripSeats, tripTransaction } from "./weekend-trips";
-import { notifyBookingCreated } from "./notifications";
+import { notifyBookingCreated, captureBookingNotification } from "./notifications";
 import { logActivity } from "./activity-log";
 
 export const WEEKEND_CANCELLATION_POLICY = "Whole-booking cancellation: more than 72 hours before pickup — full refund; 24–72 hours — 50% refund; less than 24 hours — no refund. If we cancel the departure, paid bookings receive a full refund. Offline refunds are settled by our team.";
@@ -56,7 +56,7 @@ export async function createSharedBooking(raw: unknown, user: PublicUser) {
     if (prior) {
       const saved = (await client.query("SELECT name,age,COALESCE(phone,'') AS phone,is_primary AS \"isPrimary\" FROM booking_passengers WHERE booking_id=$1 ORDER BY booking_passenger_id",[prior.booking_id])).rows;
       if (prior.departure_id!==id || prior.passenger_count!==quantity || (prior.customer_notes ?? "")!==notes || JSON.stringify(saved)!==JSON.stringify(passengers)) throw new TripError("This request was already used for different traveller details. Open the existing booking or start a new request.",409);
-      return { id:prior.booking_id as string, created:false };
+      return { id:prior.booking_id as string, created:false, notification:null };
     }
     const row = await lockDeparture(client,id);
     if (input.quotedVersion !== undefined && input.quotedVersion !== row.version) throw new TripError("This departure was updated. Refresh the trip and price before reserving seats.",409);
@@ -79,10 +79,10 @@ export async function createSharedBooking(raw: unknown, user: PublicUser) {
     const stops=snapshot.content.routeStops??[];
     for(let index=0;index<stops.length;index++) await client.query("INSERT INTO booking_stops(booking_id,tourist_spot_id,custom_label,stop_order,created_by) VALUES($1,$2,$3,$4,$5)",[bookingId,stops[index].id,stops[index].name.slice(0,200),index+1,user.id]);
     await client.query("INSERT INTO booking_status_history(booking_id,from_status,to_status,changed_by_user_id,reason) VALUES($1,'Draft','PendingPayment',$2,'Weekend trip seats held; offline payment required before expiry')",[bookingId,user.id]);
-    return { id:bookingId, created:true };
+    return { id:bookingId, created:true, notification:await captureBookingNotification(bookingId,client) };
   });
   if (result.created) {
-    await notifyBookingCreated(result.id);
+    await notifyBookingCreated(result.notification);
     await logActivity({userId:user.id,action:"booking.create",entityType:"booking",entityId:result.id,details:{departureId:id,passengers:quantity}});
   }
   return result.id;

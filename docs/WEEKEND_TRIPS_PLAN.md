@@ -390,3 +390,14 @@ publication until the user separately authorizes the finished release.
   weekend-admin-acceptance.ts, cms-catalogue-acceptance.ts and cms.test.ts;
   _booking-server.cjs supports isolated optimized acceptance. Commands in DEPLOY.md.
 - Records: MEMORY.md, plan.md, docs/CMS_PLAN.md and this operator guide.
+
+
+## Weekend Trips/CMS production publication — 2026-11-06
+
+Released commit736f8e2 (Vercel dpl_8BM36m2yTjD1QWZm7SkGErnjy2wd READY).
+Production now includes Weekend Trips and CMS Live catalogue/filter/link controls.
+Approved schema-only development rehearsal was cleaned; automatic predeploy applied029.
+Final db:check IN SYNC29/29. Exact release build/tests and production read-only mobile,
+routes/login protections pass. Earlier unrelated development work restored and remains
+unpublished. No dev departures/CMS content copied. Full release record:
+docs/WEEKEND_RELEASE_2026-11-06.md.

@@ -1,13 +1,13 @@
 {
   "format": 1,
   "kind": "schema-only-migration-replay",
+  "method": "fresh-migrations-with-exact-production-baseline-comparison",
   "verified": true,
-  "verifiedAt": "2026-11-06T16:40:07.332Z",
+  "verifiedAt": "2026-11-14T12:36:20.716Z",
   "cleanupComplete": true,
-  "targetDatabase": "travel_weekend_release_check_20261106",
-  "reviewHash": "11d262dae3d200cb0933597ea4db3ce2c3f98ade8b2b4c47aa7e17d019d78f98",
+  "targetDatabase": "travel_combined_release_check_20261114",
   "pending": [
-    "029_weekend_trip_departures.sql"
+    "030_car_pricing_and_map_services.sql"
   ],
   "migrationHashes": {
     "001_create_auth_tables.sql": "49af6321b9ca6fd6d8671b1276a178e29eff488812dfbb90b3b97bbf0adf89d1",
@@ -38,13 +38,14 @@
     "026_driver_image.sql": "20aeaa4ea22a0e2ffbefc1dcf6b47bd2e2c247dc3defee967df76a120c4c88c5",
     "027_tourist_spot_coordinates.sql": "4581463be0f50d3a3a8c64776d473889651ceac1e8a976f1bb76d82e5791ee18",
     "028_create_cms_pages.sql": "a3c21f818a0d457ec35d646d25a88e09937019753dadef0257d2db8f5886ec95",
-    "029_weekend_trip_departures.sql": "5a1c104e6342f3117c62f963d0f2e5153640dd36570c102d4a02066e8f4eba5f"
+    "029_weekend_trip_departures.sql": "5a1c104e6342f3117c62f963d0f2e5153640dd36570c102d4a02066e8f4eba5f",
+    "030_car_pricing_and_map_services.sql": "c18d8ba1a68738c6c0c586f1b7db72bf7c0d98bff2b0923ce87bbc47ecc63f01"
   },
   "productionEndpoint": "d4f04c6e23dd43772644a017f5ef85618d9d1ac8dbd7433e41ddfa2a0679f8cb",
   "developmentEndpoint": "10a9099f2708f3526d559753b82b1454eaef7bb94f7db3ba714808e0657d724a",
-  "productionSchema": "00a7d591caad94555da0a47286bda5b63db7da689996250372d791114122d8f7",
-  "developmentSchema": "71f1eb46e9c427b0829a2d7cea3e5de24a5dc236e43a0a91b4ea387c7b904a2e",
-  "replayedSchema": "71f1eb46e9c427b0829a2d7cea3e5de24a5dc236e43a0a91b4ea387c7b904a2e",
-  "tableCount": 45,
-  "columnCount": 551
+  "productionSchema": "71f1eb46e9c427b0829a2d7cea3e5de24a5dc236e43a0a91b4ea387c7b904a2e",
+  "developmentSchema": "cd9233ea89fc776e615bfba629da8f67e506d46f817164e1bda7cb8988b2a788",
+  "replayedSchema": "cd9233ea89fc776e615bfba629da8f67e506d46f817164e1bda7cb8988b2a788",
+  "tableCount": 47,
+  "columnCount": 561
 }

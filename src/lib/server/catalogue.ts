@@ -27,6 +27,7 @@ export function normalizePackageTag(tag: string | null): PackageTag {
 // ─── Vehicles ────────────────────────────────────────────────────────────────
 
 export interface PublicVehicle {
+  pricePerKm: number | null;
   id: number;
   name: string;
   typeSlug: string;
@@ -62,13 +63,18 @@ const PRIMARY_IMAGE_SUBQUERY = `
 const VEHICLE_SELECT = `
   SELECT v.vehicle_id, v.name, vt.slug AS type_slug, vt.title AS type_title,
          v.seating_capacity, v.features, v.base_price_per_day, v.rating, v.is_available,
-         ${PRIMARY_IMAGE_SUBQUERY} AS image_url
+         ${PRIMARY_IMAGE_SUBQUERY} AS image_url,
+         (SELECT p.per_km_rate FROM pricing_rules p JOIN booking_types bt USING(booking_type_id)
+          WHERE p.vehicle_id=v.vehicle_id AND bt.code='point_to_point' AND NOT p.is_deleted AND p.is_active
+          AND (p.effective_from IS NULL OR p.effective_from<=CURRENT_DATE) AND (p.effective_to IS NULL OR p.effective_to>=CURRENT_DATE)
+          ORDER BY p.priority DESC,p.pricing_rule_id LIMIT 1) AS per_km_rate
   FROM vehicles v
   JOIN vehicle_types vt ON vt.vehicle_type_id = v.vehicle_type_id
    AND vt.is_deleted = false AND vt.is_active = true
   WHERE v.is_deleted = false AND v.is_active = true`;
 
 interface VehicleRow {
+  per_km_rate: string | null;
   vehicle_id: number;
   name: string;
   type_slug: string;
@@ -90,6 +96,7 @@ function toPublicVehicle(r: VehicleRow): PublicVehicle {
     seatingCapacity: r.seating_capacity,
     features: Array.isArray(r.features) ? r.features : [],
     pricePerDay: Number(r.base_price_per_day),
+    pricePerKm: r.per_km_rate==null?null:Number(r.per_km_rate),
     rating: r.rating != null ? Number(r.rating) : null,
     isAvailable: r.is_available,
     imageUrl: r.image_url,

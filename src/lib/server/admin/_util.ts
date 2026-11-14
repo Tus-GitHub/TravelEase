@@ -1,6 +1,8 @@
 import { getPool } from "../db";
 import { logActivity } from "../activity-log";
 import { protectedResourceMutation } from "../weekend-resources";
+import { catalogueWrite, assertCatalogueParents, assertCatalogueDelete, isCatalogueTable } from "./_catalogue";
+import type { Pool, PoolClient } from "pg";
 
 /**
  * Partial UPDATE from a static camelCase->column map. Only keys present in
@@ -30,11 +32,14 @@ export async function applyPartialUpdate(
   cols.push(`updated_by = $${vals.length}`);
   vals.push(id);
 
-  const result = await protectedResourceMutation(table,id,input,db => db.query(
-    `UPDATE ${table} SET ${cols.join(", ")}
-     WHERE ${idColumn} = $${vals.length} AND is_deleted = false`,
-    vals,
-  ));
+  const result = await catalogueWrite(table, async client => {
+    await assertCatalogueParents(client, table, input);
+    return protectedResourceMutation(table,id,input,db => db.query(
+      `UPDATE ${table} SET ${cols.join(", ")}
+       WHERE ${idColumn} = $${vals.length} AND is_deleted = false`,
+      vals,
+    ), "release" in client ? client as PoolClient : undefined);
+  });
   const ok = (result.rowCount ?? 0) > 0;
   if (ok) {
     await logActivity({
@@ -54,11 +59,17 @@ export async function softDelete(
   id: number,
   actorId: string,
 ): Promise<boolean> {
-  const result = await protectedResourceMutation(table,id,{isDeleted:true},db => db.query(
-    `UPDATE ${table} SET is_deleted = true, updated_by = $1
-     WHERE ${idColumn} = $2 AND is_deleted = false`,
-    [actorId, id],
-  ));
+  const remove = async (db: Pool | PoolClient) => {
+    const changed = await db.query(`UPDATE ${table} SET is_deleted=true, updated_by=$1 WHERE ${idColumn}=$2 AND NOT is_deleted`, [actorId,id]);
+    if (table === "packages") await db.query("UPDATE package_stops SET is_deleted=true,updated_by=$1 WHERE package_id=$2 AND NOT is_deleted", [actorId,id]);
+    return changed;
+  };
+  const result = isCatalogueTable(table) ? await catalogueWrite(table, async client => {
+    const found = await client.query(`SELECT 1 FROM ${table} WHERE ${idColumn}=$1 AND NOT is_deleted FOR UPDATE`, [id]);
+    if (!found.rowCount) return { rowCount: 0 };
+    await assertCatalogueDelete(client, table, id);
+    return protectedResourceMutation(table,id,{isDeleted:true},remove,client as PoolClient);
+  }) : await protectedResourceMutation(table,id,{isDeleted:true},remove);
   const ok = (result.rowCount ?? 0) > 0;
   if (ok) {
     await logActivity({

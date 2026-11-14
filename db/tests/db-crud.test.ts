@@ -1256,6 +1256,35 @@ t("IM4", "Images", "deleted targets and gallery limit guarded", "Reject missing/
   await rejects(() => images.listImages("drivers", 2147483647), e => e.status === 404, "missing record");
 });
 
+const routeStops = await import("../../src/lib/server/route-stops.ts");
+t("RT1", "RouteOptimization", "spot pins persist and resolve in requested order", "Coordinates are paired, nullable and read from the server catalogue, in longitude/latitude order.", async () => {
+  const region = await mkRegion(); const city = await mkCity(region.id);
+  const a = await mkSpot(city.id); const b = await mkSpot(city.id);
+  await geo.updateTouristSpot(a.id, { latitude: 28.6, longitude: 77.2 }, ACTOR);
+  await geo.updateTouristSpot(b.id, { latitude: 27.1, longitude: 78.1 }, ACTOR);
+  eq(JSON.stringify(await routeStops.resolveRouteLocations([b.id, a.id])), JSON.stringify([[78.1, 27.1], [77.2, 28.6]]), "ordered server coordinates");
+  await geo.updateTouristSpot(a.id, { latitude: null, longitude: null }, ACTOR);
+  await rejects(() => routeStops.resolveRouteLocations([a.id, b.id]), e => e.status === 422, "missing pin");
+});
+t("RT2", "RouteOptimization", "inactive spots and mixed regions rejected", "Hidden/inactive parent records cannot be routed, and a route stays in one region.", async () => {
+  const region = await mkRegion(); const city = await mkCity(region.id);
+  const a = await mkSpot(city.id); const b = await mkSpot(city.id);
+  await client.query("UPDATE tourist_spots SET latitude=28, longitude=77 WHERE tourist_spot_id=ANY($1)", [[a.id, b.id]]);
+  await client.query("UPDATE cities SET is_active=false WHERE city_id=$1", [city.id]);
+  await rejects(() => routeStops.resolveRouteLocations([a.id, b.id]), e => e.status === 400, "inactive city");
+  await client.query("UPDATE cities SET is_active=true WHERE city_id=$1", [city.id]);
+  await client.query("UPDATE tourist_spots SET is_deleted=true WHERE tourist_spot_id=$1", [a.id]);
+  await rejects(() => routeStops.resolveRouteLocations([a.id, b.id]), e => e.status === 400, "deleted spot");
+  const otherRegion = await mkRegion(); const otherCity = await mkCity(otherRegion.id); const otherSpot = await mkSpot(otherCity.id);
+  await rejects(() => routeStops.resolveRouteLocations([b.id, otherSpot.id]), e => e.status === 400, "mixed regions");
+});
+for (const [id, latitude, longitude] of [["RT3", 91, 77], ["RT4", 28, null], ["RT5", 28, 181]] as const) {
+  t(id, "RouteOptimization", "invalid coordinate constraint", "The database rejects out-of-range or unpaired spot coordinates.", async () => {
+    const region = await mkRegion(); const city = await mkCity(region.id); const spot = await mkSpot(city.id);
+    await rejects(() => client.query("UPDATE tourist_spots SET latitude=$1, longitude=$2 WHERE tourist_spot_id=$3", [latitude, longitude, spot.id]), e => e.code === "23514", "CHECK constraint");
+  });
+}
+
 // ── run ──
 let passed = 0;
 for (const c of cases) {

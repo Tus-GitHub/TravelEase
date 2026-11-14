@@ -71,39 +71,31 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
   const [locating, setLocating] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [flyTarget, setFlyTarget] = useState<{ point: LatLng; key: number } | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  // Set right before we programmatically change `query` (e.g. on result pick) so
-  // the debounced search doesn't immediately re-run and re-open the dropdown.
-  const skipSearchRef = useRef(false);
+  const searchAbort = useRef<AbortController|null>(null);
 
-  useEffect(() => {
+  useEffect(()=>()=>searchAbort.current?.abort(),[]);
+  const search = async () => {
     const q = query.trim();
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (skipSearchRef.current) {
-      skipSearchRef.current = false;
-      return;
-    }
+    searchAbort.current?.abort();
+    const controller=new AbortController();searchAbort.current=controller;
     if (q.length < 3) {
       setResults([]);
       return;
     }
-    debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`,{signal:controller.signal});
         const data = await res.json();
+        if(controller.signal.aborted)return;
+        if(!res.ok){setStatus(data.error??"Search is unavailable. Please try again later.");return;}
         setResults(Array.isArray(data.results) ? data.results : []);
         setOpen(true);
       } catch {
-        setResults([]);
+        if(!controller.signal.aborted)setResults([]);
       } finally {
-        setSearching(false);
+        if(!controller.signal.aborted)setSearching(false);
       }
-    }, 450);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [query]);
+  };
 
   const reverse = useCallback(
     async (v: LatLng) => {
@@ -164,7 +156,7 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
   };
 
   const chooseResult = (r: LatLng & ResolvedPlace) => {
-    skipSearchRef.current = true; // don't let the label we just set re-trigger a search
+    searchAbort.current?.abort();
     setQuery(r.label);
     setResults([]);
     setOpen(false);
@@ -193,8 +185,10 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
           <input
             type="text"
             value={query}
-            placeholder="Search a place or address"
-            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search a public place or area"
+            placeholder="Search a public place or area"
+            onChange={(e) => {searchAbort.current?.abort();setSearching(false);setQuery(e.target.value);setResults([]);setOpen(false);}}
+            onKeyDown={(e)=>{if(e.key==="Enter"){e.preventDefault();void search();}}}
             onFocus={() => results.length > 0 && setOpen(true)}
             className={`${fieldBase} pr-9`}
           />
@@ -204,6 +198,8 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
             </span>
           )}
         </span>
+        <Button type="button" variant="outline" size="sm" className="mt-2" disabled={searching||query.trim().length<3} onClick={search}>Search location</Button>
+        <p className="mt-1 text-xs text-muted">Search public places only. Searches are sent to OpenStreetMap; do not include personal details.</p>
         {open && results.length > 0 && (
           <ul className="absolute left-0 right-0 z-[1200] mt-1 max-h-56 overflow-auto rounded-xl border border-line bg-surface py-1 shadow-lg">
             {results.map((r, i) => (

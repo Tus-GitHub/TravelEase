@@ -1,6 +1,7 @@
+import type { Pool, PoolClient } from "pg";
+import { catalogueWrite, assertCatalogueParents } from "./_catalogue";
 import { getPool } from "../db";
-import { DependentRowsError } from "../db-errors";
-import { applyPartialUpdate, countActiveChildren, plural, softDelete } from "./_util";
+import { applyPartialUpdate, softDelete } from "./_util";
 
 // ─── Regions ───────────────────────────────────────────────────────────────────
 
@@ -68,18 +69,6 @@ export async function updateRegion(
 }
 
 export async function deleteRegion(id: number, actorId: string): Promise<boolean> {
-  const cities = await countActiveChildren("cities", "region_id", id);
-  if (cities > 0) {
-    throw new DependentRowsError(
-      `This region still has ${plural(cities, "city", "cities")}. Delete ${cities === 1 ? "it" : "them"} first.`,
-    );
-  }
-  const packages = await countActiveChildren("packages", "region_id", id);
-  if (packages > 0) {
-    throw new DependentRowsError(
-      `This region still has ${plural(packages, "package")}. Delete ${packages === 1 ? "it" : "them"} first.`,
-    );
-  }
   return softDelete("regions", "region_id", id, actorId);
 }
 
@@ -134,8 +123,8 @@ export async function listCities(): Promise<City[]> {
   return result.rows.map(toCity);
 }
 
-async function getCity(id: number): Promise<City | null> {
-  const result = await getPool().query(
+async function getCity(id: number, client?: Pool | PoolClient): Promise<City | null> {
+  const result = await (client ?? getPool()).query(
     `${C_SELECT} WHERE c.city_id = $1 AND c.is_deleted = false`,
     [id],
   );
@@ -152,21 +141,24 @@ export interface CityInput {
 }
 
 export async function createCity(input: CityInput, actorId: string): Promise<City> {
-  const result = await getPool().query(
-    `INSERT INTO cities
-       (region_id, name, latitude, longitude, is_pickup_point, is_airport, created_by, updated_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $7) RETURNING city_id`,
-    [
-      input.regionId,
-      input.name,
-      input.latitude,
-      input.longitude,
-      input.isPickupPoint,
-      input.isAirport,
-      actorId,
-    ],
-  );
-  return (await getCity(result.rows[0].city_id))!;
+  return catalogueWrite("cities", async db => {
+    await assertCatalogueParents(db, "cities", { ...input });
+    const result = await db.query(
+      `INSERT INTO cities
+         (region_id, name, latitude, longitude, is_pickup_point, is_airport, created_by, updated_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $7) RETURNING city_id`,
+      [
+        input.regionId,
+        input.name,
+        input.latitude,
+        input.longitude,
+        input.isPickupPoint,
+        input.isAirport,
+        actorId,
+      ],
+    );
+    return (await getCity(result.rows[0].city_id, db))!;
+  });
 }
 
 export async function updateCity(
@@ -193,18 +185,14 @@ export async function updateCity(
 }
 
 export async function deleteCity(id: number, actorId: string): Promise<boolean> {
-  const spots = await countActiveChildren("tourist_spots", "city_id", id);
-  if (spots > 0) {
-    throw new DependentRowsError(
-      `This city still has ${plural(spots, "tourist spot")}. Delete ${spots === 1 ? "it" : "them"} first.`,
-    );
-  }
   return softDelete("cities", "city_id", id, actorId);
 }
 
 // ─── Tourist spots ─────────────────────────────────────────────────────────────
 
 export interface TouristSpot {
+  latitude: number | null;
+  longitude: number | null;
   id: number;
   cityId: number;
   cityName: string;
@@ -215,6 +203,8 @@ export interface TouristSpot {
 }
 
 interface TouristSpotRow {
+  latitude: number | null;
+  longitude: number | null;
   tourist_spot_id: number;
   city_id: number;
   city_name: string;
@@ -226,6 +216,8 @@ interface TouristSpotRow {
 
 function toTouristSpot(r: TouristSpotRow): TouristSpot {
   return {
+    latitude: r.latitude,
+    longitude: r.longitude,
     id: r.tourist_spot_id,
     cityId: r.city_id,
     cityName: r.city_name,
@@ -238,7 +230,7 @@ function toTouristSpot(r: TouristSpotRow): TouristSpot {
 
 const TS_SELECT = `
   SELECT ts.tourist_spot_id, ts.city_id, c.name AS city_name, ts.name, ts.tag,
-         ts.description, ts.display_order
+         ts.description, ts.display_order, ts.latitude, ts.longitude
   FROM tourist_spots ts
   JOIN cities c ON c.city_id = ts.city_id
 `;
@@ -250,8 +242,8 @@ export async function listTouristSpots(): Promise<TouristSpot[]> {
   return result.rows.map(toTouristSpot);
 }
 
-async function getTouristSpot(id: number): Promise<TouristSpot | null> {
-  const result = await getPool().query(
+async function getTouristSpot(id: number, client?: Pool | PoolClient): Promise<TouristSpot | null> {
+  const result = await (client ?? getPool()).query(
     `${TS_SELECT} WHERE ts.tourist_spot_id = $1 AND ts.is_deleted = false`,
     [id],
   );
@@ -259,6 +251,8 @@ async function getTouristSpot(id: number): Promise<TouristSpot | null> {
 }
 
 export interface TouristSpotInput {
+  latitude?: number | null;
+  longitude?: number | null;
   cityId: number;
   name: string;
   tag: string;
@@ -269,12 +263,15 @@ export async function createTouristSpot(
   input: TouristSpotInput,
   actorId: string,
 ): Promise<TouristSpot> {
-  const result = await getPool().query(
-    `INSERT INTO tourist_spots (city_id, name, tag, description, created_by, updated_by)
-     VALUES ($1, $2, $3, $4, $5, $5) RETURNING tourist_spot_id`,
-    [input.cityId, input.name, input.tag || null, input.description || null, actorId],
-  );
-  return (await getTouristSpot(result.rows[0].tourist_spot_id))!;
+  return catalogueWrite("tourist_spots", async db => {
+    await assertCatalogueParents(db, "tourist_spots", { ...input });
+    const result = await db.query(
+      `INSERT INTO tourist_spots (city_id, name, tag, description, created_by, updated_by, latitude, longitude)
+       VALUES ($1, $2, $3, $4, $5, $5, $6, $7) RETURNING tourist_spot_id`,
+      [input.cityId, input.name, input.tag || null, input.description || null, actorId, input.latitude ?? null, input.longitude ?? null],
+    );
+    return (await getTouristSpot(result.rows[0].tourist_spot_id, db))!;
+  });
 }
 
 export async function updateTouristSpot(
@@ -287,18 +284,12 @@ export async function updateTouristSpot(
     "tourist_spot_id",
     id,
     input,
-    { cityId: "city_id", name: "name", tag: "tag", description: "description" },
+    { cityId: "city_id", name: "name", tag: "tag", description: "description", latitude: "latitude", longitude: "longitude" },
     actorId,
   );
   return ok ? getTouristSpot(id) : null;
 }
 
 export async function deleteTouristSpot(id: number, actorId: string): Promise<boolean> {
-  const stops = await countActiveChildren("package_stops", "tourist_spot_id", id);
-  if (stops > 0) {
-    throw new DependentRowsError(
-      `This spot is used by ${plural(stops, "package stop")}. Remove ${stops === 1 ? "it" : "them"} first.`,
-    );
-  }
   return softDelete("tourist_spots", "tourist_spot_id", id, actorId);
 }

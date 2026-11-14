@@ -25,6 +25,7 @@ interface VehicleType {
 }
 
 interface Vehicle {
+  perKmRate: number | null;
   id: number;
   vehicleTypeId: number;
   vehicleTypeTitle: string;
@@ -169,6 +170,7 @@ function VehiclesTab() {
       registrationNumber: "",
       seatingCapacity: "",
       basePricePerDay: "",
+      perKmRate: "",
       features: "",
     },
     onCreate: (d) => r.create(toBody(d)),
@@ -216,6 +218,7 @@ function VehiclesTab() {
             </FormField>
             <FormField label="Vehicle Type" icon="tag">
               <select
+                aria-label="Vehicle Type"
                 required
                 value={form.draft.vehicleTypeId}
                 onChange={(e) => form.patch({ vehicleTypeId: e.target.value })}
@@ -249,6 +252,10 @@ function VehiclesTab() {
                 className={fieldBase}
                 placeholder="7"
               />
+            </FormField>
+            <FormField label="Price / km (₹)" icon="tag">
+              <input aria-label="Price / km (₹)" type="number" min={0.01} max={999999} step={0.01} required value={form.draft.perKmRate} onChange={e=>form.patch({perKmRate:e.target.value})} className={fieldBase} placeholder="Set your per-kilometre fare"/>
+              <span className="mt-1 block text-xs text-muted">Changing this applies the rate to point-to-point, airport and outstation trips. Base fares, minimum km and tax can be managed in Car pricing.</span>
             </FormField>
             <FormField label="Price / Day (₹)" icon="tag">
               <input
@@ -321,6 +328,7 @@ function VehiclesTab() {
                   <td className="px-5 py-3.5 text-muted">{v.seatingCapacity}</td>
                   <td className="px-5 py-3.5 text-muted">
                     ₹{v.basePricePerDay.toLocaleString("en-IN")}
+                    <span className="block text-xs">{v.perKmRate==null?"Per-km rate not set":`₹${v.perKmRate}/km`}</span>
                   </td>
                   <td className="px-5 py-3.5">
                     <Toggle
@@ -338,6 +346,7 @@ function VehiclesTab() {
                           registrationNumber: v.registrationNumber,
                           seatingCapacity: String(v.seatingCapacity),
                           basePricePerDay: String(v.basePricePerDay),
+                          perKmRate: v.perKmRate==null?"":String(v.perKmRate),
                           features: v.features.join(", "),
                         })
                       }
@@ -370,6 +379,7 @@ function toBody(d: {
   registrationNumber: string;
   seatingCapacity: string;
   basePricePerDay: string;
+  perKmRate: string;
   features: string;
 }) {
   return {
@@ -378,6 +388,7 @@ function toBody(d: {
     registrationNumber: d.registrationNumber,
     seatingCapacity: Number(d.seatingCapacity),
     basePricePerDay: Number(d.basePricePerDay),
+    perKmRate: Number(d.perKmRate),
     features: d.features
       .split(",")
       .map((s) => s.trim())

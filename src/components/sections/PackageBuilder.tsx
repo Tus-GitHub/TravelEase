@@ -11,6 +11,8 @@ import Icon from "@/components/common/Icon";
 import Badge from "@/components/common/Badge";
 import AnimateInView from "@/components/common/AnimateInView";
 import PackageCard from "@/components/cards/PackageCard";
+import RouteOptimizer from "@/components/packages/RouteOptimizer";
+import ItineraryIdeas from "@/components/packages/ItineraryIdeas";
 import MapSpotSelector from "@/components/ui/MapSpotSelector";
 import { useAuth } from "@/context/AuthContext";
 import type { Region, TouristSpot, TravelPackage } from "@/types";
@@ -267,6 +269,8 @@ function RouteBuilder({
       <p className="mb-6 text-center text-muted">
         Use the arrows to set your preferred travel order
       </p>
+
+      <RouteOptimizer key={spots.map(s => s.id).join(",")} spots={spots} onApply={onChange} />
 
       <motion.ol className="space-y-3" layout>
         <AnimatePresence>
@@ -568,6 +572,10 @@ function PackageSummary({
             <p className="mt-4 text-center text-xs text-faint">
               Choose your travel dates and see the full price on the next step.
             </p>
+            <div className="mt-5 rounded-2xl border border-line bg-surface-muted p-4 text-center">
+              <p className="mb-3 text-sm text-muted">Planning an overnight stay? Explore hotel options separately.</p>
+              <Button href={`/hotels?region=${region.id}`} variant="outline" size="sm" iconLeft="map-pin">Explore hotels</Button>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -740,6 +748,12 @@ export default function PackageBuilder({ regions, packages, cms }: PackageBuilde
                   exit="exit"
                   transition={{ duration: 0.25, ease: "easeInOut" }}
                 >
+                  <ItineraryIdeas
+                    key={`${region.id}:${user?.id ?? "guest"}:${selectedSpots.map(spot => spot.id).join(",")}`}
+                    region={region}
+                    selected={selectedSpots}
+                    onApply={(spots) => { setSelectedSpots(spots); setOrderedSpots(spots); setStep(3); }}
+                  />
                   <MapSpotSelector
                     region={region}
                     selected={selectedSpots}

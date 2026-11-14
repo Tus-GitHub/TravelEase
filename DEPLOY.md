@@ -66,6 +66,126 @@ References: [pricing](https://www.authgear.com/pricing/),
 [UserInfo](https://docs.authgear.com/reference/apis/oauth-2.0-and-openid-connect-oidc/userinfo),
 [PKCE](https://docs.authgear.com/get-started/native-mobile-app/using-authgear-without-sdk-client-side).
 
+### Development PostgreSQL hardening (2026-11-05)
+
+Local development now uses `DATABASE_URL_APP` for the restricted `travel_app_dev`
+login. The generated credential is stored only in ignored `.env.local`.
+`DATABASE_URL` remains the owner connection used by migrations, seeds and database
+test fixture setup. `DATABASE_URL_PRODUCTION` remains a reference for explicit
+production operations. No production credentials/settings were changed.
+
+`npm run db:setup-dev-role` is an explicit, development-only operation, never
+invoked by deployments. It verifies the git branch and distinct dev/production
+endpoints, creates the SQL role if absent, applies grants, verifies restrictions,
+then saves the runtime URL. Existing role passwords are not rotated on rerun.
+The role gets catalogue/business DML, read-only lookup tables, insert/read audit
+tables and sequence usage; no migration-ledger access, schema creation, role or
+database creation, ownership, or RLS bypass. Public-schema CREATE is revoked from
+PUBLIC on development. App authorization still controls which customer records
+each request can access: these grants do not implement row-level security.
+
+After adding approved tables through migrations, explicitly rerun the dev role
+setup and tests to grant the appropriate runtime access. New tables are not
+automatically granted to the app. Review the read-only/append-only table lists
+in the script when introducing another sensitive table.
+
+Runtime connections use explicit `sslmode=verify-full`, a 10-second connection
+acquisition timeout, 15-second statement timeout, 5-second lock timeout and
+15-second idle-transaction timeout. Idle pool errors log only a sanitized code.
+Do not retry non-idempotent writes automatically after a connection error.
+Restart localhost after credential changes so cached pools are replaced.
+
+Checks: `npm run test:db-hardening`, `npm run test:concurrency`, typecheck and lint.
+Hardening tests roll back their permission/timeout probes. Concurrency tests use
+the restricted login for app calls when configured, the owner only for temporary
+fixture setup/cleanup, and in-memory email. Neither test contacts production.
+
+Production rollout is still unapproved. Publishing code alone does not create
+a production runtime role. A future release needs a separately prepared role,
+grants, credentials and validation. Until `DATABASE_URL_APP` is configured there,
+the application retains its existing `DATABASE_URL` fallback.
+
+### Development recovery drill and migration drift checks
+
+Development drift checks now have a dedicated command: `npm run db:check:dev`.
+It reads development only, comparing full public-schema definitions (precise
+column types/defaults, constraints, indexes, triggers, overloaded functions,
+views, RLS/policies, sequence configuration and extensions), table/schema grants,
+the migration ledger and LF-normalized SHA-256 migration-file hashes against
+`db/dev-schema-baseline.json`. New pending local migration files are allowed;
+changed/deleted baseline files or applied files without a baseline hash fail.
+This is an observed baseline established on 2026-11-05, not retrospective proof
+that historical applied SQL bytes match today's files. Do not regenerate it to
+silence drift: investigate, reconcile through approved append-only migrations,
+then review an explicit baseline update. Recording with `--record-baseline`
+refuses to overwrite an existing baseline. No checksum column was added.
+
+The existing two-environment `db:check` gate now also compares full definitions.
+It fails closed when pending migrations coexist with schema differences until
+isolated migration replay verifies the expected changes; pending filenames alone
+are no longer sufficient evidence. This deliberately tightens the earlier runbook
+rule. Do not publish around that failure. Environment-specific grants are checked
+by the dev baseline, not equated to production grants. The production comparison
+has not been executed during this development-only task.
+
+`db/restore-schema-review.json` lists the proposed temporary restore database
+`travel_restore_drill_20261105` and every existing table/column/type. Explicit
+user approval of that inventory and temporary-database cleanup is required before
+running `db/restore-drill.mjs --approved-schema=<SHA256 of that file>`, with
+`PG18_BIN` set to PostgreSQL 18's client directory. The script verifies the source
+schema still matches the approved inventory, refuses an existing target, dumps
+a consistent exported snapshot over a direct development connection, and restores
+in one transaction. It compares schema definitions and all table row counts/data
+fingerprints, then exercises booking/coupon concurrency with in-memory email.
+The temporary database and private temporary dump are removed afterward; only
+a non-sensitive verification report is retained. It never connects to production.
+Application grants and ownership are intentionally excluded from the archive;
+this drill does not prove production/PITR recovery or runtime-role restoration.
+
+The development server reports PostgreSQL 18.6. System-installed client tools
+are PostgreSQL 17, which cannot dump a newer-major server. PostgreSQL 18.6 portable
+clients were downloaded from EDB into the local temporary tools directory for
+this drill; no installer or Windows service was added. Set PG18_BIN to that
+directory (or another verified PostgreSQL 18 bin directory) before rerunning.
+The portable Windows client uses Node's trusted public CA bundle with verify-full,
+never disabled certificate verification. The dump explicitly includes pgcrypto
+along with public: selecting a schema alone does not include that extension.
+An empty public schema in the newly created target is dropped without CASCADE
+before restore. The source schema is never dropped or modified.
+
+Restore-only comparisons recognize PostgreSQL's lossless distribution of an
+unbounded varchar-array-to-text-array cast onto each literal in a CHECK expression.
+Allowed values, bounded casts, validation state and all other definition differences
+remain checked. Routine development and release drift checks use exact definitions.
+
+For an approved recovery drill:
+
+1. Verify the actual Neon history window in the account. Choose and record the
+   acceptable recovery point (data loss) and recovery time with the project owner.
+2. Use a direct, certificate-verified **development** owner connection for
+   `pg_dump --format=custom`; supply credentials through a protected passfile or
+   process environment, never a command-line URL or committed file.
+3. Keep the dump in access-controlled, encrypted backup storage outside this
+   repository. A dump contains customer and authentication data; don't publish it
+   or put it in Cloudinary. Set explicit retention and test scheduled runs later.
+4. Restore with `pg_restore --exit-on-error --no-owner --no-acl` into a separate
+   empty recovery database/branch only after approval for the restored schema.
+   Never restore over development or production as a test.
+5. Verify migration ledger, constraints/indexes, catalogue counts and representative
+   auth/booking flows with external email/integrations disabled. Reapply restricted
+   role grants separately, record restore duration, and remove the approved test
+   environment afterward. Listing archive contents alone is not a restore test.
+
+The approved drill uses a temporary archive and database, both cleaned up afterward.
+See db/restore-drill-report.json for the last successful result; an absent report
+does not indicate success. No recurring backup schedule or production recovery
+has been configured. A local code rollback does not undo database migrations;
+keep migrations compatible with the still-serving app.
+
+References: [Neon branch-scoped roles](https://neon.com/docs/manage/roles),
+[Neon backup guidance](https://neon.com/docs/manage/backup-pg-dump),
+[PostgreSQL pg_dump compatibility](https://www.postgresql.org/docs/current/app-pgdump.html).
+
 **Prereqs (done):** repo `Tus-GitHub/TravelEase` on GitHub; Neon project with `production` and
 `development` branches.
 
@@ -200,7 +320,355 @@ forward migration to undo.)
 | Neon free | $0 | 0.5 GB storage; autosuspends when idle (~0.5s cold start on the next request). |
 | `*.vercel.app` domain | $0 forever | A custom domain (~$10–15/yr, bought elsewhere) attaches later in Vercel → Settings → Domains with no code change. |
 
-## JSON page CMS (development, 2026-11-06)
+
+## Custom route suggestions (Phase 3.7a; development only)
+
+Tourist spots have optional latitude/longitude pins (migration 027, approved for
+**development only**). In Admin -> Geography -> Tourist Spots -> Edit, pin a verified
+road-accessible entrance or enter both coordinates. Unknown pins stay empty; the
+app never substitutes city centres or guessed coordinates.
+
+Create an openrouteservice key through https://account.heigit.org/signup and set
+`OPENROUTESERVICE_API_KEY` in `.env.local`. Restart localhost afterward. The key
+stays server-side; do not use NEXT_PUBLIC or commit it. The user chose to add this
+key later. Live provider checks are pending; automated provider tests use mocks.
+
+Signed-in travellers can choose 4-5 stops in Build Your Own -> Set Route, then
+Suggest route. The server loads active spots and parent cities/regions, preserves
+the endpoints, and compares middle-stop orders using the openrouteservice
+`driving-car` time matrix. Preview/Keep my order/Use suggested route never saves
+or books automatically. Estimates exclude live traffic, breaks and stop visits;
+they are not vehicle-specific navigation and never change the pricing engine.
+Guests retain manual ordering and booking. Missing pins/configuration, provider
+errors and disconnected routes keep manual ordering available.
+
+Requests are limited to five distinct spot IDs and 1 KiB; cross-origin requests
+are rejected. Upstream timeout is 12 seconds. A warm-instance cache (100 entries,
+one hour) and one concurrent request / 20 requests per minute limit repeated
+provider calls. These are per-instance protections, not a distributed quota;
+monitor the provider account quota before a production rollout.
+
+No production migration or environment change is authorised for this chunk yet.
+After a separate publish approval, add the key to Vercel Production and let the
+normal deployment apply migration 027. Do not run production migration manually.
+Run `npm run test:routes`, `npm run test:db`, typecheck and lint before release.
+Provider reference: https://giscience.github.io/openrouteservice/api-reference/endpoints/matrix/
+
+## AI itinerary ideas (Phase 3.7b; development only)
+
+Build Your Own -> Choose Spots includes an optional AI idea card for signed-in
+travellers. Choose up to three interests and 2-5 stops. Existing selected stops
+must remain in the suggestion. Preview the catalogue-backed stops in the branded
+dialog, then Keep my choices or Use these stops to enter the existing route editor.
+Applying does not save, book, quote a price or call the road provider automatically.
+The manual map picker remains available, including for guests/provider failures.
+
+Local setup (not configured or live-tested during implementation):
+
+1. Add `OPENAI_API_KEY` and `OPENAI_ITINERARY_MODEL` to ignored `.env.local`.
+   Choose an account-available model supporting Responses and strict JSON-schema
+   Structured Outputs. There is deliberately no silently selected model or fallback.
+   These are server-only variables; never use NEXT_PUBLIC or commit their values.
+2. Restart localhost. Using a development account, request a 2-5-stop itinerary,
+   check the real provider result, preview/cancel/apply and confirm kept stops.
+   Real API usage may incur charges; configure provider project limits/monitoring.
+3. Before a separately approved production release, verify the chosen model,
+   endpoint/deployment execution limits and provider account settings. No production
+   environment variables, deployment or database changes are authorised here.
+
+`POST /api/itineraries/suggest` requires the existing session and rejects foreign
+origins. A 2 KiB request accepts only region ID, count, kept IDs and enumerated
+interests. The server loads active/nondeleted spots and their city/region parents;
+regions above 60 candidates fail explicitly rather than silently omitting places.
+Only bounded public catalogue names/tags/descriptions/city names and preferences
+are sent to OpenAI. No customer identity/contact data, images, credentials or
+booking details are sent. Catalogue text is treated as data, with no model tools.
+
+The Responses request uses strict structured IDs and `store: false`. This disables
+response storage for retrieval; it is not a claim of zero provider retention.
+The model cannot supply names, descriptions, prices, schedules or opening hours.
+The app checks exact count, uniqueness, catalogue membership and kept IDs, then
+reloads selected records to reject spots withdrawn during generation. It returns
+canonical database metadata only. AI ordering is an idea, not optimized navigation;
+road timing remains the separate 3.7a integration.
+
+Provider calls have a 20-second timeout, 1,500 output-token cap, 64 KiB response
+limit and no automatic retries. Warm-instance limits: 3 requests/user/minute,
+10 total/minute, 2 concurrent, bounded user tracking. These are not distributed
+quotas or hard account spend limits. Failures/refusals/incomplete results are
+sanitized; manual selection remains available. No new dependencies or schema.
+
+Checks: `npm run test:itineraries` (mock provider), `npm run test:itinerary-db`
+(explicit dev guard, rollback fixtures, restricted runtime login),
+`npm run test:routes`, `npx tsc --noEmit`, `npm run lint`.
+Official API reference: https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses
+
+## Hotel search and enquiry (Phase 3.7c; development sandbox only)
+
+The user selected search + enquiry for the two-day target. `/hotels` is linked
+from Packages, individual packages, the builder summary and the footer. It uses
+existing active cities/regions with valid stored coordinates, the existing session
+and My Support conversations. No tables, columns, migrations or dependencies were
+added. This slice does not implement supplier reservations, prebooking, payments,
+cancellations, hotel inventory management or automatic inclusion in trip prices.
+
+1. Create a free LiteAPI account at https://dashboard.liteapi.travel and save your
+   own sandbox key as `LITEAPI_SANDBOX_KEY` in ignored `.env.local`. Sandbox keys
+   start with `sand_` or `sandbox_`. Restart localhost. Never use NEXT_PUBLIC.
+2. Sign in with a development customer account. Open Packages -> Explore hotels,
+   choose a city, a 1-30-night stay within the next year, 1 room and 1-4 adults.
+   Children, extra rooms and other unsupported requests go through manual enquiry.
+   Validate city pins against real destinations before treating proximity as useful.
+3. Search, inspect photos/room/meal plan/sample full-stay total and property fees,
+   cancel the branded preview, then explicitly send an enquiry. Verify it appears
+   in that customer's My Support and Admin Support. Sending writes a support
+   conversation only; it never reserves a hotel or charges anyone. Staff must
+   independently verify availability, final price and terms. A dropped confirmation
+   requires checking My Support before retrying; there is no submission idempotency.
+4. Missing provider configuration still allows a general stay enquiry. Do not
+   interpret sandbox inventory, prices or cancellation labels as live offers.
+
+The provider adapter makes only `POST https://api.liteapi.travel/v3.0/hotels/rates`
+requests. Existing server-side coordinates are authoritative; client input cannot
+supply coordinates, credentials, prices or provider URLs. Authentication,
+same-origin checks, strict 1 KiB input, fresh destination revalidation, 15-second
+provider timeout, 1 MiB response limit and no retries bound requests. Only dates,
+city coordinates, adults and nationality are sent; no customer identity/contact or
+booking data. Images use the documented HTTPS static.cupid.travel CDN; unsupported
+or failed images show a placeholder. One-room occupancy must match the request.
+
+Only INR public selling prices are displayed; missing/mismatched retail or public
+selling prices become Quote on request. Extra property fees are shown separately.
+The adapter rejects non-sandbox responses, production credentials and execution
+with VERCEL_ENV=production. Warm-instance limits are 5/user/minute, 20 total/minute
+and 2 concurrent; they are not distributed quotas. Review provider/account limits
+and deployment duration before any future rollout.
+
+Validation on 2026-11-05: 10 mocked hotel test groups, development destination
+rollback tests through the restricted runtime role, AI regression tests, desktop/
+mobile/dark browser checks and the dev drift gate passed. A read-only live adapter
+smoke using the provider's officially published public sample sandbox key returned
+9 normalized hotels with INR public prices and allowed photos. That sample key was
+transient, never saved to the app/environment or committed. Own-account search
+remains pending the user's key. The initial browser tests mocked provider replies
+and ticket delivery. A later real general-enquiry acceptance run is recorded below;
+staff-reply email and own-provider search-result enquiries remain separate checks.
+
+Checks: `npm run test:hotels`, `npm run test:hotel-db`,
+`npm run test:itineraries`, `npx tsc --noEmit`, `npm run lint`,
+`npm run db:check:dev`. No production access or publication is authorized.
+
+Official references:
+- https://docs.liteapi.travel/docs/getting-a-sandbox-key
+- https://docs.liteapi.travel/reference/post_hotels-rates
+- https://docs.liteapi.travel/docs/hotel-rates-api-json-data-structure
+- https://docs.liteapi.travel/reference/coding-agent-skill (public sample test key)
+
+## Public contact form and admin inbox (development implementation)
+
+Change the receiving email in **Admin -> Site settings -> Edit -> Support email /
+contact inbox**. This reuses the existing `site_settings` row with key
+`contact_email`; no new column, table, migration or environment variable. The
+user-selected inbox has been saved on development only. It is also the public
+email shown in the footer and contact page. Phone, address and SMTP credentials
+were not changed. Public display caches may take a few minutes to refresh; new
+contact submissions query the saved inbox directly without that cache.
+
+The inbox must be one plain email address. Server-side validation rejects multiple
+recipients, header syntax and invalid addresses before any setting is written.
+Clearing it disables contact delivery; missing/invalid settings or database errors
+also fail safely. The sender continues to use the existing verified `EMAIL_FROM`
+and `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` environment variables.
+Visitor email is Reply-To only, never From/To/CC/BCC. No automatic email is sent to
+the visitor. Messages are delivered by email, not stored as support tickets.
+
+`POST /api/contact` accepts guests. It validates same-origin browser requests,
+JSON type, a 20 KiB body, bounded name/email, known reason, 10-4,000-character
+message, UUID submission ID and empty bot-trap field. Client-supplied recipients,
+roles and extra fields are rejected. HTML is escaped; file/URL attachment access
+is disabled. The contact transport reuses the existing email service/config with
+10s connection/greeting/DNS waits and 15s socket inactivity timeout, requiring TLS
+for non-implicit-TLS connections. Other email callers keep their original options.
+Reference: https://nodemailer.com/smtp and https://nodemailer.com/message.
+
+The server waits for SMTP acceptance of the intended recipient and returns a
+CONTACT reference only then. A queued/accepted email can still bounce or enter
+spam later; the UI says submitted by email, not guaranteed delivery. Errors never
+show success or clear the message. The browser waits up to45 seconds, preserves
+the same submission ID for unchanged retries and warns when delivery is uncertain.
+There are no automatic retries. An uncertain send can still have reached SMTP.
+
+Warm-instance limits: 3 attempts/email/15min, 25 total/15min, 2 concurrent and at
+most200 retained submission records. Pending/accepted/uncertain retries with the
+same ID and content share the first result for15 minutes; a changed payload with
+the same ID is rejected. Only hashes/status/promises are retained in this cache.
+These controls reset on cold start and do not coordinate between instances;
+they are not durable idempotency, a provider spend limit or complete bot protection.
+Review deployment/provider limits and stronger shared abuse controls before public
+rollout. Any future table/column still requires explicit names/types approval.
+
+Verification: `npm run test:contact` (12 groups, mocked SMTP and HTTP handler),
+`npm run test:contact-db` (dev-only existing-setting changes, all rolled back),
+`npx tsc --noEmit`, `npm run lint`, `npm run db:check:dev`.
+Browser checks cover failure/network/malformed responses, retained text, retry ID,
+busy states, receipts/focus/reset, mobile/dark and the existing branded admin editor.
+Automated regression tests send no real email. Separately, the user authorized one
+real localhost browser test on2026-11-05. SMTP accepted CONTACT-842AF92E58F3 at
+18:45 IST, the real UI displayed the receipt, and the user confirmed Received in
+Inbox. A preceding403 did not reach SMTP and exposed Next's normalized server
+hostname: origin validation now uses actual Host plus request protocol for contact
+submission and admin inbox edits, rejecting malformed hosts and foreign origins
+without trusting arbitrary forwarded-host headers. Regression cases cover this.
+Target-origin reference: https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#identifying-the-target-origin
+
+Before an authorized release, verify Reply-To client behavior, provider bounces,
+hosting execution limits and the deployed host/proxy origin behavior. This one
+received test does not prove all future deliveries. Production settings have not
+been changed; configure its inbox only as part of a separately approved action.
+
+### Localhost origin checks for hotel, itinerary and routing APIs
+
+Development follow-up on2026-11-05: `/api/hotels/search`,
+`/api/itineraries/suggest` and `/api/routes/optimize` now use the same
+`matchesRequestOrigin` helper as contact submission. It checks the actual Host
+with the request protocol, retains exact port/scheme checks, rejects cross-site
+requests and ignores untrusted forwarded-host headers. Existing session guards
+run first.
+
+With the development server on port3000, run `npm run test:integration-origins`.
+It requires the development git branch, local execution and distinct development
+and production endpoints. It connects only to the restricted development runtime
+DB, creates one temporary customer/session in existing tables, then removes both
+and verifies cleanup. It does not create tables or columns.
+
+All54 HTTP checks passed on both localhost and127.0.0.1: unauthenticated401,
+authenticated same-origin validation400, and rejected origins403. An optional
+`--browser-module=<absolute path to an installed Playwright module>` argument
+adds Chrome checks; all6 passed using browser-generated Origin headers without
+API mocks. Pass this argument after `npm run test:integration-origins --`.
+The400 responses are intentional invalid-input tests before provider calls;
+they do not establish successful hotel/AI/routing provider responses. No external
+provider requests, emails or bookings are generated. Provider setup and deployed host/proxy
+acceptance remain separate from this dev-only verification.
+
+### Real hotel enquiry handoff (development acceptance)
+
+On2026-11-05, the real localhost browser/API/development-DB flow passed: general
+hotel-help preview/cancel (no write), explicit Send (one ticket/message), customer
+thread and follow-up, admin thread view, branded status popup to close, then
+customer closed state. The16 API checks cover authentication, ownership/admin
+restrictions, malformed JSON/booking IDs/oversized input, foreign origins and
+replies after closure. Three temporary test accounts/sessions and the enquiry with
+its messages were removed and verified absent. No API/auth mocks were used.
+
+The test exposed malformed JSON500s; support write routes now require bounded
+JSON objects (20 KiB) and the shared origin guard. A malformed linked booking ID
+returns400 before querying the UUID column. Existing role/ownership rules remain.
+
+Run `npm run test:support` for four isolated validation regressions. With the local
+development server on port3000 and Chrome/Playwright already installed, run:
+
+```powershell
+npm.cmd run test:hotel-enquiry -- "--browser-module=<absolute path to installed Playwright module>"
+```
+
+The smoke requires the development branch and distinct development/production
+endpoints, and connects only with the restricted dev runtime URL. It uses existing
+tables, no DDL. It deliberately exercises admin status changes without sending a
+staff reply, because staff replies trigger SMTP. No email, notification, provider
+call or booking is generated. Own-provider search and staff-reply email delivery
+are not established by this check. Production remains untouched.
+
+### Booking, offline-payment and refund acceptance (development)
+
+Verified on2026-11-05 with real Chrome, Next handlers and the development DB:
+quote/coupon -> booking -> admin confirms offline payment -> customer cancels ->
+admin records refund method/reference -> customer sees Refunded. DB assertions
+cover quote/saved amount parity, coupon use, ordered history and vehicle holds.
+The suite also exercises curated pricing authority, cancellation tiers and waiver,
+unpaid cancellation, roles/ownership, duplicate actions and competing settlements.
+
+The test exposed a settlement race; refunds now transition from pending with one
+conditional UPDATE, so a competing action returns409 without overwriting the
+winner or producing a second settlement audit entry. Method/reference lengths
+are bounded before SQL. Curated package type/duration come from the catalogue;
+selected vehicle type/activity/capacity are checked before booking. Quote/booking/
+refund mutations use the shared origin helper and object JSON limits (64 KiB for
+booking creation, 20 KiB for the other handlers).
+
+```powershell
+npm.cmd run test:booking-acceptance -- "--browser-module=<absolute path to installed Playwright module>"
+```
+
+Requires Chrome/Playwright already installed, a free loopback port3103, the
+development git branch, DATABASE_URL_APP on the dev endpoint and distinct
+DATABASE_URL_PRODUCTION for hostname exclusion only. No production connection is
+opened. Owner credentials create/inspect/remove synthetic fixtures in existing
+tables; application calls use the restricted runtime credential. No DDL runs.
+
+The runner copies source/config, never .env files, into an isolated temporary Next
+app and links existing dependencies. This avoids Next14's custom-server config
+override limitation and the user's localhost build cache. SMTP points only to a
+local receiving sink accepting this run's fake addresses. Server, sink, fixtures
+and temporary app are cleaned afterward; cleanup checks paths before recursive
+removal and unlinks the dependency junction first. Optional `--artifacts=<path>`
+saves a customer-state screenshot.
+
+Final result:49 API checks, real browser flow and18 locally captured notifications
+passed. Pricing42, state25, refund-policy22, contention10, rollback DB102,
+typecheck, lint and dev schema/checksum checks passed. No real money or external
+email was sent. Actual collection/refund reconciliation and booking-email inbox
+delivery are separate acceptance tasks. This does not introduce a collection
+ledger, payment gateway, submission idempotency or notification outbox.
+
+### Email/password authentication acceptance (development)
+
+Verified on2026-11-05–06: real Chrome signup -> locally captured verification link ->
+verified session -> logout popup -> login/Remember Me -> forgot-password -> reset.
+Signup does not issue a session. Old passwords and existing sessions are rejected
+after reset. The saved email token is hashed; links are expiring and single-use.
+
+Auth token redemption now uses one transaction with a lock on the owning active
+user. Verification/password/session changes commit together, and successful reset
+retires outstanding reset and verification links. Password login takes the same
+lock before checking the hash and creating a session, preventing an old-password
+login from surviving a concurrent reset. Resend issuance uses that lock for the
+existing one-minute per-account cooldown, including consumed tokens.
+
+Auth mutations use the shared origin guard. JSON endpoints require object bodies
+under20 KiB with typed fields and identity column limits; passwords are capped at
+1,024 characters. Form failures now show retryable errors without losing input or
+claiming success. Signup requires confirmation; login return paths reject external
+destinations, backslashes and control characters. Forgot/resend still give neutral
+responses for well-formed unknown accounts.
+
+```powershell
+npm.cmd run test:auth-acceptance -- "--browser-module=<absolute path to installed Playwright module>"
+```
+
+Uses the same isolated loopback3103 server/source-copy and local SMTP sink as the
+booking runner above. Requires development git branch and distinct dev/prod
+endpoints; production URL is used only to exclude its hostname. Owner credentials
+inspect/clean synthetic fixtures in existing tables; application calls and direct
+transaction tests use the restricted runtime connection. No DDL or external mail.
+Optional `--artifacts=<path>` saves the reset-complete browser screenshot.
+
+Final result:75 HTTP checks plus browser/DB assertions, 9 emails captured locally,
+and verified cleanup of users/sessions/tokens/audit entries. Coverage includes
+same-token and sibling-token reset contention, concurrent resends, concurrent
+login/reset, expired/disabled accounts, neutral unknown emails, client role claims,
+duplicate signup, malformed/oversized bodies, foreign origins and session expiry.
+An injected transaction failure verifies credentials, verification state, sessions
+and token consumption all roll back. Only UI error responses are mocked; successful
+auth requests and email-link journeys run against real handlers and development DB.
+Typecheck/lint,102 existing rollback DB checks and dev schema/checksums (27) pass.
+
+This verifies email/password auth on development. Real Google OAuth, auth-email
+Inbox delivery and production acceptance are separate checks. The account resend
+cooldown does not replace the broader login/signup/IP abuse limits in plan.md §30.
+No production connection, schema change or deployment was made.
+
+## JSON page CMS (published, 2026-11-06)
 
 Open `/admin/pages` through **Pages / CMS** in the admin sidebar. Homepage and
 About are initialized from the existing site content. Administrators can create
@@ -211,13 +679,13 @@ The editor uses existing admin auth, theme components and Cloudinary configurati
 no extra provider or dependency is required. Full guide/schema: docs/CMS_PLAN.md.
 
 JSON documents are stored in the two user-approved tables `cms_pages` and
-`cms_page_revisions`. Migration028 is applied on DEVELOPMENT only and must never
+`cms_page_revisions`. Migration028 is applied on development and production; never
 be edited. `db/cms-setup-dev.mjs --dev` applied it after checking the previous27
 baseline/checksums, verified only reviewed additions, archived the old baseline
 to `db/dev-schema-baseline-before-cms.json`, and advanced the reviewed baseline
 to28. Narrow grants use the existing runtime role; future dev role setup retains
-SELECT/INSERT-only access to the revisions table. No production migration, grants,
-connection or deployment was performed.
+SELECT/INSERT-only access to the revisions table. The separately authorized production
+release used Vercel predeploy and the existing owner connection; no new role grants.
 
 Draft and publication are separate JSON snapshots. A version check rejects stale
 updates, and publication plus its revision commits in one transaction. Restoring
@@ -254,12 +722,11 @@ rollback. Desktop/mobile visual review, typecheck/lint/whitespace checks, an iso
 optimized Next build, fixture cleanup and dev schema/checksums28 also pass.
 
 **CMS Publish on localhost publishes content to the DEVELOPMENT site only.** It
-is separate from deploying code to production. A later explicitly authorized
-release must still use the existing db:check/publish runbook; production migrations
-run automatically. Also review any restricted production role's grants for the new
-tables before release. Development draft/content edits are not copied to production
+is separate from deploying code to production. The authorized release used the
+existing db:check/publish runbook and automatic production migrations. Future releases
+must follow those gates too. Review any future restricted production role's grants
+for these tables. Development draft/content edits are not copied to production
 by a code deployment; migration028 seeds the initial homepage/About snapshot there.
-
 
 ## CMS release rehearsal (2026-11-06)
 
@@ -270,6 +737,13 @@ The enhanced db:check requires current development baseline/hash parity and eith
 full production parity or fresh isolated-replay proof bound to both endpoints,
 schemas and all SQL files. Evidence expires after48 hours; it cannot waive unrelated
 drift. Production migrations still run only through Vercel predeploy.
+
+Production release completed: commit8457c8c, Vercel deployment
+dpl_5CHh5XZ4sjyiz4LWnjmgkHN1wtds READY at https://travelease-rouge.vercel.app.
+Vercel applied027/028; final db:check reports IN SYNC28/28. Live public content,
+SEO, mobile and anonymous CMS access checks pass. Earlier development-only changes
+were restored locally and remain unpublished. Open /admin/pages on the live site
+to edit production content; code deployment does not copy development drafts/pages.
 
 ## Weekend Trips and CMS catalogue — development only (2026-11-06)
 
@@ -305,6 +779,17 @@ It does not call vercel-build/predeploy or any production migration command.
 Publication requires separate user authorization for the production schema and
 reviewed application scope. Earlier unrelated dev-only work remains in this checkout;
 prepare/rehearse the intended release and run the normal parity gate when authorized.
+
+
+## Weekend Trips/CMS production publication — 2026-11-06
+
+Released commit736f8e2 (Vercel dpl_8BM36m2yTjD1QWZm7SkGErnjy2wd READY).
+Production now includes Weekend Trips and CMS Live catalogue/filter/link controls.
+Approved schema-only development rehearsal was cleaned; automatic predeploy applied029.
+Final db:check IN SYNC29/29. Exact release build/tests and production read-only mobile,
+routes/login protections pass. Earlier unrelated development work restored and remains
+unpublished. No dev departures/CMS content copied. Full release record:
+docs/WEEKEND_RELEASE_2026-11-06.md.
 
 
 ## Contact delivery and authentication release — 2026-11-10
@@ -354,3 +839,5 @@ The child server uses the existing restricted development runtime connection,
 has no production URL and sends mail only to its loopback sink. Synthetic users,
 sessions, tokens and activity rows are removed and absence checked. No DDL.
 Run typecheck/lint and the required db:check gate before and after publication.
+
+Production outcome: commit75db0e2, Vercel READY on2026-11-10. Saved production contact inbox configured with the previously selected verified-sender mailbox; no other content copied. Final db:check IN SYNC29/29. See focused release record for live checks and limitations.

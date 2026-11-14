@@ -1,5 +1,6 @@
 import { getPool } from "./db";
 import type { BookingTypeCode, PricingRuleInput } from "./pricing";
+import { bookingTimeValue } from "../booking-datetime";
 
 /**
  * DB side of pricing (plan.md §19). Resolves a config row for the pure engine in
@@ -24,6 +25,8 @@ export async function resolveBookingTypeId(
 export async function resolvePricingRule(
   bookingTypeId: number,
   vehicleTypeId: number | null,
+  vehicleId: number | null = null,
+  tripDate?: Date,
 ): Promise<PricingRuleInput | null> {
   const r = await getPool().query(
     `SELECT base_amount, per_km_rate, per_hour_rate, included_km, extra_km_rate,
@@ -31,13 +34,13 @@ export async function resolvePricingRule(
             tax_percent, min_hours, min_km
        FROM pricing_rules
       WHERE booking_type_id = $1
-        AND (vehicle_type_id = $2 OR vehicle_type_id IS NULL)
+        AND (vehicle_id = $3 OR (vehicle_id IS NULL AND (vehicle_type_id = $2 OR vehicle_type_id IS NULL)))
         AND is_deleted = false AND is_active = true
-        AND (effective_from IS NULL OR effective_from <= now())
-        AND (effective_to   IS NULL OR effective_to   >= now())
-      ORDER BY (vehicle_type_id IS NOT NULL) DESC, priority DESC, pricing_rule_id ASC
+        AND (effective_from IS NULL OR effective_from <= COALESCE($4::date, CURRENT_DATE))
+        AND (effective_to   IS NULL OR effective_to   >= COALESCE($4::date, CURRENT_DATE))
+      ORDER BY (vehicle_id IS NOT NULL) DESC, (vehicle_type_id IS NOT NULL) DESC, priority DESC, pricing_rule_id ASC
       LIMIT 1`,
-    [bookingTypeId, vehicleTypeId],
+    [bookingTypeId, vehicleTypeId, vehicleId, bookingTimeValue(tripDate??new Date()).slice(0,10)],
   );
   const row = r.rows[0];
   if (!row) return null;

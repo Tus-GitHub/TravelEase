@@ -62,7 +62,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Invalid id." }, { status: 400 });
   }
 
-  const ok = await deleteVendor(id, auth.user.id);
-  if (!ok) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  return NextResponse.json({ ok: true });
+  try {
+    const ok = await deleteVendor(id, auth.user.id);
+    if (!ok) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const response = dbErrorResponse(error);
+    if (response) return response;
+    throw error;
+  }
 }

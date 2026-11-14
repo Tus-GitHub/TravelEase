@@ -7,6 +7,10 @@ import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import { useAuth } from "@/context/AuthContext";
 import type { BookingTypeCode } from "@/lib/server/pricing";
+import DateTimeSelector from "./DateTimeSelector";
+import { bookingInstant, bookingTimeValue, validBookingTime as validDateTime } from "@/lib/booking-datetime";
+import TripRouteSelector from "./TripRouteSelector";
+import { routePoint, type BookingRoute, type RoutePoint } from "@/lib/booking-route";
 
 type Mode = "curated" | "custom" | "vehicle" | "generic";
 
@@ -59,11 +63,19 @@ export default function BookingFlow() {
       ? "package"
       : (typeParam ?? "point_to_point"),
   );
-  const [startDate, setStart] = useState(params.get("start") ?? "");
+  const [startDate,setStart]=useState(()=>{const raw=params.get("start")??"";if(validDateTime(raw))return raw;const date=new Date(raw);return Number.isFinite(date.getTime())?bookingTimeValue(date):"";});
   const [passengers, setPassengers] = useState(Number(params.get("pax")) || 2);
   const [pickupAddress, setPickup] = useState(params.get("pickup") ?? "");
   const [dropAddress, setDrop] = useState(params.get("drop") ?? "");
   const [distanceKm, setDistance] = useState(Number(params.get("km")) || 0);
+  const [pickupPoint, setPickupPoint] = useState<RoutePoint|null>(()=>routePoint({lat:Number(params.get("plat")??NaN),lng:Number(params.get("plng")??NaN)}));
+  const [dropPoint, setDropPoint] = useState<RoutePoint|null>(()=>routePoint({lat:Number(params.get("dlat")??NaN),lng:Number(params.get("dlng")??NaN)}));
+  const [roadRoute, setRoadRoute] = useState<BookingRoute|null>(null);
+  const requiresRoadRoute = ["point_to_point","outstation","airport_transfer"].includes(bookingType);
+  const [quoteError, setQuoteError] = useState<string|null>(null);
+  const [quoteRefresh, setQuoteRefresh] = useState(0);
+  const choosePickup=useCallback((point:RoutePoint|null,label?:string)=>{setPickupPoint(point);setRoadRoute(null);if(point)setPickup(label??`Map pin (${point.lat.toFixed(5)}, ${point.lng.toFixed(5)})`);},[]);
+  const chooseDrop=useCallback((point:RoutePoint|null,label?:string)=>{setDropPoint(point);setRoadRoute(null);if(point)setDrop(label??`Map pin (${point.lat.toFixed(5)}, ${point.lng.toFixed(5)})`);},[]);
   const [hours, setHours] = useState(Number(params.get("hrs")) || 0);
   const [days, setDays] = useState(
     Number(params.get("days")) || (spotsParam ? spotsParam.split(",").length : 0),
@@ -143,7 +155,7 @@ export default function BookingFlow() {
           setVehicleTypeId(vt?.id ?? null);
           setMeta({
             title: vehicle.name,
-            subtitle: `${vehicle.typeTitle} · ${vehicle.seatingCapacity} seats · ${inr(vehicle.pricePerDay)}/day`,
+            subtitle: `${vehicle.typeTitle} · ${vehicle.seatingCapacity} seats${vehicle.pricePerKm?` · ${inr(vehicle.pricePerKm)}/km`:" · Fare calculated from your trip"}`,
           });
         } else {
           const vtRes = await fetch("/api/vehicle-types");
@@ -165,6 +177,8 @@ export default function BookingFlow() {
   // ---- live quote ----
   const quoteBody = useMemo(() => {
     const body: Record<string, unknown> = { bookingType, passengers };
+    if (vehicleId) body.vehicleId = Number(vehicleId);
+    if (requiresRoadRoute && roadRoute) { body.routeId=roadRoute.id;body.pickupPoint=pickupPoint;body.dropPoint=dropPoint; }
     if (bookingType === "package") {
       if (packageSlug) body.packageSlug = packageSlug;
       body.days = days || undefined;
@@ -178,9 +192,9 @@ export default function BookingFlow() {
       if (nights) body.nights = nights;
     }
     if (couponCode.trim()) body.couponCode = couponCode.trim();
-    if (startDate) body.startDate = new Date(startDate).toISOString();
+    if (validDateTime(startDate)) body.startDate = bookingInstant(startDate).toISOString();
     return body;
-  }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours, couponCode, startDate]);
+  }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours, couponCode, startDate, vehicleId, requiresRoadRoute, roadRoute, pickupPoint, dropPoint]);
 
   useEffect(() => {
     if (!meta) return;
@@ -189,6 +203,8 @@ export default function BookingFlow() {
     setQuote(null);
     setCouponInfo(null);
     setCouponError(null);
+    setQuoteError(null);
+    if (requiresRoadRoute && !roadRoute) { setQuoting(false); return; }
     setQuoting(true);
     const timer = setTimeout(async () => {
       try {
@@ -201,16 +217,17 @@ export default function BookingFlow() {
         const data = await res.json();
         if (controller.signal.aborted) return;
         setQuote(res.ok ? data.quote : null);
+        setQuoteError(res.ok ? null : data.error ?? "Could not calculate a fare. Please try again.");
         setCouponInfo(res.ok ? (data.coupon ?? null) : null);
         setCouponError(res.ok ? (data.couponError ?? null) : null);
       } catch {
-        if (!controller.signal.aborted) setQuote(null);
+        if (!controller.signal.aborted) { setQuote(null); setQuoteError("Could not reach the pricing service. Please try again."); }
       } finally {
         if (!controller.signal.aborted) setQuoting(false);
       }
     }, 350);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [quoteBody, meta]);
+  }, [quoteBody, meta, roadRoute, requiresRoadRoute, quoteRefresh]);
 
   const currentUrlWithState = useCallback(() => {
     const p = new URLSearchParams(params.toString());
@@ -219,6 +236,8 @@ export default function BookingFlow() {
     if (pickupAddress) p.set("pickup", pickupAddress);
     if (dropAddress) p.set("drop", dropAddress);
     if (distanceKm) p.set("km", String(distanceKm));
+    if (pickupPoint) {p.set("plat",String(pickupPoint.lat));p.set("plng",String(pickupPoint.lng));}
+    if (dropPoint) {p.set("dlat",String(dropPoint.lat));p.set("dlng",String(dropPoint.lng));}
     if (hours) p.set("hrs", String(hours));
     if (days) p.set("days", String(days));
     if (nights) p.set("nights", String(nights));
@@ -227,17 +246,18 @@ export default function BookingFlow() {
     return `/booking/new?${p.toString()}`;
   }, [
     params, startDate, passengers, pickupAddress, dropAddress, distanceKm, hours,
-    days, nights, notes, mode, bookingType,
+    days, nights, notes, mode, bookingType, pickupPoint, dropPoint,
   ]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
     setError(null);
-    if (!startDate) {
+    if (!validDateTime(startDate) || bookingInstant(startDate).getTime() <= Date.now()) {
       setError("Please choose a travel date and time.");
       return;
     }
+    if (!quote || (requiresRoadRoute && !roadRoute)) {setError("Choose locations and wait for a valid fare before confirming.");return;}
 
     if (!user) {
       router.push(`/login?redirect=${encodeURIComponent(currentUrlWithState())}`);
@@ -247,12 +267,14 @@ export default function BookingFlow() {
     setSubmitting(true);
     const payload: Record<string, unknown> = {
       bookingType,
-      startDateTime: new Date(startDate).toISOString(),
+      startDateTime: bookingInstant(startDate).toISOString(),
       passengerCount: passengers,
       pickupAddress: pickupAddress || undefined,
       dropAddress: dropAddress || undefined,
       customerNotes: notes || undefined,
       couponCode: couponCode.trim() || undefined,
+      expectedTotal: quote.totalAmount,
+      ...(requiresRoadRoute&&roadRoute?{routeId:roadRoute.id,pickupPoint,dropPoint}:{}),
     };
     if (bookingType === "package") {
       if (packageSlug) payload.packageSlug = packageSlug;
@@ -277,6 +299,7 @@ export default function BookingFlow() {
       });
       const data = await res.json();
       if (!res.ok) {
+        if (res.status===409) setQuoteRefresh(n=>n+1);
         setSubmitting(false);
         setError(data.error ?? "Couldn't create the booking.");
         return;
@@ -310,7 +333,7 @@ export default function BookingFlow() {
   const showDistance = bookingType === "point_to_point" || bookingType === "outstation" || bookingType === "airport_transfer";
   const showHours = bookingType === "hourly";
   const showDays = bookingType === "package" || bookingType === "outstation";
-  const showDrop = bookingType === "point_to_point" || bookingType === "airport_transfer";
+  const showDrop = bookingType === "point_to_point" || bookingType === "airport_transfer" || bookingType === "outstation";
 
   return (
     <div className="mx-auto grid max-w-4xl gap-8 lg:grid-cols-[1.4fr_1fr]">
@@ -341,16 +364,7 @@ export default function BookingFlow() {
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-muted">Start date &amp; time</span>
-            <input
-              type="datetime-local"
-              className={fieldCls}
-              value={startDate}
-              onChange={(e) => setStart(e.target.value)}
-              required
-            />
-          </label>
+          <DateTimeSelector label="Start date & time" value={startDate} onChange={setStart}/>
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold text-muted">Passengers</span>
             <input
@@ -363,6 +377,8 @@ export default function BookingFlow() {
             />
           </label>
         </div>
+
+        {requiresRoadRoute&&<TripRouteSelector roundTrip={bookingType==="outstation"} pickup={pickupPoint} drop={dropPoint} onPickup={choosePickup} onDrop={chooseDrop} onRoute={setRoadRoute}/>}
 
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold text-muted">Pickup address</span>
@@ -395,7 +411,9 @@ export default function BookingFlow() {
                 type="number"
                 min={0}
                 className={fieldCls}
-                value={distanceKm || ""}
+                readOnly={requiresRoadRoute}
+                aria-label="Distance (km)"
+                value={requiresRoadRoute ? roadRoute?.distanceKm ?? "" : distanceKm || ""}
                 onChange={(e) => setDistance(Number(e.target.value))}
               />
             </label>
@@ -469,13 +487,15 @@ export default function BookingFlow() {
           )}
         </label>
 
+        {quoteError&&<p role="alert" className="rounded-xl border border-red-400/30 px-3 py-2.5 text-sm text-red-700 dark:text-red-300">{quoteError}</p>}
         {error && (
           <p role="alert" className="rounded-xl border border-red-400/30 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">
             {error}
           </p>
         )}
 
-        <Button type="submit" variant="accent" size="lg" fullWidth loading={submitting}>
+        {quote&&<p aria-live="polite" className="text-base font-semibold text-fg lg:hidden">Estimated total: {inr(quote.totalAmount)}</p>}
+        <Button type="submit" variant="accent" size="lg" fullWidth loading={submitting} disabled={!quote||quoting||(requiresRoadRoute&&!roadRoute)}>
           {!isLoading && !user
             ? "Sign in to book"
             : submitting

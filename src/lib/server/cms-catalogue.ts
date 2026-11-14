@@ -21,7 +21,7 @@ export async function cmsOptions(): Promise<CmsOptions> {
   return { categories: categories.map(c => ({ value: c.slug, label: c.title })), regions: regions.rows, cities: cities.rows,
     destinations: [
       ...pages.rows.map(p => ({ href: cmsPath(p.slug), label: p.title || p.slug, kind: 'page' as const })),
-      ...[{ href: '/vehicles', label: 'Browse vehicles' }, { href: '/packages', label: 'Travel packages' }, { href: '/weekend-trips', label: 'Weekend Trips' }, { href: '/booking', label: 'Plan a trip' }, { href: '/contact', label: 'Contact us' }].map(p => ({ ...p, kind: 'page' as const })),
+      ...[{ href: '/vehicles', label: 'Browse vehicles' }, { href: '/packages', label: 'Travel packages' }, { href: '/weekend-trips', label: 'Weekend Trips' }, { href: '/booking', label: 'Plan a trip' }, { href: '/contact', label: 'Contact us' }, { href: '/hotels', label: 'Hotel search' }].map(p => ({ ...p, kind: 'page' as const })),
       ...vehicles.map(v => ({ href: `/vehicles/${v.id}`, label: v.name, kind: 'vehicles' as const })),
       ...packages.map(p => ({ href: `/packages/${p.slug}`, label: p.name, kind: 'packages' as const })),
       ...trips.map(t => ({ href: `/weekend-trips/${t.slug}`, label: `${t.title} · ${t.startsAt.slice(0, 10)}`, kind: 'weekend-trips' as const })),

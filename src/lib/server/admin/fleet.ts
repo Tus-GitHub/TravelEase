@@ -1,6 +1,10 @@
+import type { Pool, PoolClient } from "pg";
+import { catalogueWrite, assertCatalogueParents } from "./_catalogue";
 import { getPool } from "../db";
-import { DependentRowsError } from "../db-errors";
-import { applyPartialUpdate, countActiveChildren, plural, softDelete } from "./_util";
+import { applyPartialUpdate, softDelete } from "./_util";
+import { protectedResourceMutation } from "../weekend-resources";
+import { saveVehicleKmRate } from "./pricing";
+import { logActivity } from "../activity-log";
 
 // ─── Vehicle types ─────────────────────────────────────────────────────────────
 
@@ -96,18 +100,13 @@ export async function updateVehicleType(
 }
 
 export async function deleteVehicleType(id: number, actorId: string): Promise<boolean> {
-  const children = await countActiveChildren("vehicles", "vehicle_type_id", id);
-  if (children > 0) {
-    throw new DependentRowsError(
-      `This vehicle type still has ${plural(children, "vehicle")}. Move or delete ${children === 1 ? "it" : "them"} first.`,
-    );
-  }
   return softDelete("vehicle_types", "vehicle_type_id", id, actorId);
 }
 
 // ─── Vehicles ──────────────────────────────────────────────────────────────────
 
 export interface Vehicle {
+  perKmRate: number | null;
   id: number;
   vehicleTypeId: number;
   vehicleTypeTitle: string;
@@ -124,6 +123,7 @@ export interface Vehicle {
 }
 
 interface VehicleRow {
+  per_km_rate: string | null;
   vehicle_id: number;
   vehicle_type_id: number;
   vehicle_type_title: string;
@@ -140,6 +140,7 @@ interface VehicleRow {
 
 function toVehicle(r: VehicleRow): Vehicle {
   return {
+    perKmRate: r.per_km_rate === null ? null : Number(r.per_km_rate),
     id: r.vehicle_id,
     vehicleTypeId: r.vehicle_type_id,
     vehicleTypeTitle: r.vehicle_type_title,
@@ -159,7 +160,10 @@ const V_SELECT = `
   SELECT v.vehicle_id, v.vehicle_type_id, vt.title AS vehicle_type_title,
          v.name, v.registration_number, v.seating_capacity, v.features,
          v.base_price_per_day, v.rating, v.is_available,
-         v.vendor_profile_id, vp.business_name AS vendor_business_name
+         v.vendor_profile_id, vp.business_name AS vendor_business_name,
+         (SELECT p.per_km_rate FROM pricing_rules p JOIN booking_types b USING(booking_type_id)
+          WHERE p.vehicle_id=v.vehicle_id AND b.code='point_to_point' AND NOT p.is_deleted AND p.is_active
+          ORDER BY p.priority DESC,p.pricing_rule_id LIMIT 1) AS per_km_rate
   FROM vehicles v
   JOIN vehicle_types vt ON vt.vehicle_type_id = v.vehicle_type_id
   LEFT JOIN vendor_profiles vp ON vp.vendor_profile_id = v.vendor_profile_id
@@ -172,8 +176,8 @@ export async function listVehicles(): Promise<Vehicle[]> {
   return result.rows.map(toVehicle);
 }
 
-async function getVehicle(id: number): Promise<Vehicle | null> {
-  const result = await getPool().query(
+async function getVehicle(id: number, client?: Pool | PoolClient): Promise<Vehicle | null> {
+  const result = await (client ?? getPool()).query(
     `${V_SELECT} WHERE v.vehicle_id = $1 AND v.is_deleted = false`,
     [id],
   );
@@ -181,6 +185,7 @@ async function getVehicle(id: number): Promise<Vehicle | null> {
 }
 
 export interface VehicleInput {
+  perKmRate?: number;
   vehicleTypeId: number;
   name: string;
   registrationNumber: string;
@@ -193,23 +198,28 @@ export async function createVehicle(
   input: VehicleInput,
   actorId: string,
 ): Promise<Vehicle> {
-  const result = await getPool().query(
-    `INSERT INTO vehicles
-       (vehicle_type_id, name, registration_number, seating_capacity, features,
-        base_price_per_day, created_by, updated_by)
-     VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $7)
-     RETURNING vehicle_id`,
-    [
-      input.vehicleTypeId,
-      input.name,
-      input.registrationNumber || null,
-      input.seatingCapacity,
-      JSON.stringify(input.features ?? []),
-      input.basePricePerDay,
-      actorId,
-    ],
-  );
-  return (await getVehicle(result.rows[0].vehicle_id))!;
+  return catalogueWrite("vehicles", async db => {
+    await assertCatalogueParents(db, "vehicles", { ...input });
+    const result = await db.query(
+      `INSERT INTO vehicles
+         (vehicle_type_id, name, registration_number, seating_capacity, features,
+          base_price_per_day, created_by, updated_by)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $7)
+       RETURNING vehicle_id`,
+      [
+        input.vehicleTypeId,
+        input.name,
+        input.registrationNumber || null,
+        input.seatingCapacity,
+        JSON.stringify(input.features ?? []),
+        input.basePricePerDay,
+        actorId,
+      ],
+    );
+    const id = result.rows[0].vehicle_id;
+    if (input.perKmRate !== undefined) await saveVehicleKmRate(db, id, input.perKmRate, actorId);
+    return (await getVehicle(id, db))!;
+  });
 }
 
 const V_COLUMNS = {
@@ -227,7 +237,27 @@ export async function updateVehicle(
   input: Partial<VehicleInput & { isAvailable: boolean; vendorProfileId: number | null }>,
   actorId: string,
 ): Promise<Vehicle | null> {
-  const { features, ...rest } = input;
+  const { features, perKmRate, ...rest } = input;
+  if (perKmRate !== undefined) {
+    const result = await catalogueWrite("vehicles", async client => {
+      await assertCatalogueParents(client, "vehicles", input);
+      return protectedResourceMutation("vehicles", id, input, async db => {
+        const values: unknown[] = [], columns: string[] = [];
+        for (const [key, column] of Object.entries(V_COLUMNS)) {
+          const value = rest[key as keyof typeof rest];
+          if (value !== undefined) { values.push(value); columns.push(`${column}=$${values.length}`); }
+        }
+        if (features !== undefined) { values.push(JSON.stringify(features)); columns.push(`features=$${values.length}::jsonb`); }
+        values.push(actorId); columns.push(`updated_by=$${values.length}`); values.push(id);
+        const updated = await db.query(`UPDATE vehicles SET ${columns.join(",")} WHERE vehicle_id=$${values.length} AND NOT is_deleted RETURNING vehicle_id`, values);
+        if (!updated.rowCount) return null;
+        await saveVehicleKmRate(db, id, perKmRate, actorId);
+        return getVehicle(id, db);
+      }, client as PoolClient);
+    });
+    if (result) await logActivity({ userId: actorId, action: "admin.update", entityType: "vehicles", entityId: id, details: { fields: Object.keys(input) } });
+    return result;
+  }
   const ok = await applyPartialUpdate(
     "vehicles",
     "vehicle_id",

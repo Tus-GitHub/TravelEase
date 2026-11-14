@@ -10,6 +10,8 @@ import { resolveSeason } from "@/lib/server/seasonal-pricing";
 import { getUserIdForToken, SESSION_COOKIE } from "@/lib/server/session";
 import { quoteSharedTrip } from "@/lib/server/weekend-bookings";
 import { tripResponse, tripFailure } from "@/lib/server/weekend-http";
+import { carTripFacts, distanceTrip } from "@/lib/server/car-trip";
+import { MapServiceError, verifiedBookingRoute } from "@/lib/server/map-services";
 
 /**
  * POST /api/quotes — a server-computed price for a prospective booking
@@ -65,6 +67,19 @@ export async function POST(request: Request) {
   };
 
   let vehicleTypeId = asInt(body.vehicleTypeId);
+  let vehicleId: number | null = null;
+  if (body.vehicleId != null) {
+    try {
+      const facts = await carTripFacts({ vehicleId: body.vehicleId, vehicleTypeId: body.vehicleTypeId, bookingType: trip.bookingType,
+        passengers: body.passengers, routeId: body.routeId, pickupPoint: body.pickupPoint, dropPoint: body.dropPoint });
+      vehicleId = body.vehicleId as number;
+      vehicleTypeId = facts.vehicleTypeId;
+      if (facts.route) { trip.distanceKm = facts.route.distanceKm; trip.hours = facts.route.durationHours; }
+    } catch(error) { return NextResponse.json({ error: error instanceof MapServiceError ? error.message : "Could not validate the car route." }, { status: error instanceof MapServiceError ? error.status : 503 }); }
+  } else if(distanceTrip(trip.bookingType)) {
+    try {const route=await verifiedBookingRoute(body.routeId,body.pickupPoint,body.dropPoint,trip.bookingType==="outstation");trip.distanceKm=route.distanceKm;trip.hours=route.durationHours;}
+    catch(error){return NextResponse.json({error:error instanceof MapServiceError?error.message:"Could not validate the road route."},{status:error instanceof MapServiceError?error.status:503});}
+  }
 
   // Per-person package pricing — price comes from the packages table, never the client.
   if (
@@ -99,7 +114,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId);
+  const date = typeof body.startDate === "string" ? new Date(body.startDate) : undefined;
+  if (date && Number.isNaN(date.getTime())) return NextResponse.json({ error: "Choose a valid travel date." }, { status: 400 });
+  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId, vehicleId, date);
   if (!rule) {
     return NextResponse.json(
       { error: "No pricing is configured for this trip yet." },

@@ -214,7 +214,7 @@ export default function AdminBookingsPage() {
                         {b.vehicleTypeTitle ? ` · ${b.vehicleTypeTitle}` : ""}
                       </td>
                       <td className="px-4 py-3 text-muted">
-                        {new Date(b.startDateTime).toLocaleDateString("en-IN", { dateStyle: "medium" })}
+                        {new Date(b.startDateTime).toLocaleString("en-IN", { timeZone:"Asia/Kolkata", dateStyle: "medium",timeStyle:"short" })} IST
                       </td>
                       <td className="px-4 py-3 font-medium text-fg">{inr(b.totalAmount)}</td>
                       <td className="px-4 py-3">

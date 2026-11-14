@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
 import { dbErrorResponse } from "@/lib/server/api-errors";
 import { deleteVehicle, updateVehicle } from "@/lib/server/admin/fleet";
+import { matchesRequestOrigin } from "@/lib/server/request-origin";
+import { PricingError } from "@/lib/server/admin/pricing";
+import { readBoundedJsonObject } from "@/lib/server/http-json";
 
 export async function PATCH(
   request: Request,
@@ -9,6 +12,7 @@ export async function PATCH(
 ) {
   const auth = await requireRole("admin");
   if (!auth.ok) return auth.response;
+  if(!matchesRequestOrigin(request))return NextResponse.json({error:"Invalid origin."},{status:403});
 
   const id = Number(params.id);
   if (!Number.isInteger(id)) {
@@ -17,7 +21,7 @@ export async function PATCH(
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    body = await readBoundedJsonObject(request.body,16384);
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
@@ -29,9 +33,11 @@ export async function PATCH(
     seatingCapacity?: number;
     features?: string[];
     basePricePerDay?: number;
+    perKmRate?: number;
     isAvailable?: boolean;
     vendorProfileId?: number | null;
   } = {};
+  if(body.perKmRate!==undefined){const rate=Number(body.perKmRate);if(!Number.isFinite(rate)||rate<=0||rate>999999)return NextResponse.json({error:"Price per km must be greater than zero."},{status:400});input.perKmRate=rate;}
 
   if (body.vendorProfileId === null) {
     input.vendorProfileId = null;
@@ -80,6 +86,7 @@ export async function PATCH(
     if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
     return NextResponse.json({ item });
   } catch (err) {
+    if(err instanceof PricingError)return NextResponse.json({error:err.message},{status:err.status});
     const res = dbErrorResponse(err, { fk: "That vehicle type doesn't exist." });
     if (res) return res;
     throw err;

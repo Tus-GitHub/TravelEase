@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useMemo, useState } from "react";
 import Card from "@/components/common/Card";
@@ -14,6 +15,8 @@ import { ErrorNote, EmptyRow, LoadingRow } from "@/components/admin/tableBits";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
 import { useAdminResource } from "@/lib/admin/useAdminResource";
 import { useCrudForm } from "@/lib/admin/useCrudForm";
+
+const LocationPicker = dynamic(() => import("@/components/forms/LocationPicker"), { ssr: false, loading: () => <p className="text-sm text-muted">Loading map...</p> });
 
 interface Region {
   id: number;
@@ -32,6 +35,8 @@ interface City {
   isAirport: boolean;
 }
 interface TouristSpot {
+  latitude: number | null;
+  longitude: number | null;
   id: number;
   cityId: number;
   cityName: string;
@@ -197,9 +202,9 @@ function SpotsTab() {
   const cities = useAdminResource<City>("/api/admin/cities");
   const r = useAdminResource<TouristSpot>("/api/admin/tourist-spots");
   const form = useCrudForm({
-    empty: { cityId: "", name: "", tag: "", description: "" },
-    onCreate: (d) => r.create({ ...d, cityId: Number(d.cityId) }),
-    onUpdate: (id, d) => r.update(id, { ...d, cityId: Number(d.cityId) }),
+    empty: { cityId: "", name: "", tag: "", description: "", latitude: "", longitude: "" },
+    onCreate: (d) => r.create({ ...d, cityId: Number(d.cityId), latitude: d.latitude.trim() === "" ? null : Number(d.latitude), longitude: d.longitude.trim() === "" ? null : Number(d.longitude) }),
+    onUpdate: (id, d) => r.update(id, { ...d, cityId: Number(d.cityId), latitude: d.latitude.trim() === "" ? null : Number(d.latitude), longitude: d.longitude.trim() === "" ? null : Number(d.longitude) }),
   });
 
   const cityName = useMemo(() => {
@@ -237,19 +242,24 @@ function SpotsTab() {
           <FormField label="Description" icon="tag">
             <input value={form.draft.description} onChange={(e) => form.patch({ description: e.target.value })} className={fieldBase} placeholder="Short description" />
           </FormField>
+          <FormField label="Latitude" icon="map-pin"><input type="number" min={-90} max={90} step="any" value={form.draft.latitude} onChange={e => form.patch({ latitude: e.target.value })} className={fieldBase} /></FormField>
+          <FormField label="Longitude" icon="map-pin"><input type="number" min={-180} max={180} step="any" value={form.draft.longitude} onChange={e => form.patch({ longitude: e.target.value })} className={fieldBase} /></FormField>
+          <div className="min-w-0 sm:col-span-2"><p className="mb-3 text-sm text-muted">Pin the spot&apos;s road-accessible entrance for route suggestions. Leave both coordinates empty if it is not verified yet.</p><LocationPicker value={form.draft.latitude !== "" && form.draft.longitude !== "" && Number.isFinite(Number(form.draft.latitude)) && Number.isFinite(Number(form.draft.longitude)) && Math.abs(Number(form.draft.latitude)) <= 90 && Math.abs(Number(form.draft.longitude)) <= 180 ? { lat: Number(form.draft.latitude), lng: Number(form.draft.longitude) } : null} onChange={point => form.patch({ latitude: point ? String(point.lat) : "", longitude: point ? String(point.lng) : "" })} /></div>
         </FormCard>
       )}
 
       <TableCard headers={["Spot", "City", "Tag", "Actions"]}>
         {r.items.map((row) => (
           <tr key={row.id} className="hover:bg-surface-hover/60">
-              <td className="px-5 py-3.5 font-medium text-fg">{row.name}</td>
+              <td className="px-5 py-3.5 font-medium text-fg">{row.name}<p className="mt-1 text-xs font-normal text-muted">{row.latitude != null && row.longitude != null ? "Map pin set" : "Map pin needed"}</p></td>
             <td className="px-5 py-3.5 text-muted">{row.cityName || cityName(row.cityId)}</td>
             <td className="px-5 py-3.5 text-muted">{row.tag || "—"}</td>
             <td className="px-5 py-3.5 text-right">
               <RowActions name={row.name}
                 onEdit={() =>
                   form.startEdit(row.id, {
+                    latitude: row.latitude == null ? "" : String(row.latitude),
+                    longitude: row.longitude == null ? "" : String(row.longitude),
                     cityId: String(row.cityId),
                     name: row.name,
                     tag: row.tag,

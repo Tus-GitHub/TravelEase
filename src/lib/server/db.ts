@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { runtimeDatabaseConfig } from "./db-config";
 
 // Kept on `globalThis` so the pool survives Next.js dev-mode module reloads
 // (Fast Refresh) instead of opening a fresh pool on every edit.
@@ -6,19 +7,18 @@ const globalForDb = globalThis as unknown as { __pgPool?: Pool };
 
 export function getPool(): Pool {
   if (!globalForDb.__pgPool) {
-    const connectionString = process.env.DATABASE_URL;
+    const connectionString = process.env.DATABASE_URL_APP || process.env.DATABASE_URL;
     if (!connectionString) {
       throw new Error("DATABASE_URL is not set");
     }
-    globalForDb.__pgPool = new Pool({
-      connectionString,
-      ssl: { rejectUnauthorized: false },
-      // On serverless (Vercel) each warm instance keeps its own pool, so keep it
-      // small and let idle connections drop fast. DATABASE_URL must point at
-      // Neon's *pooled* endpoint (host contains "-pooler") — that side does the
-      // real connection multiplexing; this number is just per-instance ceiling.
-      max: 3,
-      idleTimeoutMillis: 10_000,
+    // DATABASE_URL_APP is the restricted runtime login; DATABASE_URL remains
+    // the migration connection. Older environments retain their existing URL
+    // until a separately authorised credential rollout.
+    globalForDb.__pgPool = new Pool(runtimeDatabaseConfig(connectionString));
+    globalForDb.__pgPool.on("error", (error: Error & { code?: string }) => {
+      // Do not log messages/configuration: server errors can contain private data.
+      const code = /^[A-Z0-9_]{2,32}$/.test(error.code ?? "") ? error.code : "UNKNOWN";
+      console.error("Database idle connection error", { code });
     });
   }
   return globalForDb.__pgPool;

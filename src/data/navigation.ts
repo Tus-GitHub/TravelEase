@@ -20,6 +20,7 @@ export const footerLinkGroups: { title: string; links: NavLink[] }[] = [
       { label: "Vehicles", href: "/vehicles" },
       { label: "Packages", href: "/packages" },
       { label: "Weekend Trips", href: "/weekend-trips" },
+      { label: "Hotels", href: "/hotels" },
       { label: "Booking", href: "/booking" },
       { label: "About Us", href: "/about" },
       { label: "Contact", href: "/contact" },

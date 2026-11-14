@@ -176,8 +176,9 @@ export default function BookingDetailPage() {
               <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                 <Field label="Trip type" value={booking.departureId ? "Weekend group trip" : booking.bookingTypeCode.replace(/_/g, " ")} />
                 <Field
-                  label="Starts"
+                  label="Starts (IST)"
                   value={new Date(booking.startDateTime).toLocaleString("en-IN", {
+                    timeZone: "Asia/Kolkata",
                     dateStyle: "medium",
                     timeStyle: "short",
                   })}

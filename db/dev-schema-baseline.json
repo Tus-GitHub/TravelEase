@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "recordedAt": "2026-11-06T13:47:35.820Z",
-  "note": "Observed development baseline; historical applied SQL bytes cannot be proven retroactively. Approved migration028 added on development; prior baseline archived; old definitions/checksums unchanged. Approved development migration029; prior28 baseline archived. Four tables/six columns verified.",
+  "recordedAt": "2026-11-14T12:58:10.276Z",
+  "note": "Observed development baseline; historical applied SQL bytes cannot be proven retroactively. Approved migration028 added on development; prior baseline archived; old definitions/checksums unchanged. Approved development migration029; prior28 baseline archived. Four tables/six columns verified. Approved development030 reviewed: two map tables, nine map columns, one pricing vehicle FK column, four indexes; original29 definitions/checksums retained.",
   "hashes": {
     "001_create_auth_tables.sql": "49af6321b9ca6fd6d8671b1276a178e29eff488812dfbb90b3b97bbf0adf89d1",
     "002_create_vehicle_tables.sql": "93af44cafc8f775574671563122c99abe27f6d8c7347d70da589cf15aedbd92a",
@@ -31,7 +31,8 @@
     "026_driver_image.sql": "20aeaa4ea22a0e2ffbefc1dcf6b47bd2e2c247dc3defee967df76a120c4c88c5",
     "027_tourist_spot_coordinates.sql": "4581463be0f50d3a3a8c64776d473889651ceac1e8a976f1bb76d82e5791ee18",
     "028_create_cms_pages.sql": "a3c21f818a0d457ec35d646d25a88e09937019753dadef0257d2db8f5886ec95",
-    "029_weekend_trip_departures.sql": "5a1c104e6342f3117c62f963d0f2e5153640dd36570c102d4a02066e8f4eba5f"
+    "029_weekend_trip_departures.sql": "5a1c104e6342f3117c62f963d0f2e5153640dd36570c102d4a02066e8f4eba5f",
+    "030_car_pricing_and_map_services.sql": "c18d8ba1a68738c6c0c586f1b7db72bf7c0d98bff2b0923ce87bbc47ecc63f01"
   },
   "snapshot": {
     "migrations": [
@@ -63,7 +64,8 @@
       "026_driver_image.sql",
       "027_tourist_spot_coordinates.sql",
       "028_create_cms_pages.sql",
-      "029_weekend_trip_departures.sql"
+      "029_weekend_trip_departures.sql",
+      "030_car_pricing_and_map_services.sql"
     ],
     "tables": [
       {
@@ -194,6 +196,24 @@
       },
       {
         "key": "email_verification_tokens",
+        "definition": {
+          "kind": "r",
+          "rls": false,
+          "forceRls": false,
+          "replicaIdentity": "d"
+        }
+      },
+      {
+        "key": "map_service_cache",
+        "definition": {
+          "kind": "r",
+          "rls": false,
+          "forceRls": false,
+          "replicaIdentity": "d"
+        }
+      },
+      {
+        "key": "map_service_usage",
         "definition": {
           "kind": "r",
           "rls": false,
@@ -2377,6 +2397,105 @@
         }
       },
       {
+        "key": "map_service_cache.cache_key",
+        "definition": {
+          "type": "character(64)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "map_service_cache.created_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "map_service_cache.expires_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "map_service_cache.provider",
+        "definition": {
+          "type": "character varying(20)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "map_service_cache.response",
+        "definition": {
+          "type": "jsonb",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "map_service_usage.last_request_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "map_service_usage.provider",
+        "definition": {
+          "type": "character varying(20)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "map_service_usage.request_count",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "0",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "map_service_usage.usage_date",
+        "definition": {
+          "type": "date",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
         "key": "notifications.booking_id",
         "definition": {
           "type": "uuid",
@@ -3370,6 +3489,17 @@
         "key": "pricing_rules.updated_by",
         "definition": {
           "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "pricing_rules.vehicle_id",
+        "definition": {
+          "type": "integer",
           "notNull": false,
           "default": null,
           "identity": "",
@@ -7818,6 +7948,97 @@
         }
       },
       {
+        "key": "map_service_cache.map_service_cache_cache_key_not_null",
+        "definition": {
+          "definition": "NOT NULL cache_key",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_cache.map_service_cache_created_at_not_null",
+        "definition": {
+          "definition": "NOT NULL created_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_cache.map_service_cache_expires_at_not_null",
+        "definition": {
+          "definition": "NOT NULL expires_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_cache.map_service_cache_pkey",
+        "definition": {
+          "definition": "PRIMARY KEY (cache_key)",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_cache.map_service_cache_provider_check",
+        "definition": {
+          "definition": "CHECK (provider::text = ANY (ARRAY['nominatim'::character varying, 'fossgis'::character varying]::text[]))",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_cache.map_service_cache_provider_not_null",
+        "definition": {
+          "definition": "NOT NULL provider",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_cache.map_service_cache_response_not_null",
+        "definition": {
+          "definition": "NOT NULL response",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_usage.map_service_usage_pkey",
+        "definition": {
+          "definition": "PRIMARY KEY (provider)",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_usage.map_service_usage_provider_check",
+        "definition": {
+          "definition": "CHECK (provider::text = ANY (ARRAY['nominatim'::character varying, 'fossgis'::character varying]::text[]))",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_usage.map_service_usage_provider_not_null",
+        "definition": {
+          "definition": "NOT NULL provider",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_usage.map_service_usage_request_count_check",
+        "definition": {
+          "definition": "CHECK (request_count >= 0)",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_usage.map_service_usage_request_count_not_null",
+        "definition": {
+          "definition": "NOT NULL request_count",
+          "validated": true
+        }
+      },
+      {
+        "key": "map_service_usage.map_service_usage_usage_date_not_null",
+        "definition": {
+          "definition": "NOT NULL usage_date",
+          "validated": true
+        }
+      },
+      {
         "key": "notifications.notifications_booking_id_fkey",
         "definition": {
           "definition": "FOREIGN KEY (booking_id) REFERENCES public.bookings(booking_id) ON DELETE SET NULL",
@@ -8472,6 +8693,13 @@
         "key": "pricing_rules.pricing_rules_updated_by_fkey",
         "definition": {
           "definition": "FOREIGN KEY (updated_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "pricing_rules.pricing_rules_vehicle_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (vehicle_id) REFERENCES public.vehicles(vehicle_id)",
           "validated": true
         }
       },
@@ -11170,6 +11398,14 @@
         }
       },
       {
+        "key": "idx_map_service_cache_expiry",
+        "definition": {
+          "definition": "CREATE INDEX idx_map_service_cache_expiry ON public.map_service_cache USING btree (expires_at)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
         "key": "idx_notifications_booking_id",
         "definition": {
           "definition": "CREATE INDEX idx_notifications_booking_id ON public.notifications USING btree (booking_id)",
@@ -11197,6 +11433,14 @@
         "key": "idx_pricing_rules_type",
         "definition": {
           "definition": "CREATE INDEX idx_pricing_rules_type ON public.pricing_rules USING btree (booking_type_id, vehicle_type_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "idx_pricing_rules_vehicle",
+        "definition": {
+          "definition": "CREATE INDEX idx_pricing_rules_vehicle ON public.pricing_rules USING btree (vehicle_id, booking_type_id) WHERE (NOT is_deleted)",
           "valid": true,
           "ready": true
         }
@@ -11349,6 +11593,22 @@
         "key": "idx_weekend_bookings_request",
         "definition": {
           "definition": "CREATE UNIQUE INDEX idx_weekend_bookings_request ON public.bookings USING btree (user_id, client_request_id) WHERE (client_request_id IS NOT NULL)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "map_service_cache_pkey",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX map_service_cache_pkey ON public.map_service_cache USING btree (cache_key)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "map_service_usage_pkey",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX map_service_usage_pkey ON public.map_service_usage USING btree (provider)",
           "valid": true,
           "ready": true
         }
@@ -12677,6 +12937,20 @@
       },
       {
         "key": "email_verification_tokens:neondb_owner",
+        "definition": [
+          "neondb_owner=arwdDxtm/neondb_owner",
+          "travel_app_dev=arwd/neondb_owner"
+        ]
+      },
+      {
+        "key": "map_service_cache:neondb_owner",
+        "definition": [
+          "neondb_owner=arwdDxtm/neondb_owner",
+          "travel_app_dev=arwd/neondb_owner"
+        ]
+      },
+      {
+        "key": "map_service_usage:neondb_owner",
         "definition": [
           "neondb_owner=arwdDxtm/neondb_owner",
           "travel_app_dev=arwd/neondb_owner"

@@ -1,5 +1,6 @@
 import { getPool } from "./db";
 import { applyPartialUpdate, softDelete } from "./admin/_util";
+import { bookingTimeValue } from "../booking-datetime";
 
 /**
  * Seasonal pricing (chunk 2.8, plan.md §37). A date-range multiplier that the
@@ -21,7 +22,7 @@ export async function resolveSeason(
   vehicleTypeId: number | null,
 ): Promise<SeasonMatch | null> {
   if (Number.isNaN(tripDate.getTime())) return null;
-  const day = tripDate.toISOString().slice(0, 10); // YYYY-MM-DD
+  const day = bookingTimeValue(tripDate).slice(0, 10); // Scheduled calendar date in IST.
 
   const r = await getPool().query(
     `SELECT seasonal_pricing_id, name, multiplier

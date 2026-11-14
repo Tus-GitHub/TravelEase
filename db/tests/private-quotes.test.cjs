@@ -32,11 +32,15 @@ const ts = require('typescript');
       const router = { push() {} };
       const imports = {
         react: React,
-        'next/navigation': { useRouter: () => router, useSearchParams: () => new URLSearchParams() },
+        'next/navigation': { useRouter: () => router, useSearchParams: () => new URLSearchParams('type=hourly') },
         'next/link': { __esModule: true, default: link },
         '@/components/common/Card': { __esModule: true, default: box },
         '@/components/common/Button': { __esModule: true, default: button },
         '@/context/AuthContext': { useAuth: () => ({ user: null, isLoading: false }) },
+        './DateTimeSelector': { __esModule:true, default:box, validDateTime:()=>false },
+        '@/lib/booking-datetime': { validBookingTime:()=>false,bookingTimeValue:()=>'',bookingInstant:()=>new Date() },
+        './TripRouteSelector': { __esModule:true, default:box },
+        '@/lib/booking-route': { routePoint:()=>null },
       };
       const module = { exports: {} };
       new Function('require', 'module', 'exports', compiled)(name => { if (!(name in imports)) throw Error(`Unexpected module ${name}`); return imports[name]; }, module, module.exports);

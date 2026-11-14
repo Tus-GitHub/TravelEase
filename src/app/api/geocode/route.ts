@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getUserIdForToken, SESSION_COOKIE } from "@/lib/server/session";
 import { geocodeForward, geocodeReverse } from "@/lib/server/geocode";
 import { isValidLatLng } from "@/lib/validation";
+import { MapServiceError } from "@/lib/server/map-services";
 
 // Session-gated so it can't be used as an open geocoding proxy; login also
 // naturally throttles abuse. Only the profile location picker calls this.
@@ -35,7 +36,8 @@ export async function GET(request: Request) {
       { error: "Provide ?q= (min 3 characters) or ?lat=&lng=." },
       { status: 400 },
     );
-  } catch {
-    return NextResponse.json({ error: "Geocoding service unavailable." }, { status: 502 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof MapServiceError ? error.message : "Geocoding service unavailable." }, { status: error instanceof MapServiceError ? error.status : 502,
+      headers: error instanceof MapServiceError && error.retryAfter ? { "Retry-After":String(error.retryAfter) } : {} });
   }
 }

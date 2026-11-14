@@ -168,6 +168,10 @@ export default async function PackageDetailPage({
         </div>
       )}
 
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-surface p-5">
+        <p className="text-sm text-muted">Explore hotel options for your stay. Hotel enquiries are separate from this booking.</p>
+        <Button href={`/hotels?region=${pkg.regionId}`} variant="outline" size="sm" iconLeft="map-pin">Explore hotels</Button>
+      </div>
       <ReviewList reviews={reviews} />
 
       {similar.length > 0 && (

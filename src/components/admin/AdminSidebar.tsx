@@ -48,6 +48,8 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
     (item) => item.section === null || canAccess(user.role, item.section),
   );
 
+  if (user.role === "admin") visibleItems.push({ href: "/admin/pricing", label: "Car pricing", icon: "tag", section: "vehicles" });
+
   const NavList = ({ onNavigate }: { onNavigate?: () => void }) => (
     <ul className="flex flex-col gap-1">
       {visibleItems.map((item) => (

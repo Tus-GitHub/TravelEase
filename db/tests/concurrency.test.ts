@@ -1,7 +1,7 @@
 /** Real multi-connection tests. Development only; committed, uniquely tagged fixtures
  * are removed in finally. SMTP uses an in-memory transport. No schema changes. */
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import pg from "pg";
 import nodemailer from "nodemailer";
 import { runtimeDatabaseConfig } from "../../src/lib/server/db-config.ts";
@@ -27,6 +27,8 @@ process.env.SMTP_PASS = "test";
 const { createBooking, transitionBooking } = await import("../../src/lib/server/bookings.ts");
 const { createAdminBlock } = await import("../../src/lib/server/availability.ts");
 const tag = randomUUID();
+const routeId=createHash("sha256").update(`concurrency-route:${tag}`).digest("hex");
+const pickupPoint={lat:28.61,lng:77.21},dropPoint={lat:28.62,lng:77.22};
 const ids = [randomUUID(), randomUUID()];
 let vt: number | undefined;
 let vehicle: number;
@@ -36,6 +38,7 @@ const user = (i = 0) => ({ id: ids[i], name: "Concurrency test", email: `${ids[i
   phone: "", role: "admin", emailVerified: true, createdAt: new Date().toISOString() });
 const start = "2090-01-01T10:00:00Z", end = "2090-01-01T12:00:00Z";
 const input = () => ({ bookingType: "point_to_point" as const, vehicleTypeId: vt!,
+  routeId,pickupPoint,dropPoint,
   startDateTime: start, endDateTime: end, estimatedDistanceKm: 10 });
 async function booking() {
   const r = await pool.query(`INSERT INTO bookings
@@ -80,6 +83,7 @@ async function race<T>(lockSql: string, params: unknown[], calls: (() => Promise
 }
 async function clearBlocks() { await pool.query("DELETE FROM vehicle_availability WHERE vehicle_id=$1", [vehicle]); }
 try {
+  await pool.query("INSERT INTO map_service_cache(cache_key,provider,response,expires_at) VALUES($1,'fossgis',$2::jsonb,now()+interval '1 hour')",[routeId,JSON.stringify({id:routeId,provider:"fossgis",pickup:pickupPoint,drop:dropPoint,roundTrip:false,distanceKm:10,durationHours:2,geometry:[]})]);
   for (const id of ids) await pool.query(`INSERT INTO users(user_id,name,email,phone,password_hash,role_id)
     VALUES ($1,'Concurrency test',$2,'','disabled',(SELECT role_id FROM roles WHERE name='admin'))`, [id,`${id}@example.invalid`]);
   vt = (await pool.query("INSERT INTO vehicle_types(slug,title) VALUES($1,'Concurrency test') RETURNING vehicle_type_id", [tag])).rows[0].vehicle_type_id;
@@ -160,6 +164,7 @@ try {
   assert.equal(disabled.filter(r => r.ok).length, 1);
   console.log("PASS rolled-back coupon edit does not corrupt concurrent redemption");
 } finally {
+  await pool.query("DELETE FROM map_service_cache WHERE cache_key=$1",[routeId]);
   // Only this run's IDs; no existing catalogue/customer rows are modified.
   await pool.query("DELETE FROM notifications WHERE user_id=ANY($1::uuid[])", [ids]);
   await pool.query("DELETE FROM activity_logs WHERE user_id=ANY($1::uuid[])", [ids]);

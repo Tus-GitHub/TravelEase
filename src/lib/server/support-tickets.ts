@@ -1,7 +1,8 @@
 import { randomBytes } from "crypto";
 import { getPool } from "./db";
 import type { PublicUser } from "./users";
-import { notifySupportReply } from "./notifications";
+import type { PoolClient } from "pg";
+import { notifySupportReply, captureSupportReply, type SupportReplySnapshot } from "./notifications";
 
 /**
  * Support tickets (Phase 3 chunk 3.2, plan.md §20/§38). A customer opens a
@@ -18,6 +19,18 @@ export type MessageAuthorRole = "customer" | "agent" | "admin";
 
 /** How many open/pending tickets a customer may have at once. */
 export const OPEN_TICKET_LIMIT = 20;
+
+const ticketCapMessage = `You already have ${OPEN_TICKET_LIMIT} tickets open. Please wait for a reply before opening another.`;
+export class TicketLimitError extends Error { constructor() { super(ticketCapMessage); this.name = "TicketLimitError"; } }
+async function hasTicketCapacity(client: PoolClient, userId: string) {
+  const count = await client.query("SELECT count(*)::int AS n FROM support_tickets WHERE user_id=$1 AND NOT is_deleted AND status IN ('open','pending')", [userId]);
+  return count.rows[0].n < OPEN_TICKET_LIMIT;
+}
+async function lockOwner(client: PoolClient, userId: string) {
+  // NO KEY UPDATE serializes capacity writers while allowing the FK checks on
+  // staff authors/updated_by; two admins replying must not deadlock on each other.
+  return (await client.query("SELECT user_id,email,is_active,is_deleted FROM users WHERE user_id=$1 FOR NO KEY UPDATE", [userId])).rows[0];
+}
 
 const CATEGORIES: TicketCategory[] = ["general", "booking", "payment", "refund", "other"];
 const STATUSES: TicketStatus[] = ["open", "pending", "resolved", "closed"];
@@ -180,68 +193,41 @@ export async function createTicket(
     ? (input.category as TicketCategory)
     : "general";
 
-  const pool = getPool();
-
-  const openCount = (
-    await pool.query(
-      `SELECT count(*)::int AS n FROM support_tickets
-        WHERE user_id = $1 AND is_deleted = false AND status IN ('open','pending')`,
-      [user.id],
-    )
-  ).rows[0].n as number;
-  if (openCount >= OPEN_TICKET_LIMIT) {
-    return {
-      ok: false,
-      status: 409,
-      message: `You already have ${OPEN_TICKET_LIMIT} tickets open. Please wait for a reply before opening another.`,
-    };
+  // Invalid UUID input must never reach PostgreSQL's UUID cast (22P02 -> 500).
+  if (input.bookingId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.bookingId)) {
+    return { ok: false, status: 400, message: "Choose a valid booking." };
   }
 
-  let bookingId: string | null = null;
-  if (typeof input.bookingId === "string" && input.bookingId) {
-    const b = await pool.query(
-      `SELECT 1 FROM bookings WHERE booking_id = $1 AND user_id = $2 AND is_deleted = false`,
-      [input.bookingId, user.id],
-    );
-    if (!b.rowCount) {
-      return { ok: false, status: 400, message: "That booking isn't one of yours." };
-    }
-    bookingId = input.bookingId;
-  }
-
-  const client = await pool.connect();
+  const client = await getPool().connect();
   let ticketId: string | null = null;
   try {
     await client.query("BEGIN");
+    const owner = await lockOwner(client, user.id);
+    if (!owner || !owner.is_active || owner.is_deleted) {
+      await client.query("ROLLBACK");
+      return { ok: false, status: 401, message: "Not authenticated." };
+    }
+    if (!await hasTicketCapacity(client, user.id)) {
+      await client.query("ROLLBACK");
+      return { ok: false, status: 409, message: ticketCapMessage };
+    }
+    let bookingId: string | null = null;
+    if (typeof input.bookingId === "string" && input.bookingId) {
+      const b = await client.query("SELECT 1 FROM bookings WHERE booking_id=$1 AND user_id=$2 AND NOT is_deleted FOR SHARE", [input.bookingId,user.id]);
+      if (!b.rowCount) { await client.query("ROLLBACK"); return { ok: false, status: 400, message: "That booking isn't one of yours." }; }
+      bookingId = input.bookingId;
+    }
     for (let attempt = 0; attempt < 5 && !ticketId; attempt++) {
-      try {
-        const res = await client.query(
-          `INSERT INTO support_tickets
-             (reference, user_id, booking_id, subject, category, created_by, updated_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $6)
-           RETURNING support_ticket_id`,
-          [reference(), user.id, bookingId, subject, category, user.id],
-        );
-        ticketId = res.rows[0].support_ticket_id;
-      } catch (err) {
-        if ((err as { code?: string }).code === "23505") continue; // reference clash — retry
-        throw err;
-      }
+      const res = await client.query(`INSERT INTO support_tickets (reference,user_id,booking_id,subject,category,created_by,updated_by)
+        VALUES($1,$2,$3,$4,$5,$2,$2) ON CONFLICT(reference) DO NOTHING RETURNING support_ticket_id`,
+        [reference(),user.id,bookingId,subject,category]);
+      ticketId = res.rows[0]?.support_ticket_id ?? null;
     }
     if (!ticketId) throw new Error("could not allocate a ticket reference");
-    await client.query(
-      `INSERT INTO support_ticket_messages (support_ticket_id, author_user_id, author_role, body)
-       VALUES ($1, $2, $3, $4)`,
-      [ticketId, user.id, roleOf(user), body],
-    );
+    await client.query("INSERT INTO support_ticket_messages(support_ticket_id,author_user_id,author_role,body) VALUES($1,$2,$3,$4)", [ticketId,user.id,roleOf(user),body]);
     await client.query("COMMIT");
-  } catch (err) {
-    await client.query("ROLLBACK");
-    throw err;
-  } finally {
-    client.release();
-  }
-
+  } catch (error) { await client.query("ROLLBACK"); throw error; }
+  finally { client.release(); }
   return { ok: true, ticket: (await getTicketDetail(ticketId, user))! };
 }
 
@@ -264,12 +250,17 @@ export async function addTicketMessage(
   const nextStatus: TicketStatus = authorRole === "customer" ? "open" : "pending";
 
   const client = await pool.connect();
+  let notification: SupportReplySnapshot | null = null;
   try {
     await client.query("BEGIN");
+    const ownerId = (await client.query("SELECT user_id FROM support_tickets WHERE support_ticket_id=$1 AND NOT is_deleted", [ticketId])).rows[0]?.user_id;
+    if (!ownerId || (viewer.role !== "admin" && ownerId !== viewer.id)) { await client.query("ROLLBACK"); return { ok: false, status: 404, message: "Ticket not found." }; }
+    const owner = await lockOwner(client, ownerId);
+    if (!owner || (viewer.role !== "admin" && (!owner.is_active || owner.is_deleted))) { await client.query("ROLLBACK"); return { ok: false, status: 401, message: "Not authenticated." }; }
     // Status updates lock this same row. Check after acquiring the lock so a
     // reply cannot reopen a ticket closed while the request was waiting.
     const t = (await client.query(
-      `SELECT user_id, status FROM support_tickets
+      `SELECT user_id, status, reference, subject FROM support_tickets
         WHERE support_ticket_id = $1 AND is_deleted = false FOR UPDATE`,
       [ticketId],
     )).rows[0];
@@ -281,6 +272,9 @@ export async function addTicketMessage(
       await client.query("ROLLBACK");
       return { ok: false, status: 409, message: "This ticket is closed. Open a new one." };
     }
+    if (!["open", "pending"].includes(t.status) && !await hasTicketCapacity(client, ownerId)) {
+      await client.query("ROLLBACK"); return { ok: false, status: 409, message: ticketCapMessage };
+    }
     await client.query(
       `INSERT INTO support_ticket_messages (support_ticket_id, author_user_id, author_role, body)
        VALUES ($1, $2, $3, $4)`,
@@ -291,6 +285,7 @@ export async function addTicketMessage(
         WHERE support_ticket_id = $1`,
       [ticketId, nextStatus, viewer.id],
     );
+    if (authorRole !== "customer") notification = captureSupportReply(ticketId, owner, t, body);
     await client.query("COMMIT");
   } catch (err) {
     await client.query("ROLLBACK");
@@ -300,7 +295,7 @@ export async function addTicketMessage(
   }
 
   if (authorRole !== "customer") {
-    await notifySupportReply(ticketId); // non-blocking, never throws
+    await notifySupportReply(notification); // non-blocking, never throws
   }
   return { ok: true, ticket: (await getTicketDetail(ticketId, viewer))! };
 }
@@ -331,10 +326,16 @@ export async function setTicketStatus(
   actorId: string,
 ): Promise<boolean> {
   if (!STATUSES.includes(status as TicketStatus)) return false;
-  const r = await getPool().query(
-    `UPDATE support_tickets SET status = $2, updated_by = $3
-      WHERE support_ticket_id = $1 AND is_deleted = false`,
-    [ticketId, status, actorId],
-  );
-  return (r.rowCount ?? 0) > 0;
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const ownerId = (await client.query("SELECT user_id FROM support_tickets WHERE support_ticket_id=$1 AND NOT is_deleted", [ticketId])).rows[0]?.user_id;
+    if (!ownerId || !await lockOwner(client, ownerId)) { await client.query("ROLLBACK"); return false; }
+    const current = (await client.query("SELECT status FROM support_tickets WHERE support_ticket_id=$1 AND NOT is_deleted FOR UPDATE", [ticketId])).rows[0];
+    if (!current) { await client.query("ROLLBACK"); return false; }
+    if (["open", "pending"].includes(status) && !["open", "pending"].includes(current.status) && !await hasTicketCapacity(client, ownerId)) throw new TicketLimitError();
+    await client.query("UPDATE support_tickets SET status=$2,updated_by=$3 WHERE support_ticket_id=$1", [ticketId,status,actorId]);
+    await client.query("COMMIT"); return true;
+  } catch (error) { await client.query("ROLLBACK"); throw error; }
+  finally { client.release(); }
 }

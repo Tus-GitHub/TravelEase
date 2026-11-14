@@ -40,9 +40,10 @@ export default async function BookingConfirmPage({
   const { contact } = await getSiteSettings();
   const bd = booking.priceBreakdown;
   const start = new Date(booking.startDateTime).toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
     dateStyle: "medium",
     timeStyle: "short",
-  });
+  }) + " IST";
 
   return (
     <Section bg="gray">

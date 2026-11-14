@@ -1,3 +1,5 @@
+import type { Pool, PoolClient } from "pg";
+import { catalogueWrite, assertCatalogueParents } from "./_catalogue";
 import { getPool } from "../db";
 import { applyPartialUpdate, softDelete } from "./_util";
 
@@ -112,16 +114,14 @@ export async function listPackages(): Promise<CataloguePackage[]> {
   return pkgs.rows.map((r) => toPackage(r, byPackage.get(r.package_id) ?? []));
 }
 
-async function getPackage(id: number): Promise<CataloguePackage | null> {
-  const pool = getPool();
-  const [pkg, stops] = await Promise.all([
-    pool.query(`${P_SELECT} WHERE p.package_id = $1 AND p.is_deleted = false`, [id]),
-    pool.query(
+async function getPackage(id: number, client?: Pool | PoolClient): Promise<CataloguePackage | null> {
+  const pool = client ?? getPool();
+  const pkg = await pool.query(`${P_SELECT} WHERE p.package_id = $1 AND p.is_deleted = false`, [id]);
+  if (!pkg.rows[0]) return null;
+  const stops = await pool.query(
       `${STOP_SELECT} WHERE ps.package_id = $1 AND ps.is_deleted = false ORDER BY ps.stop_order`,
       [id],
-    ),
-  ]);
-  if (!pkg.rows[0]) return null;
+  );
   return toPackage(pkg.rows[0], stops.rows.map(toStop));
 }
 
@@ -159,27 +159,30 @@ export async function createPackage(
   actorId: string,
 ): Promise<CataloguePackage> {
   const slug = await uniqueSlug(slugify(input.name));
-  const result = await getPool().query(
-    `INSERT INTO packages
-       (region_id, vehicle_type_id, name, slug, duration_days, max_persons,
-        price_per_person, tag, rating, highlights, created_by, updated_by, booking_mode)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '[]'::jsonb, $10, $10, $11)
-     RETURNING package_id`,
-    [
-      input.regionId,
-      input.vehicleTypeId,
-      input.name,
-      slug,
-      input.durationDays,
-      input.maxPersons,
-      input.pricePerPerson,
-      input.tag || null,
-      input.rating,
-      actorId,
-      input.bookingMode ?? "private",
-    ],
-  );
-  return (await getPackage(result.rows[0].package_id))!;
+  return catalogueWrite("packages", async db => {
+    await assertCatalogueParents(db, "packages", { ...input });
+    const result = await db.query(
+      `INSERT INTO packages
+         (region_id, vehicle_type_id, name, slug, duration_days, max_persons,
+          price_per_person, tag, rating, highlights, created_by, updated_by, booking_mode)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '[]'::jsonb, $10, $10, $11)
+       RETURNING package_id`,
+      [
+        input.regionId,
+        input.vehicleTypeId,
+        input.name,
+        slug,
+        input.durationDays,
+        input.maxPersons,
+        input.pricePerPerson,
+        input.tag || null,
+        input.rating,
+        actorId,
+        input.bookingMode ?? "private",
+      ],
+    );
+    return (await getPackage(result.rows[0].package_id, db))!;
+  });
 }
 
 export async function updatePackage(
@@ -210,17 +213,7 @@ export async function updatePackage(
 }
 
 export async function deletePackage(id: number, actorId: string): Promise<boolean> {
-  const ok = await softDelete("packages", "package_id", id, actorId);
-  if (ok) {
-    // Stops are wholly owned by the package (composition) — take them with it,
-    // rather than leaving rows pointing at a deleted package.
-    await getPool().query(
-      `UPDATE package_stops SET is_deleted = true, updated_by = $1
-       WHERE package_id = $2 AND is_deleted = false`,
-      [actorId, id],
-    );
-  }
-  return ok;
+  return softDelete("packages", "package_id", id, actorId);
 }
 
 // ─── Package stops ─────────────────────────────────────────────────────────────
@@ -236,19 +229,16 @@ export async function addPackageStop(
   input: PackageStopInput,
   actorId: string,
 ): Promise<CataloguePackage | null> {
-  // Bail before the INSERT if the package is missing or soft-deleted — otherwise
-  // the stop row lands against a dead package and the route still answers 404,
-  // leaving an orphan behind.
-  const pkg = await getPackage(packageId);
-  if (!pkg) return null;
-
-  await getPool().query(
-    `INSERT INTO package_stops
-       (package_id, tourist_spot_id, stop_order, nights_here, created_by, updated_by)
-     VALUES ($1, $2, $3, $4, $5, $5)`,
-    [packageId, input.touristSpotId, input.stopOrder, input.nightsHere, actorId],
-  );
-  return getPackage(packageId);
+  return catalogueWrite("package_stops", async db => {
+    const pkg = await getPackage(packageId, db);
+    if (!pkg) return null;
+    await assertCatalogueParents(db, "package_stops", { packageId, ...input });
+    await db.query(
+      `INSERT INTO package_stops (package_id,tourist_spot_id,stop_order,nights_here,created_by,updated_by)
+       VALUES($1,$2,$3,$4,$5,$5)`, [packageId,input.touristSpotId,input.stopOrder,input.nightsHere,actorId],
+    );
+    return getPackage(packageId, db);
+  });
 }
 
 export async function deletePackageStop(

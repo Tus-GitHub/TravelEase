@@ -1,0 +1,20 @@
+{
+  "verifiedAt": "2026-11-05T10:25:33.770Z",
+  "target": "travel_restore_drill_20261105",
+  "source": "development",
+  "tables": 39,
+  "migrations": 27,
+  "elapsedSeconds": 85,
+  "schemaApprovalSha256": "939f02b7dc8f2ec319b35251a58c97924979548a5c651253964e1dfa39a0d6b5",
+  "verified": [
+    "schema definitions (excluding environment-specific ACLs; lossless varchar-array/text-array cast normalization)",
+    "all table row counts and fingerprints",
+    "live trigger drift probe (rolled back)",
+    "booking/coupon concurrency smoke"
+  ],
+  "limitations": [
+    "No production recovery or PITR tested",
+    "Runtime grants excluded; owner used only in isolated restore",
+    "No external emails or integrations exercised"
+  ]
+}

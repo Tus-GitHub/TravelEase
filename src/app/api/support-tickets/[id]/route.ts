@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/server/auth-guard";
 import { addTicketMessage, getTicketForUser } from "@/lib/server/support-tickets";
+import { readBoundedJsonObject } from "@/lib/server/http-json";
+import { matchesRequestOrigin } from "@/lib/server/request-origin";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -28,13 +30,14 @@ export async function POST(
 ) {
   const auth = await requireUser();
   if (!auth.ok) return auth.response;
+  if (!matchesRequestOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
   let body: { message?: unknown };
   try {
-    body = await request.json();
+    body = await readBoundedJsonObject(request.body, 20 * 1024);
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
