@@ -29,7 +29,7 @@ export default function BrandedDialog({ brand = "Jagdamba Travellers", title, de
               <h2 id={titleId} className="break-words font-display text-xl font-semibold sm:text-2xl">{title}</h2>
               {description && <p id={descriptionId} className="mt-2 text-sm leading-relaxed text-white/65">{description}</p>}
             </div>
-            <button type="button" disabled={busy} aria-label="Close dialog" onClick={onClose} className="rounded-full border border-white/15 bg-white/5 p-2 text-white/80 transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 disabled:opacity-40"><Icon name="close" className="h-5 w-5" /></button>
+            <button type="button" disabled={busy} aria-label="Close dialog" onClick={onClose} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 p-2 text-white/80 transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 disabled:opacity-40"><Icon name="close" className="h-5 w-5" /></button>
           </div>
         </header>
         <div className="min-h-0 overflow-y-auto overscroll-contain">{children}</div>

@@ -21,7 +21,7 @@ export default function ThemeToggle({
 
   const isDark = mounted && resolvedTheme === "dark";
   const base =
-    "inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors";
+    "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors";
   const tones =
     tone === "light"
       ? "text-white/90 hover:bg-white/10"

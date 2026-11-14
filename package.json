@@ -31,6 +31,7 @@
     "test:workflow-races": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/workflow-races.test.ts --dev",
     "test:p1-races": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/p1-races.test.ts --dev",
     "test:content-races": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/content-races.test.ts --dev",
+    "test:home-screen": "node db/tests/mobile-home-screen.test.cjs",
     "test:private-quotes": "node db/tests/private-quotes.test.cjs",
     "test:contact": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/contact.test.ts",
     "test:contact-db": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/contact-settings.test.ts --dev",

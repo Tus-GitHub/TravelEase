@@ -29,6 +29,7 @@ export default function Footer({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/55">
               {site.description}
             </p>
+            <Link href="/install" className="mt-5 inline-flex min-h-11 items-center rounded-xl border border-white/25 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10">Add to home screen</Link>
             <div className="mt-6 flex gap-3">
               {socialLinks.map((social) => (
                 <a

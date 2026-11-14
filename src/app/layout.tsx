@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider, themeInitScript } from "@/context/ThemeContext";
 import { SiteContactProvider } from "@/context/SiteContactContext";
 import { site } from "@/data/site";
+import { AppInstallProvider } from "@/components/app/AppInstallProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,6 +23,20 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: `${site.name} — ${site.tagline}`,
   description: site.description,
+  applicationName: site.name,
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Jagdamba", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#090c14" },
+  ],
 };
 
 export default function RootLayout({
@@ -41,7 +56,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <AuthProvider>
-            <SiteContactProvider>{children}</SiteContactProvider>
+            <SiteContactProvider><AppInstallProvider>{children}</AppInstallProvider></SiteContactProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

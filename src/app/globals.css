@@ -54,11 +54,19 @@
 
   body {
     @apply bg-canvas font-sans text-fg antialiased;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     /* NOTE: never put `overflow`/`overflow-x` (hidden or clip) or a fixed
        height on `html`/`body` — Lenis (SmoothScroll) drives the document
        scroll and those rules stop the wheel/touch/keyboard from moving the
        page (only the native scrollbar keeps working). Contain stray
        horizontal overflow on the offending element instead. */
+  }
+
+  /* Prevent iOS focus zoom without disabling pinch zoom. Keep native date
+     controls inside narrow grid/flex columns on both phone engines. */
+  input, select, textarea { min-width: 0; max-width: 100%; }
+  @media (max-width: 767px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 16px !important; }
   }
 
   /* ── Global reduced-motion safety net (§30) ──────────────────
@@ -82,6 +90,14 @@
 }
 
 @layer components {
+  /* Standalone Section pages need room for the fixed site header. Nested
+     marketing/CMS sections retain their own spacing. */
+  .site-page-content > section:first-of-type,
+  .site-page-content > .route-enter > section:first-of-type { padding-top: 7rem; }
+  @media (min-width: 768px) {
+    .site-page-content > section:first-of-type,
+    .site-page-content > .route-enter > section:first-of-type { padding-top: 8rem; }
+  }
   .cms-dark {
     --c-canvas: 9 12 20;
     --c-surface: 17 24 39;

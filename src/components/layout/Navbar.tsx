@@ -58,6 +58,7 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
       className={`fixed inset-x-0 top-0 z-50 transition-[transform,background-color,box-shadow,backdrop-filter] duration-300 ${
         hidden && !isOpen ? "-translate-y-full" : "translate-y-0"
       } ${solid ? "glass border-x-0 border-t-0 shadow-sm" : "bg-transparent"}`}
+      style={{ paddingTop: "env(safe-area-inset-top)", paddingLeft: "env(safe-area-inset-left)", paddingRight: "env(safe-area-inset-right)" }}
     >
       <nav
         className={`section-container flex items-center justify-between transition-[height] duration-300 ${
@@ -111,8 +112,9 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
             type="button"
             aria-label={isOpen ? "Close menu" : "Open menu"}
             aria-expanded={isOpen}
+            aria-controls="site-mobile-menu"
             onClick={() => setIsOpen((v) => !v)}
-            className={solid ? "text-fg" : "text-white"}
+            className={`flex h-11 w-11 shrink-0 items-center justify-center ${solid ? "text-fg" : "text-white"}`}
           >
             <Icon name={isOpen ? "close" : "menu"} className="h-7 w-7" />
           </button>
@@ -121,11 +123,14 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
 
       {/* Mobile drawer */}
       <div
+        id="site-mobile-menu"
+        aria-hidden={!isOpen}
         className={`overflow-x-hidden border-t border-line-subtle bg-canvas transition-[max-height] duration-300 lg:hidden ${
-          isOpen ? "max-h-[75dvh] overflow-y-auto" : "max-h-0 overflow-y-hidden border-transparent"
+          isOpen ? "visible max-h-[75dvh] overflow-y-auto" : "invisible max-h-0 overflow-y-hidden border-transparent"
         }`}
       >
         <ul className="section-container flex flex-col gap-1 py-4">
+          <li><Link href="/install" onClick={() => setIsOpen(false)} className="block rounded-xl px-3 py-3 text-sm font-semibold text-accent-600 dark:text-accent-400">Add to home screen</Link></li>
           {links.map((link) => {
             const active = isActive(link.href);
             return (

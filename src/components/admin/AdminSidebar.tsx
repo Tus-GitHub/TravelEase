@@ -98,15 +98,19 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
             type="button"
             onClick={() => setIsMobileOpen((v) => !v)}
             aria-label={isMobileOpen ? "Close menu" : "Open menu"}
-            className="text-white"
+            aria-expanded={isMobileOpen}
+            aria-controls="admin-mobile-menu"
+            className="flex h-11 w-11 shrink-0 items-center justify-center text-white"
           >
             <Icon name={isMobileOpen ? "close" : "menu"} className="h-6 w-6" />
           </button>
         </div>
       </div>
       <div
+        id="admin-mobile-menu"
+        aria-hidden={!isMobileOpen}
         className={`admin-sidebar-scroll bg-primary-900 transition-[max-height] duration-300 lg:hidden ${
-          isMobileOpen ? "max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain" : "max-h-0 overflow-hidden"
+          isMobileOpen ? "visible max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain" : "invisible max-h-0 overflow-hidden"
         }`}
       >
         <div className="px-4 py-4">

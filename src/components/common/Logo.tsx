@@ -10,12 +10,12 @@ export interface LogoProps {
 /** Brand mark + wordmark, links home. Shared by the Navbar and Footer. */
 export default function Logo({ inverted = false }: LogoProps) {
   return (
-    <Link href="/" className="inline-flex items-center gap-2">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-500 text-white shadow-sm">
+    <Link href="/" className="inline-flex min-w-0 items-center gap-2">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-500 text-white shadow-sm">
         <Icon name="bus" className="h-5 w-5" />
       </span>
       <span
-        className={`font-display text-xl font-bold tracking-tight ${
+        className={`min-w-0 font-display text-base font-bold leading-tight tracking-tight sm:text-xl ${
           inverted ? "text-white" : "text-primary-900 dark:text-white"
         }`}
       >

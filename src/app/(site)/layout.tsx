@@ -22,7 +22,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         wheel/touch scrolling. `clip` establishes no scroll container, so the
         document still scrolls and `position: sticky` still works.
       */}
-      <div className="overflow-x-clip">
+      <div className="site-page-content overflow-x-clip">
         {children}
         <Footer cmsNavigation={cmsNavigation} />
       </div>
