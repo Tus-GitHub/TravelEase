@@ -5,7 +5,11 @@ import Icon from "@/components/common/Icon";
 import Button from "@/components/common/Button";
 import AdminDialog from "./AdminDialog";
 import ConfirmRemove from "./ConfirmRemove";
+import dynamic from "next/dynamic";
+import { vehicleImageSource, type VehicleCrop } from "@/lib/vehicle-image";
 import { MAX_IMAGE_BYTES, type AdminImage, type ImageKind } from "@/lib/image-upload";
+
+const VehicleImageCrop = dynamic(() => import("./VehicleImageCrop"));
 
 export default function ImageManager({ kind, id, name, onBusyChange }: {
   kind: ImageKind; id: number; name: string; onBusyChange?: (busy: boolean) => void;
@@ -21,6 +25,7 @@ export default function ImageManager({ kind, id, name, onBusyChange }: {
   const [previews, setPreviews] = useState<string[]>([]);
   const [preview, setPreview] = useState<string | null>(null);
   const [removing, setRemoving] = useState<AdminImage | null>(null);
+  const [cropping, setCropping] = useState<AdminImage | null>(null);
   const [progress, setProgress] = useState("");
   const [dragging, setDragging] = useState(false);
   const endpoint = `/api/admin/images/${kind}/${id}`;
@@ -86,7 +91,7 @@ export default function ImageManager({ kind, id, name, onBusyChange }: {
 
   return <section aria-label={`Photos for ${name}`}>
     <div className="mb-5 flex items-start justify-between gap-4">
-      <div><h3 className="font-display text-lg font-semibold text-fg">{multiple ? "Vehicle gallery" : kind === "drivers" ? "Profile photo" : "Cover photo"}</h3><p className="mt-1 text-sm text-muted">{multiple ? "Give travellers a clear view of their ride. Your main image appears first." : "Choose a clear, welcoming image for this profile."}</p></div>
+      <div><h3 className="font-display text-lg font-semibold text-fg">{multiple ? "Vehicle gallery" : kind === "drivers" ? "Profile photo" : "Cover photo"}</h3><p className="mt-1 text-sm text-muted">{multiple ? "Upload a photo, then choose Crop & preview to set its exact traveller-facing frame. Your main image appears first." : "Choose a clear, welcoming image for this profile."}</p></div>
       <span className="shrink-0 rounded-full border border-line bg-surface-muted px-3 py-1 text-xs font-semibold text-muted">{items.length} / {multiple ? 10 : 1}</span>
     </div>
     {loaded && !configured && <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">Image storage is not connected yet. Please ask your administrator to finish setup.</p>}
@@ -115,10 +120,11 @@ export default function ImageManager({ kind, id, name, onBusyChange }: {
       <h4 className="mb-3 text-sm font-semibold">{multiple ? "Your gallery" : "Current photo"}</h4>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => <article key={item.id} className={`overflow-hidden rounded-2xl border bg-surface ${item.primary ? "border-accent-400/70 shadow-sm" : "border-line"}`}>
-          <div className="group relative"><button type="button" onClick={() => setPreview(item.url)} aria-label={`Preview ${name} photo`} className="block w-full"><Image src={item.url} alt={`${name} photo`} width={480} height={320} unoptimized className="aspect-[3/2] w-full object-cover transition group-hover:brightness-90" /><span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-primary-950/80 px-2.5 py-1 text-[11px] font-medium text-white"><Icon name="eye" className="h-3.5 w-3.5" />Preview</span></button>
+          <div className="group relative"><button type="button" onClick={() => setPreview(item.url)} aria-label={`Preview ${name} photo`} className="block w-full"><Image src={item.url} alt={`${name} photo`} width={480} height={multiple ? 300 : 320} unoptimized={!multiple} sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw" className={multiple ? "aspect-[8/5] w-full bg-primary-950 object-contain transition group-hover:brightness-90" : "aspect-[3/2] w-full object-cover transition group-hover:brightness-90"} /><span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-primary-950/80 px-2.5 py-1 text-[11px] font-medium text-white"><Icon name="eye" className="h-3.5 w-3.5" />Preview</span></button>
             {item.primary && <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-accent-300 px-2.5 py-1 text-[10px] font-bold text-primary-950"><Icon name="star" className="h-3 w-3" />{multiple ? "MAIN IMAGE" : "PROFILE PHOTO"}</span>}
           </div>
-          <div className="flex items-center justify-between gap-2 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3">
+            {multiple && vehicleImageSource(item.url) && <button type="button" disabled={busy} onClick={() => setCropping(item)} className="rounded-lg border border-line px-2.5 py-2 text-xs font-semibold text-fg hover:bg-surface-hover disabled:opacity-50">Crop &amp; preview</button>}
             {multiple && !item.primary ? <button type="button" disabled={busy} onClick={() => void change(item.id, "primary")} className="rounded-lg border border-line px-2.5 py-2 text-xs font-semibold text-fg hover:bg-surface-hover disabled:opacity-50">Set as main</button> : <span className="text-xs text-muted">Visible to travellers</span>}
             <button type="button" disabled={busy} onClick={() => setRemoving(item)} aria-label="Remove photo" className="rounded-lg p-2 text-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-500/10"><Icon name="trash" className="h-4 w-4" /></button>
           </div>
@@ -128,5 +134,6 @@ export default function ImageManager({ kind, id, name, onBusyChange }: {
     <p className="mt-6 border-t border-line pt-4 text-xs leading-5 text-muted">Photo uploads and main-image changes save immediately. Use Close when you are done. Only upload public photos, not identity documents.</p>
     {preview && <AdminDialog title="Photo preview" description={name} onClose={() => setPreview(null)}><div className="bg-primary-950/5 p-3 dark:bg-black/20"><Image src={preview} alt={`${name} preview`} width={1400} height={1000} unoptimized className="max-h-[65dvh] w-full object-contain" /></div></AdminDialog>}
     {removing && <ConfirmRemove name={`${name} - photo`} description="This photo will be removed from this profile. The other photos will stay in place." onConfirm={() => change(removing.id, "remove")} onClose={() => setRemoving(null)} />}
+    {cropping && <VehicleImageCrop image={cropping} name={name} onClose={() => setCropping(null)} onSave={(crop: VehicleCrop | null) => request({ method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageId: cropping.id, action: "crop", expectedUrl: cropping.url, crop }) })} />}
   </section>;
 }

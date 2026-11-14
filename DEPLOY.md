@@ -1,5 +1,59 @@
 # Deploying TravelEase (free)
 
+## Development changes prepared on 15 November 2026
+
+Vehicle framing is under **Admin → Fleet → Vehicles → Edit → Photos → Crop & preview**.
+After uploading, choose the full photo or an8:5 crop, adjust zoom/position or drag
+the selection, review the traveller preview, then Save photo frame. Cancel sends
+no update. The original Cloudinary upload stays intact; a delivery URL in the
+existing image_url field stores the selected frame and can restore the full photo.
+Only versioned app-managed uploads support recropping. Vehicle cards/details show
+the complete selected frame; vehicles without photos use a neutral placeholder.
+No schema migration, paid editor, new storage provider or repeated transformation
+requests during drag. The crop endpoint checks role/origin, the photo's vehicle,
+bounded crop coordinates and the expected previous URL before saving.
+
+The next release pins functions to **sin1 (Singapore)** beside both existing Neon
+branches, replacing the observed US execution region. Hobby supports one region;
+no billing change is needed. Only published CMS copy/navigation has a60-second
+tagged data cache; successful publish/unpublish/delete invalidates it. Drafts,
+admin data, vehicle prices/availability, quotes and bookings remain live. Independent
+renderer reads begin together. Production latency improvement must be measured
+after a separately authorized production release; local tests cannot prove it.
+
+The separate admin login-only label uses the existing settings key
+`admin_login_alias` with JSON `{"identifier":"admin@travelease.com","userId":"ADMIN_UUID","recoveryEmail":"owner@gmail.com"}`.
+The starter account itself now displays/stores `admin@travelease.com` as its
+app-only email/login identifier. It resolves to that existing active, verified account and
+checks the same password/session system and current role under the account lock.
+Roles stay editable; other promoted admins use their own logins. The label grants
+no role and is never a mail recipient or OAuth identity. Google email claims for
+this identifier are rejected before account matching/linking. Password resets and
+verification mail use the separately configured recoveryEmail. Booking/support
+events capture that working recipient under their transaction, so delivery logs
+and replies never use the app-only identifier. Business booking alerts/replies use
+Business details → Support email / contact inbox independently.
+
+Development activation was explicitly approved and completed: the legacy starter
+admin account initially used the business Gmail inbox's `+travelease-admin`
+alias. The user then explicitly requested replacing that account address with
+`admin@travelease.com`; development now stores it and keeps the original plain
+Gmail as recoveryEmail. No external mailbox was created. Its password/role/user ID were retained; old
+sessions, outstanding reset/verification links and any Google link for its
+unowned old email were retired. No real email was sent by that operation.
+Production is unchanged. Publishing code does not activate an alias on another
+DB: any production activation requires an explicit request, the alias-capable
+release already live, exact account/unique-address checks and one audited
+transaction. Keep the existing working business inbox. An app-only users.email
+requires this separate mailbox-routing and Google-claim guard; its retained
+account-verification marker does not prove ownership of the external domain.
+Changing an app login does not create a mailbox.
+
+Validation: `test:vehicle-image`, `test:login-identifier`, development
+`test:content-races`, optimized `test:cms-acceptance` and `test:auth-acceptance`,
+plus lint/typecheck and Chrome/WebKit crop checks. The isolated tests remove
+their own fixtures; no production car photo or pricing is changed by testing.
+
 Stack: **Vercel Hobby** (hosting, $0) + **Neon** (Postgres, $0) + the free `*.vercel.app` URL.
 
 - **`main`** → the live site (Vercel production, Neon `production` DB).

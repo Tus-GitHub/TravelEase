@@ -11,7 +11,7 @@ import type { Vehicle, TravelPackage, PackageTag, Region } from "@/types";
 
 /** Used when a vehicle has no image row yet. */
 export const VEHICLE_IMAGE_FALLBACK =
-  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80";
+  "/images/vehicle-placeholder.svg";
 
 /** Used when a package / stop has no image. */
 export const PACKAGE_IMAGE_FALLBACK =

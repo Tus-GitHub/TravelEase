@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title desc">
+  <title id="title">Vehicle photo not added</title>
+  <desc id="desc">A neutral car outline. The owner has not uploaded this vehicle's photo yet.</desc>
+  <rect width="800" height="500" fill="#111827"/>
+  <g fill="none" stroke="#64748b" stroke-width="10" stroke-linejoin="round">
+    <path d="M245 264h310l-28-70a24 24 0 0 0-23-15H296a24 24 0 0 0-23 15z"/>
+    <path d="M217 264h366a20 20 0 0 1 20 20v52H197v-52a20 20 0 0 1 20-20z"/>
+    <path d="M232 336v22m336-22v22M233 297h33m268 0h33" stroke-linecap="round"/>
+  </g>
+  <text x="400" y="419" text-anchor="middle" fill="#cbd5e1" font-family="Arial,sans-serif" font-size="24">Vehicle photo not added</text>
+</svg>

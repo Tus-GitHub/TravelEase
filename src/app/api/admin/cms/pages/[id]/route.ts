@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { PUBLIC_CMS_CACHE_TAG } from "@/lib/cms-cache";
 import { requireRole } from "@/lib/server/auth-guard";
 import { matchesRequestOrigin } from "@/lib/server/request-origin";
 import { readBoundedJsonObject } from "@/lib/server/http-json";
@@ -14,6 +16,7 @@ async function handle(request: Request, { params }: { params: { id: string } }) 
     let body: Record<string, unknown>;
     try { body = await readBoundedJsonObject(request.body, CMS_MAX_BYTES + 4096); } catch { throw new CmsError("Invalid or oversized page request."); }
     const item = await changeCmsPage(params.id, body, auth.user.id);
+    if (["publish", "unpublish", "delete"].includes(String(body.action))) revalidateTag(PUBLIC_CMS_CACHE_TAG);
     return NextResponse.json({ item, revisions: item ? await listCmsRevisions(params.id) : [] }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof CmsError) return NextResponse.json({ error: error.message }, { status: error.status });

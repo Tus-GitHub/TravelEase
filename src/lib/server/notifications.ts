@@ -11,6 +11,7 @@ import {
   type BookingEmailInfo,
 } from "./email";
 import { getContactInbox } from "./site-settings";
+import { accountMailbox } from "./login-identifier";
 import type { BookingStatus } from "@/lib/bookingStatus";
 
 /**
@@ -95,6 +96,7 @@ export async function captureBookingNotification(bookingId: string, client: Pool
   );
   const row: BookingRow | undefined = result.rows[0];
   if (!row) return null;
+  row.owner_email = await accountMailbox(client, row.owner_user_id, row.owner_email) ?? "";
   const info = toEmailInfo(row);
   if (info.driver) Object.freeze(info.driver);
   const amount = row.refund_amount == null ? null : Number(row.refund_amount);

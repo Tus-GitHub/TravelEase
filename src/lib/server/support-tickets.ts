@@ -3,6 +3,7 @@ import { getPool } from "./db";
 import type { PublicUser } from "./users";
 import type { PoolClient } from "pg";
 import { notifySupportReply, captureSupportReply, type SupportReplySnapshot } from "./notifications";
+import { accountMailbox } from "./login-identifier";
 
 /**
  * Support tickets (Phase 3 chunk 3.2, plan.md §20/§38). A customer opens a
@@ -285,7 +286,8 @@ export async function addTicketMessage(
         WHERE support_ticket_id = $1`,
       [ticketId, nextStatus, viewer.id],
     );
-    if (authorRole !== "customer") notification = captureSupportReply(ticketId, owner, t, body);
+    if (authorRole !== "customer") notification = captureSupportReply(ticketId,
+      { ...owner, email: await accountMailbox(client, owner.user_id, owner.email) ?? "" }, t, body);
     await client.query("COMMIT");
   } catch (err) {
     await client.query("ROLLBACK");

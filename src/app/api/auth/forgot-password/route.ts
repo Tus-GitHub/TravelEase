@@ -4,6 +4,8 @@ import { createAuthTokenWithCooldown } from "@/lib/server/auth-tokens";
 import { sendPasswordResetEmail, appOrigin } from "@/lib/server/email";
 import { isValidEmail } from "@/lib/validation";
 import { readAuthBody } from "@/lib/server/auth-request";
+import { getPool } from "@/lib/server/db";
+import { accountMailbox, resolveLoginIdentifier } from "@/lib/server/login-identifier";
 
 /**
  * Start a password reset (plan.md §24). Always responds { ok: true } for a
@@ -20,13 +22,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
   }
 
-  const user = await findUserByEmail(email);
-  if (user) {
+  const identifier = await resolveLoginIdentifier(getPool(), email);
+  const user = identifier.email ? await findUserByEmail(identifier.email) : undefined;
+  if (user && (!identifier.aliasUserId || (user.user_id === identifier.aliasUserId && user.role === "admin"))) {
     try {
+      const recipient = await accountMailbox(getPool(), user.user_id, user.email);
+      if (!recipient) return NextResponse.json({ ok: true });
       const token = await createAuthTokenWithCooldown("password_reset", user.user_id, 60);
       if (token) {
         await sendPasswordResetEmail(
-          user.email,
+          recipient,
           user.name,
           `${appOrigin()}/reset-password?token=${token}`,
         );

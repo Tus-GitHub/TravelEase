@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
-import { changeImage, listImages, saveImage } from "@/lib/server/admin/images";
+import { changeImage, cropVehicleImage, listImages, saveImage } from "@/lib/server/admin/images";
 import { discardUpload, ImageError, imageStorageReady, uploadImage } from "@/lib/server/cloudinary";
 import { isImageKind, MAX_IMAGE_BYTES } from "@/lib/image-upload";
 import { uploadWasRolledBack } from "@/lib/server/upload-persistence";
+import { matchesRequestOrigin } from "@/lib/server/request-origin";
+import { readBoundedJsonObject } from "@/lib/server/http-json";
 
 export const runtime = "nodejs";
 type Context = { params: { kind: string; id: string } };
@@ -18,8 +20,7 @@ async function handle(request: Request, { params }: Context) {
   }
   try {
     if (request.method !== "GET") {
-      const origin = request.headers.get("origin");
-      if (origin && origin !== new URL(request.url).origin) throw new ImageError("Invalid request origin.", 403);
+      if (!matchesRequestOrigin(request)) throw new ImageError("Invalid request origin.", 403);
     }
     if (request.method === "POST") {
       // Check target before consuming a body or using storage quota.
@@ -57,11 +58,14 @@ async function handle(request: Request, { params }: Context) {
         throw err;
       }
     } else if (request.method === "PATCH") {
-      let body: { imageId?: unknown; action?: unknown };
-      try { body = await request.json(); } catch { throw new ImageError("Invalid request body."); }
+      let body: Record<string, unknown>;
+      try { body = await readBoundedJsonObject(request.body, 4096); } catch { throw new ImageError("Invalid request body."); }
       if (!body || !Number.isSafeInteger(body.imageId) || Number(body.imageId) <= 0 ||
-        (body.action !== "remove" && body.action !== "primary")) throw new ImageError("Invalid image action.");
-      await changeImage(kind, id, Number(body.imageId), body.action, auth.user.id);
+        (body.action !== "remove" && body.action !== "primary" && body.action !== "crop")) throw new ImageError("Invalid image action.");
+      if (body.action === "crop") {
+        if (kind !== "vehicles") throw new ImageError("Only vehicle photos use this frame.");
+        await cropVehicleImage(id, Number(body.imageId), body.expectedUrl, body.crop, auth.user.id);
+      } else await changeImage(kind, id, Number(body.imageId), body.action, auth.user.id);
     }
     return NextResponse.json({ items: await listImages(kind, id), configured: imageStorageReady() }, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {

@@ -65,14 +65,14 @@ export default async function VehicleDetailPage({
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div>
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-surface-hover shadow-card">
+          <div className="relative aspect-[8/5] w-full overflow-hidden rounded-2xl bg-primary-950 shadow-card">
             <Spotlight className="h-full w-full">
               <Image
                 src={gallery[0]}
                 alt={vehicle.name}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover"
+                className="object-contain"
                 priority
               />
             </Spotlight>
@@ -95,7 +95,7 @@ export default async function VehicleDetailPage({
                     alt={`${vehicle.name} photo ${i + 2}`}
                     fill
                     sizes="120px"
-                    className="object-cover"
+                    className="object-contain"
                   />
                 </div>
               ))}

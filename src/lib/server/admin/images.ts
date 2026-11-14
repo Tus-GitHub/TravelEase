@@ -3,6 +3,7 @@ import { getPool } from "../db";
 import { ImageError } from "../cloudinary";
 import type { AdminImage, ImageKind } from "../../image-upload";
 import { markUploadRolledBack } from "../upload-persistence";
+import { vehicleCropUrl, validVehicleCrop } from "../../vehicle-image";
 
 // Identifiers are exclusively server-owned, never interpolated from request input.
 const tables = {
@@ -75,5 +76,18 @@ export async function changeImage(kind: ImageKind, id: number, imageId: number, 
         SELECT vehicle_image_id FROM vehicle_images WHERE vehicle_id=$1 AND NOT is_deleted AND is_active
         ORDER BY is_primary DESC, display_order, vehicle_image_id LIMIT 1)`, [id, actor]);
     }
+  });
+}
+
+/** Update only this existing photo's delivery URL; preserve the original asset and primary choice. */
+export async function cropVehicleImage(id: number, imageId: number, expectedUrl: unknown, crop: unknown, actor: string) {
+  if (typeof expectedUrl !== "string" || expectedUrl.length > 500 || (crop !== null && !validVehicleCrop(crop))) throw new ImageError("Invalid photo frame.");
+  await locked("vehicles", id, async c => {
+    const found = await c.query("SELECT image_url FROM vehicle_images WHERE vehicle_id=$1 AND vehicle_image_id=$2 AND NOT is_deleted AND is_active FOR UPDATE", [id, imageId]);
+    if (!found.rowCount) throw new ImageError("Image not found.", 404);
+    if (found.rows[0].image_url !== expectedUrl) throw new ImageError("This photo changed in another editor. Close and reload photos before saving.", 409);
+    const url = vehicleCropUrl(found.rows[0].image_url, crop);
+    if (!url || url.length > 500) throw new ImageError("Upload this photo through the gallery before cropping it.");
+    await c.query("UPDATE vehicle_images SET image_url=$3,updated_by=$4 WHERE vehicle_id=$1 AND vehicle_image_id=$2", [id, imageId, url, actor]);
   });
 }

@@ -4,11 +4,11 @@ import AnimateInView from "@/components/common/AnimateInView";
 import Button from "@/components/common/Button";
 import TiltCard from "@/components/motion/TiltCard";
 import VehicleCard from "@/components/cards/VehicleCard";
-import { listPublicVehicles, toCardVehicle } from "@/lib/server/catalogue";
+import { listPublicVehicles, toCardVehicle, type PublicVehicle } from "@/lib/server/catalogue";
 import { cmsHeading, cmsText, type CmsSection } from "@/lib/cms";
 
-export default async function FeaturedVehicles({ cms }: { cms?: CmsSection } = {}) {
-  const featured = (await listPublicVehicles({ availableOnly: true }))
+export default async function FeaturedVehicles({ cms, vehicles }: { cms?: CmsSection; vehicles?: PublicVehicle[] } = {}) {
+  const featured = (vehicles ?? await listPublicVehicles({ availableOnly: true }))
     .slice(0, 4)
     .map(toCardVehicle);
 

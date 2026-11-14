@@ -14,7 +14,7 @@ import HowItWorks from "@/components/sections/HowItWorks";
 import PackageBuilder from "@/components/sections/PackageBuilder";
 import WhyChooseUs from "@/components/sections/WhyChooseUs";
 import Testimonials from "@/components/sections/Testimonials";
-import { listPublicPackages, listPublicRegions, toCardPackage, toBuilderRegion } from "@/lib/server/catalogue";
+import { listPublicPackages, listPublicRegions, listPublicVehicles, toCardPackage, toBuilderRegion } from "@/lib/server/catalogue";
 import { cmsText, cmsItems, cmsHeading, type CmsDocument, type CmsSection } from "@/lib/cms";
 import { loadCatalogue } from '@/lib/server/cms-catalogue';
 import CatalogueBrowser from './CatalogueBrowser';
@@ -46,9 +46,15 @@ export default async function CmsRenderer({ document }: { document: CmsDocument 
   const sections = document.sections.filter(section => section.visible);
   const hasPackages = sections.some(section => ["packages", "package-builder"].includes(section.type));
   const hasBuilder = sections.some(section => section.type === "package-builder");
-  const [packageRows, regionRows] = await Promise.all([hasPackages ? listPublicPackages() : [], hasBuilder ? listPublicRegions() : []]);
+  const hasVehicles = sections.some(section => section.type === "featured-vehicles");
+  // Start independent reads together; hero rendering no longer waits for several data waves.
+  const [packageRows, regionRows, vehicleRows, catalogues] = await Promise.all([
+    hasPackages ? listPublicPackages() : [], hasBuilder ? listPublicRegions() : [],
+    hasVehicles ? listPublicVehicles({ availableOnly: true }) : [],
+    Promise.all(sections.filter(s => s.type === 'catalogue').map(async s => [s.id, await loadCatalogue(s.content)] as const)),
+  ]);
   const packages = packageRows.map(toCardPackage), regions = regionRows.map(toBuilderRegion);
-  const catalogueRows = new Map(await Promise.all(sections.filter(s => s.type === 'catalogue').map(async s => [s.id, await loadCatalogue(s.content)] as const)));
+  const catalogueRows = new Map(catalogues);
   return <main className={sections[0]?.type === "hero" ? "" : "pt-20"} data-cms-page>
     {!sections.some(section => section.type === "hero") && <h1 className="sr-only">{document.seo.title}</h1>}
     {sections.map(section => {
@@ -58,7 +64,7 @@ export default async function CmsRenderer({ document }: { document: CmsDocument 
         case "travel-band": { const photo = cmsText(section, "imageUrl") || (section.appearance.background === "image" ? section.appearance.imageUrl : ""); return <div key={section.id} id={`section-${section.id}`} data-cms-section={section.id}>{photo ? <div className="relative h-60"><Image src={photo} alt={cmsText(section, "imageAlt")} fill sizes="100vw" className="object-cover" /></div> : <TravelAnimationBand />}</div>; }
         case "destinations": return <DestinationMap key={section.id} cms={section} />;
         case "vehicle-categories": return <VehicleCategories key={section.id} cms={section} />;
-        case "featured-vehicles": return <FeaturedVehicles key={section.id} cms={section} />;
+        case "featured-vehicles": return <FeaturedVehicles key={section.id} cms={section} vehicles={vehicleRows} />;
         case "packages": return <PackageShowcase key={section.id} cms={section} packages={packages} />;
         case "how-it-works": return <HowItWorks key={section.id} cms={section} />;
         case "package-builder": return <PackageBuilder key={section.id} cms={section} packages={packages} regions={regions} />;

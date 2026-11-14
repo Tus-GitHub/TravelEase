@@ -19,7 +19,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
     <Card className="flex h-full flex-col transition-shadow duration-300 group-hover:shadow-[0_20px_50px_-12px_rgba(37,99,235,0.35)] group-hover:ring-1 group-hover:ring-primary-400/40">
       <Link
         href={`/vehicles/${vehicle.id}`}
-        className="relative block h-48 w-full overflow-hidden bg-surface-hover"
+        className="relative block aspect-[8/5] w-full overflow-hidden bg-primary-950"
       >
         <Spotlight className="h-full w-full">
           <Image
@@ -27,7 +27,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
             alt={vehicle.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover transition-transform duration-[600ms] ease-out group-hover:scale-110"
+            className="object-contain"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         </Spotlight>

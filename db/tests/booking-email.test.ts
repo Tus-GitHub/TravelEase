@@ -12,11 +12,13 @@ const allowed = [customer, business];
 const sink = await localMailSink(allowed);
 Object.assign(process.env, { SMTP_HOST: "127.0.0.1", SMTP_PORT: String(sink.port), SMTP_USER: "fixture", SMTP_PASS: "fixture", EMAIL_FROM: "Fixture Sender <sender@example.invalid>", APP_ORIGIN: "https://booking.example.invalid" });
 let inbox: string | null = business;
+let managedLogin: string | null = null;
 let row: Record<string, unknown>;
 const logs: unknown[][] = [];
 const pool = {
   async query(sql: string, params: unknown[] = []) {
     if (sql.includes("INSERT INTO notifications")) { logs.push(params); return { rows: [] }; }
+    if (sql.includes("FROM site_settings") && sql.includes("admin_login_alias")) return { rows: managedLogin ? [{ setting_value: managedLogin }] : [] };
     if (sql.includes("FROM site_settings")) return { rows: inbox ? [{ setting_key: "contact_email", setting_value: inbox }] : [] };
     if (sql.includes("FROM bookings b")) {
       assert(sql.includes("b.pickup_address") && sql.includes("u.name AS owner_name"));
@@ -43,7 +45,7 @@ const snapshot = async () => {
 };
 beforeEach(() => {
   sink.messages.length = 0; sink.rejected.length = 0; logs.length = 0;
-  allowed.splice(0, allowed.length, customer, business); inbox = business; invalidateSiteSettings();
+  allowed.splice(0, allowed.length, customer, business); inbox = business; managedLogin = null; invalidateSiteSettings();
   row = { booking_id: "00000000-0000-4000-8000-000000000001", booking_reference: "TE-EMAIL001", status: "PendingPayment", start_datetime: new Date("2026-12-01T06:00:00Z"), total_amount: "1250", passenger_count: 2, type_code: "point_to_point", owner_user_id: "00000000-0000-4000-8000-000000000002", owner_email: customer, owner_name: "<i>Fixture customer</i>", owner_phone: "9999999999", pickup_address: "Pickup <test>", drop_address: "Destination test", itinerary: null, driver_name: null, driver_phone: null, departure_id: null, seat_hold_expires_at: null, refund_amount: null };
 });
 after(async () => { console.error = previousError; await sink.close(); });
@@ -117,4 +119,20 @@ test("invalid customer Reply-To cannot inject email headers", async () => {
   const event = await snapshot();
   await assert.rejects(sendAdminBookingNotification(business, { email: "customer@example.invalid\r\nBcc: outsider@example.invalid" }, event.info), /Invalid booking email mailbox/);
   assert.equal(sink.messages.length, 0);
+});
+
+test("app-only admin address uses the captured real mailbox for receipt, replies and delivery logs", async () => {
+  const label = "admin@example.invalid";
+  managedLogin = JSON.stringify({ identifier: label, userId: row.owner_user_id, recoveryEmail: customer });
+  row.owner_email = label;
+  const event = await snapshot();
+  assert.equal(event.row.owner_email, customer);
+  managedLogin = JSON.stringify({ identifier: label, userId: row.owner_user_id, recoveryEmail: "later@example.invalid" });
+  await notifyBookingCreated(event);
+  assert.equal(sink.messages.length, 2);
+  assert(sink.messages.some(message => message.to.includes(customer)));
+  assert(sink.messages.every(message => !message.to.includes(label) && !message.to.includes("later@example.invalid")));
+  const admin = sink.messages.find(message => message.to.includes(business))!;
+  assert.match(decode(admin.content), /Reply-To: customer@example\.invalid/i);
+  assert.equal(logs.find(values => values[2] === "booking.confirmation")?.[3], customer);
 });

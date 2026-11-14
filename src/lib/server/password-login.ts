@@ -1,6 +1,7 @@
 import { getPool } from "./db";
 import { verifyCredentials, type PublicUser } from "./users";
 import { createSession } from "./session";
+import { resolveLoginIdentifier } from "./login-identifier";
 
 /** Password validation and session issuance serialize with password reset. */
 export async function passwordLogin(email: string, password: string, remember: boolean): Promise<
@@ -13,7 +14,14 @@ export async function passwordLogin(email: string, password: string, remember: b
     // Supplying a transaction locks this user before checking the hash. If a
     // reset wins first, we read its new hash; if login wins, reset deletes this
     // session when it subsequently acquires the same lock.
-    const user = await verifyCredentials(email, password, client);
+    const identifier = await resolveLoginIdentifier(client, email);
+    const user = identifier.email ? await verifyCredentials(identifier.email, password, client) : null;
+    // Recheck binding/role after verifyCredentials acquired the account lock.
+    // A demotion or reassignment cannot turn an alias into another account.
+    if (identifier.aliasUserId && (user?.id !== identifier.aliasUserId || user.role !== "admin")) {
+      await client.query("ROLLBACK");
+      return { ok: false, reason: "invalid" };
+    }
     if (!user || !user.emailVerified) {
       await client.query("ROLLBACK");
       return { ok: false, reason: user ? "unverified" : "invalid" };

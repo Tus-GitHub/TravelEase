@@ -57,6 +57,8 @@ const auth = { requireRole: async () => authAllowed ? { ok: true, user: { id: ad
 const imageRoute = load("src/app/api/admin/images/[kind]/[id]/route.ts", {
   "@/lib/server/auth-guard": auth, "@/lib/server/admin/images": images, "@/lib/server/cloudinary": storage,
   "@/lib/image-upload": await import("../../src/lib/image-upload.ts"), "@/lib/server/upload-persistence": persistence,
+  "@/lib/server/request-origin": await import("../../src/lib/server/request-origin.ts"),
+  "@/lib/server/http-json": await import("../../src/lib/server/http-json.ts"),
 });
 const cmsRoute = load("src/app/api/admin/cms/pages/[id]/image/route.ts", {
   "@/lib/server/auth-guard": auth, "@/lib/server/request-origin": await import("../../src/lib/server/request-origin.ts"),
@@ -186,6 +188,26 @@ try {
     cleanupFails=true;assert.equal((await intercept(fault("write"),()=>postImage())).status,409);cleanupFails=false;
     authAllowed=false;const before=assets.size;assert.equal((await postImage()).status,401);assert.equal(assets.size,before);authAllowed=true;
     pass("deleted target/version conflict safely clean new upload; cleanup failure preserves original status; anonymous upload never spends storage");
+  }
+  {
+    const original=`https://res.cloudinary.com/test-cloud/image/upload/v1/jagdamba/development/${randomUUID()}.webp`;
+    await images.saveImage("vehicles",vehicleIds[0],original,admin);
+    const photo=(await images.listImages("vehicles",vehicleIds[0])).find(p=>p.url===original)!;assert(photo);
+    const patch=(id:number,data:object,origin="http://localhost")=>imageRoute.PATCH(new Request(`http://localhost/api/admin/images/vehicles/${id}`,{method:"PATCH",headers:{Origin:origin,"Content-Type":"application/json"},body:JSON.stringify(data)}),{params:{kind:"vehicles",id:String(id)}}) as Promise<Response>;
+    const body={action:"crop",imageId:photo.id,expectedUrl:original,crop:{x:100,y:200,width:800,height:500}};
+    assert.equal((await patch(vehicleIds[0],body,"https://foreign.invalid")).status,403);
+    authAllowed=false;assert.equal((await patch(vehicleIds[0],body)).status,401);authAllowed=true;
+    assert.equal((await patch(vehicleIds[1],body)).status,404);
+    assert.equal((await patch(vehicleIds[0],{...body,crop:{x:-1,y:0,width:800,height:500}})).status,400);
+    assert.equal((await patch(vehicleIds[0],body)).status,200);
+    const cropped=(await images.listImages("vehicles",vehicleIds[0])).find(p=>p.id===photo.id)!;
+    assert(cropped.url.includes('/c_crop,x_100,y_200,w_800,h_500/'));assert.equal(cropped.primary,photo.primary);
+    assert.equal((await patch(vehicleIds[0],body)).status,409);
+    assert.equal((await patch(vehicleIds[0],{...body,expectedUrl:cropped.url,crop:null})).status,200);
+    assert.equal((await images.listImages("vehicles",vehicleIds[0])).find(p=>p.id===photo.id)?.url,original);
+    await images.changeImage("vehicles",vehicleIds[0],photo.id,"remove",admin);
+    assert.equal((await patch(vehicleIds[0],body)).status,404);
+    pass("real crop API checks admin/origin/ownership/bounds, preserves primary/original, rejects stale/deleted edits, and restores full photo");
   }
   {
     const id=await booking(),first=await reviews.upsertReview(id,customer,{rating:5,body:"Original"});assert(first.ok);

@@ -37,6 +37,8 @@
     "test:hotel-db": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/hotel-destinations.test.ts --dev",
     "test:contact": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/contact.test.ts",
     "test:booking-email": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/booking-email.test.ts",
+    "test:login-identifier": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/login-identifier.test.ts",
+    "test:vehicle-image": "node --experimental-strip-types --test db/tests/vehicle-image.test.ts",
     "test:contact-db": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/contact-settings.test.ts --dev",
     "test:integration-origins": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/integration-origin-smoke.ts --dev",
     "test:support": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/support-requests.test.ts",

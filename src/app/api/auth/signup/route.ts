@@ -6,6 +6,8 @@ import { sendVerificationEmail, appOrigin } from "@/lib/server/email";
 import { logActivity, clientIp } from "@/lib/server/activity-log";
 import { isValidEmail, isValidPhone, PASSWORD_MIN_LENGTH } from "@/lib/validation";
 import { readAuthBody } from "@/lib/server/auth-request";
+import { getPool } from "@/lib/server/db";
+import { resolveLoginIdentifier } from "@/lib/server/login-identifier";
 
 export async function POST(request: Request) {
   const input = await readAuthBody(request);
@@ -41,7 +43,8 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (await findUserByEmail(email)) {
+  const identifier = await resolveLoginIdentifier(getPool(), email);
+  if (identifier.aliasUserId || await findUserByEmail(email)) {
     return NextResponse.json(
       { error: "An account with this email already exists." },
       { status: 409 },

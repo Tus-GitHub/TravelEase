@@ -4,6 +4,7 @@ import { AccountUnavailableError } from "./account-write";
 import { createFederatedUser, findUserByEmail, findUserById, markEmailVerified, setUserPassword } from "./users";
 import { linkProvider } from "./auth-providers";
 import { createSession, destroyAllSessionsForUser } from "./session";
+import { resolveLoginIdentifier } from "./login-identifier";
 
 /** Called only after the callback validates Google's verified identity.
  * Resolve collisions, secure an unverified signup, link and issue the session
@@ -16,6 +17,9 @@ export async function finishGoogleLogin(subject: string, email: string, name: st
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    // This app-only label does not prove control of an external email domain.
+    // Never let a Google email claim link or take over its managed account.
+    if ((await resolveLoginIdentifier(client, email)).aliasUserId) throw new Error("Use password login for this app-only identifier.");
     // There may not be a provider row yet. Serialize callbacks for this subject
     // without inventing a second account/identity system or a new table.
     await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [`google:${subject}`]);

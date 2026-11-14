@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import CmsRenderer from "@/components/cms/CmsRenderer";
-import { getPublishedCmsPage } from "@/lib/server/cms";
+import { getPublishedCmsPage } from "@/lib/server/published-cms";
 import { validateCmsSlug } from "@/lib/cms";
 export const dynamic = "force-dynamic";
 function slugOr404(slug: string) {

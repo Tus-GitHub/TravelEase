@@ -2,9 +2,9 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SmoothScroll from "@/components/motion/SmoothScroll";
 import ScrollProgress from "@/components/motion/ScrollProgress";
-import { getCmsNavigation } from "@/lib/server/cms";
+import { getCmsNavigation } from "@/lib/server/published-cms";
 
-// Published menu changes must appear on every site page without a rebuild.
+// Published menu changes invalidate the shared public cache without a rebuild.
 export const dynamic = "force-dynamic";
 
 /** Chrome for every regular marketing/booking page: sticky navbar + footer. */
