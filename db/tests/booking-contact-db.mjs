@@ -1,11 +1,12 @@
 // Real development database; all email is captured in a loopback sink.
 import assert from 'node:assert/strict';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHash} from 'node:crypto';
 import {createRequire} from 'node:module';
 import {localMailSink} from './_local-smtp.mjs';
 import {getPool} from '../../src/lib/server/db.ts';
 import {cachedMapRequest} from '../../src/lib/server/map-services.ts';
 import {createBooking} from '../../src/lib/server/bookings.ts';
+import {listPricing,savePricing,saveVehicleKmRate} from '../../src/lib/server/admin/pricing.ts';
 const require=createRequire(import.meta.url),{Pool}=require('pg');
 assert(process.argv.includes('--dev') && !process.env.VERCEL, 'Development only');
 assert(process.env.DATABASE_URL && process.env.DATABASE_URL_APP && process.env.DATABASE_URL_PRODUCTION);
@@ -14,6 +15,10 @@ assert.notEqual(host(process.env.DATABASE_URL),host(process.env.DATABASE_URL_PRO
 assert.equal(host(process.env.DATABASE_URL),host(process.env.DATABASE_URL_APP));
 const pool=new Pool({connectionString:process.env.DATABASE_URL,max:2,connectionTimeoutMillis:15000});
 const id=randomUUID(),email=`service-${id}@example.invalid`,key=randomUUID().replaceAll('-','').repeat(2);
+const routeKeys=[];
+process.env.BOOKING_ROUTING_ORIGIN=`https://${id}.maps.invalid`;
+const originalFetch=globalThis.fetch;
+globalThis.fetch=(...args)=>{if(String(args[0]).includes('.maps.invalid'))throw Error('Fixture cache must prevent upstream requests');return originalFetch(...args);};
 let type,car,route,booking;
 const inbox=String((await pool.query("SELECT setting_value FROM site_settings WHERE setting_key='contact_email'")).rows[0]?.setting_value||'');
 const sink=await localMailSink([email,...(inbox?[inbox]:[])]);
@@ -37,11 +42,34 @@ try{
  assert.equal((await pool.query('SELECT phone FROM users WHERE user_id=$1',[id])).rows[0].phone,'');
  assert.equal(sink.messages.length,2);assert.deepEqual(sink.rejected,[]);assert(sink.messages.some(m=>m.content.includes('+919999999999')));
  console.log('PASS real development Photon quota/cache constraints, cached read, missing/invalid phone rejection, trusted fare, saved lead contact, unchanged profile, two loopback emails with contact.');
+ const rule=(await listPricing()).rules.find(r=>r.vehicleId===car&&r.bookingType==='point_to_point');assert(rule);
+ for(const invalid of [{vehicleId:null},{bookingType:'outstation'},{emptyReturnPerKmRate:0},{emptyReturnPerKmRate:0.001}])await assert.rejects(()=>savePricing({...rule,emptyReturnEnabled:true,emptyReturnPerKmRate:9,...invalid},id));
+ await savePricing({...rule,emptyReturnEnabled:true,emptyReturnPerKmRate:9},id);
+ const reverse={...route,id:createHash('sha256').update(`fossgis:${process.env.BOOKING_ROUTING_ORIGIN}:${route.drop.lng},${route.drop.lat};${route.pickup.lng},${route.pickup.lat}`).digest('hex'),pickup:route.drop,drop:route.pickup,distanceKm:20,durationHours:2};
+ routeKeys.push(reverse.id);await pool.query("INSERT INTO map_service_cache(cache_key,provider,response,expires_at) VALUES($1,'fossgis',$2::jsonb,now()+interval '1 hour')",[reverse.id,JSON.stringify(reverse)]);
+ const contactInput={...input,passengers:[{name:user.name,phone:'+919999999999',isPrimary:true}]};
+ assert.equal((await createBooking(contactInput,user)).status,409,'Old quote cannot hide the new return fee');
+ const charged=await createBooking({...contactInput,expectedTotal:402.12,emptyReturnKm:0.01,endDateTime:new Date(Date.parse(input.startDateTime)+60000).toISOString()},user);assert.equal(charged.ok,true,JSON.stringify(charged));
+ const saved=(await pool.query('SELECT total_amount,price_breakdown FROM bookings WHERE booking_id=$1',[charged.bookingId])).rows[0];assert.equal(Number(saved.total_amount),402.12);assert.equal(saved.price_breakdown.emptyReturnAmount,180);assert.equal(saved.price_breakdown.emptyReturnRoute.distanceKm,20);
+ const window=(await pool.query('SELECT estimated_hours,end_datetime FROM bookings WHERE booking_id=$1',[charged.bookingId])).rows[0];assert.equal(Number(window.estimated_hours),3);assert.equal(window.end_datetime,null);
+ await pool.query("INSERT INTO vehicle_availability(vehicle_id,starts_at,ends_at,kind,note) VALUES($1,$2,$3,'maintenance','Owned return-window fixture')",[car,new Date(Date.parse(input.startDateTime)+2*3600000),new Date(Date.parse(input.startDateTime)+2.5*3600000)]);
+ assert.equal((await createBooking({...contactInput,expectedTotal:402.12},user)).status,409,'Availability includes empty return');await pool.query('DELETE FROM vehicle_availability WHERE vehicle_id=$1',[car]);
+ await saveVehicleKmRate(pool,car,19,id);
+ const preserved=(await pool.query("SELECT empty_return_enabled,empty_return_per_km_rate FROM pricing_rules p JOIN booking_types b USING(booking_type_id) WHERE p.vehicle_id=$1 AND b.code='point_to_point'",[car])).rows[0];assert(preserved.empty_return_enabled);assert.equal(Number(preserved.empty_return_per_km_rate),9);
+ assert.equal(Number((await pool.query('SELECT total_amount FROM bookings WHERE booking_id=$1',[charged.bookingId])).rows[0].total_amount),402.12,'Existing fare stays immutable');
+ const outstation=(await listPricing()).rules.find(r=>r.vehicleId===car&&r.bookingType==='outstation');assert(outstation);await savePricing({...outstation,driverAllowancePerDay:200,nightCharge:100},id);
+ const round={...route,id:randomUUID().replaceAll('-','').repeat(2),roundTrip:true,distanceKm:26};routeKeys.push(round.id);await pool.query("INSERT INTO map_service_cache(cache_key,provider,response,expires_at) VALUES($1,'fossgis',$2::jsonb,now()+interval '1 hour')",[round.id,JSON.stringify(round)]);
+ const roundInput={...contactInput,bookingType:'outstation',routeId:round.id,endDateTime:new Date(Date.parse(input.startDateTime)+2*86400000).toISOString(),durationDays:1,nights:0,expectedTotal:1294};
+ assert.equal((await createBooking({...roundInput,endDateTime:undefined},user)).status,400);
+ assert.equal((await createBooking({...roundInput,endDateTime:new Date(Date.parse(input.startDateTime)+60000).toISOString()},user)).status,400);
+ const together=await createBooking(roundInput,user);assert.equal(together.ok,true,JSON.stringify(together));const roundSaved=(await pool.query('SELECT duration_days,price_breakdown,end_datetime FROM bookings WHERE booking_id=$1',[together.bookingId])).rows[0];assert.equal(roundSaved.duration_days,3);assert.equal(roundSaved.price_breakdown.driverAllowance,600);assert.equal(roundSaved.price_breakdown.nightCharges,200);assert.equal(roundSaved.price_breakdown.emptyReturnAmount,undefined);assert.equal(new Date(roundSaved.end_datetime).toISOString(),roundInput.endDateTime);
+ console.log('PASS per-car policy save/validation, actual reverse-road charge, forged km ignored, stale quote409, fleet rate preserves policy, immutable fare and server-derived round-trip dates/days/nights without an empty return.');
 }finally{
+ globalThis.fetch=originalFetch;
  await pool.query('DELETE FROM notifications WHERE user_id=$1 OR booking_id IN (SELECT booking_id FROM bookings WHERE user_id=$1)',[id]);
  await pool.query('DELETE FROM activity_logs WHERE user_id=$1',[id]);await pool.query('DELETE FROM bookings WHERE user_id=$1',[id]);
- if(car)await pool.query('DELETE FROM pricing_rules WHERE vehicle_id=$1',[car]);if(car)await pool.query('DELETE FROM vehicles WHERE vehicle_id=$1',[car]);if(type)await pool.query('DELETE FROM vehicle_types WHERE vehicle_type_id=$1',[type]);
- await pool.query("DELETE FROM users WHERE user_id=$1 AND email=$2",[id,email]);await pool.query('DELETE FROM map_service_cache WHERE cache_key=ANY($1::text[])',[[key,...(route?[route.id]:[])]]);
+ if(car)await pool.query('DELETE FROM vehicle_availability WHERE vehicle_id=$1',[car]);if(car)await pool.query('DELETE FROM pricing_rules WHERE vehicle_id=$1',[car]);if(car)await pool.query('DELETE FROM vehicles WHERE vehicle_id=$1',[car]);if(type)await pool.query('DELETE FROM vehicle_types WHERE vehicle_type_id=$1',[type]);
+ await pool.query("DELETE FROM users WHERE user_id=$1 AND email=$2",[id,email]);await pool.query('DELETE FROM map_service_cache WHERE cache_key=ANY($1::text[])',[[key,...routeKeys,...(route?[route.id]:[])]]);
  assert.equal((await pool.query('SELECT 1 FROM users WHERE user_id=$1',[id])).rowCount,0);
  await sink.close();await pool.end();await getPool().end();console.log('PASS owned development fixtures removed.');
 }

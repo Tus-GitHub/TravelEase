@@ -12,6 +12,7 @@ import { bookingInstant, bookingTimeValue, validBookingTime as validDateTime } f
 import TripRouteSelector from "./TripRouteSelector";
 import { routePoint, type BookingRoute, type RoutePoint } from "@/lib/booking-route";
 import { isValidPhone, normalizePhone } from "@/lib/validation";
+import { tripDuration } from "@/lib/booking-duration";
 
 type Mode = "curated" | "custom" | "vehicle" | "generic";
 
@@ -68,6 +69,10 @@ export default function BookingFlow() {
   );
   const [startDate,setStart]=useState(()=>{const raw=params.get("start")??"";if(validDateTime(raw))return raw;const date=new Date(raw);return Number.isFinite(date.getTime())?bookingTimeValue(date):"";});
   const [passengers, setPassengers] = useState(Number(params.get("pax")) || 2);
+  const [capacity, setCapacity] = useState(60);
+  const [endDate, setEnd] = useState(() => validDateTime(params.get("end") ?? "") ? params.get("end")! : "");
+  let duration: { days: number; nights: number } | null = null;
+  if (validDateTime(startDate) && validDateTime(endDate)) { try { duration = tripDuration(bookingInstant(startDate), bookingInstant(endDate)); } catch { /* validated on submission */ } }
   const [pickupAddress, setPickup] = useState(params.get("pickup") ?? "");
   const [dropAddress, setDrop] = useState(params.get("drop") ?? "");
   const [distanceKm, setDistance] = useState(Number(params.get("km")) || 0);
@@ -118,6 +123,8 @@ export default function BookingFlow() {
             pricePerPerson: pkg.pricePerPerson,
           });
           setDays(pkg.durationDays);
+          setCapacity(pkg.maxPersons);
+          setNights(Math.max(0, pkg.durationDays - 1));
         } else if (mode === "custom" && spotsParam) {
           const ids = spotsParam
             .split(",")
@@ -150,6 +157,7 @@ export default function BookingFlow() {
           ]);
           if (!vRes.ok) throw new Error("Vehicle not found.");
           const { vehicle } = await vRes.json();
+          setCapacity(vehicle.seatingCapacity);
           const { vehicleTypes } = await vtRes.json();
           if (cancelled) return;
           const vt = vehicleTypes.find(
@@ -196,8 +204,9 @@ export default function BookingFlow() {
     }
     if (couponCode.trim()) body.couponCode = couponCode.trim();
     if (validDateTime(startDate)) body.startDate = bookingInstant(startDate).toISOString();
+    if (bookingType === "outstation" && validDateTime(endDate)) body.endDateTime = bookingInstant(endDate).toISOString();
     return body;
-  }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours, couponCode, startDate, vehicleId, requiresRoadRoute, roadRoute, pickupPoint, dropPoint]);
+  }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours, couponCode, startDate, endDate, vehicleId, requiresRoadRoute, roadRoute, pickupPoint, dropPoint]);
 
   useEffect(() => {
     if (!meta) return;
@@ -207,7 +216,7 @@ export default function BookingFlow() {
     setCouponInfo(null);
     setCouponError(null);
     setQuoteError(null);
-    if (requiresRoadRoute && !roadRoute) { setQuoting(false); return; }
+    if ((requiresRoadRoute && !roadRoute) || !validDateTime(startDate) || (bookingType === "outstation" && (!validDateTime(endDate) || bookingInstant(endDate) <= bookingInstant(startDate)))) { setQuoting(false); return; }
     setQuoting(true);
     const timer = setTimeout(async () => {
       try {
@@ -230,11 +239,12 @@ export default function BookingFlow() {
       }
     }, 350);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [quoteBody, meta, roadRoute, requiresRoadRoute, quoteRefresh]);
+  }, [quoteBody, meta, roadRoute, requiresRoadRoute, quoteRefresh, bookingType, startDate, endDate]);
 
   const currentUrlWithState = useCallback(() => {
     const p = new URLSearchParams(params.toString());
     p.set("start", startDate);
+    if (endDate) p.set("end", endDate);
     p.set("pax", String(passengers));
     if (pickupAddress) p.set("pickup", pickupAddress);
     if (dropAddress) p.set("drop", dropAddress);
@@ -249,7 +259,7 @@ export default function BookingFlow() {
     return `/booking/new?${p.toString()}`;
   }, [
     params, startDate, passengers, pickupAddress, dropAddress, distanceKm, hours,
-    days, nights, notes, mode, bookingType, pickupPoint, dropPoint,
+    days, nights, notes, mode, bookingType, pickupPoint, dropPoint, endDate,
   ]);
 
   const submit = async (e: React.FormEvent) => {
@@ -261,6 +271,7 @@ export default function BookingFlow() {
       return;
     }
     if (!quote || (requiresRoadRoute && !roadRoute)) {setError("Choose locations and wait for a valid fare before confirming.");return;}
+    if (bookingType === "outstation" && !duration) { setError("Choose a return date and time after pickup."); return; }
 
     if (!user) {
       router.push(`/login?redirect=${encodeURIComponent(currentUrlWithState())}`);
@@ -272,6 +283,7 @@ export default function BookingFlow() {
     const payload: Record<string, unknown> = {
       bookingType,
       startDateTime: bookingInstant(startDate).toISOString(),
+      ...(bookingType === "outstation" ? { endDateTime: bookingInstant(endDate).toISOString() } : {}),
       passengerCount: passengers,
       pickupAddress: pickupAddress || undefined,
       dropAddress: dropAddress || undefined,
@@ -337,7 +349,7 @@ export default function BookingFlow() {
 
   const showDistance = bookingType === "point_to_point" || bookingType === "outstation" || bookingType === "airport_transfer";
   const showHours = bookingType === "hourly";
-  const showDays = bookingType === "package" || bookingType === "outstation";
+  const showDays = bookingType === "package" && mode !== "curated";
   const showDrop = bookingType === "point_to_point" || bookingType === "airport_transfer" || bookingType === "outstation";
 
   return (
@@ -355,6 +367,7 @@ export default function BookingFlow() {
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold text-muted">Trip type</span>
             <select
+              aria-label="Trip type"
               className={fieldCls}
               value={bookingType}
               onChange={(e) => setBookingType(e.target.value as BookingTypeCode)}
@@ -375,7 +388,7 @@ export default function BookingFlow() {
             <input
               type="number"
               min={1}
-              max={60}
+              max={capacity}
               className={fieldCls}
               value={passengers}
               onChange={(e) => setPassengers(Math.max(1, Number(e.target.value)))}
@@ -383,8 +396,16 @@ export default function BookingFlow() {
           </label>
         </div>
 
+        {bookingType === "outstation" && <div className="space-y-2">
+          <DateTimeSelector label="Return date & time" value={endDate} onChange={setEnd} min={startDate}/>
+          <p className="text-sm text-muted">{duration ? `${duration.days} ${duration.days === 1 ? "day" : "days"} · ${duration.nights} nights. You and the chauffeur return together.` : "Choose when your group returns. Daily allowances follow calendar dates in India."} The route includes both directions; no empty-return fee applies.</p>
+        </div>}
+
         {requiresRoadRoute&&<TripRouteSelector roundTrip={bookingType==="outstation"} pickup={pickupPoint} drop={dropPoint} pickupLabel={pickupAddress} dropLabel={dropAddress} onPickup={choosePickup} onDrop={chooseDrop} onRoute={setRoadRoute}/>}
 
+        <details open={!requiresRoadRoute} className="rounded-xl border border-line p-3">
+          <summary className="min-h-8 cursor-pointer text-sm font-medium text-fg">{requiresRoadRoute ? "Exact pickup / drop instructions (optional)" : "Pickup details"}</summary>
+          <div className="mt-3 space-y-3">
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold text-muted">Pickup address</span>
           <input
@@ -407,16 +428,19 @@ export default function BookingFlow() {
             />
           </label>
         )}
+          </div>
+        </details>
 
         <div className="grid gap-4 sm:grid-cols-3">
           {showDistance && (
-            <label className="block">
+            <label className={requiresRoadRoute ? "sr-only" : "block"}>
               <span className="mb-1.5 block text-xs font-semibold text-muted">Distance (km)</span>
               <input
                 type="number"
                 min={0}
                 className={fieldCls}
                 readOnly={requiresRoadRoute}
+                tabIndex={requiresRoadRoute ? -1 : undefined}
                 aria-label="Distance (km)"
                 value={requiresRoadRoute ? roadRoute?.distanceKm ?? "" : distanceKm || ""}
                 onChange={(e) => setDistance(Number(e.target.value))}
@@ -461,12 +485,15 @@ export default function BookingFlow() {
           )}
         </div>
 
-        {user && <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold text-muted">Booking contact number</span>
-          <input type="tel" autoComplete="tel" required maxLength={30} className={fieldCls} value={contactPhone} onChange={e=>setContactPhone(e.target.value)} placeholder="Mobile number for trip updates" />
-          <span className="mt-1 block text-xs text-muted">We’ll use this number to coordinate pickup and your trip.</span>
-        </label>}
+        {user && <div>
+          <label htmlFor="booking-contact-phone" className="mb-1.5 block text-xs font-semibold text-muted">Booking contact number</label>
+          <input id="booking-contact-phone" aria-describedby="booking-contact-help" type="tel" autoComplete="tel" required maxLength={30} className={fieldCls} value={contactPhone} onChange={e=>setContactPhone(e.target.value)} placeholder="Mobile number for trip updates" />
+          <p id="booking-contact-help" className="mt-1 text-xs text-muted">We’ll use this number to coordinate pickup and your trip.</p>
+        </div>}
 
+        <details className="rounded-xl border border-line p-3" open={Boolean(params.get("coupon") || params.get("notes"))}>
+          <summary className="min-h-8 cursor-pointer text-sm font-medium text-fg">Add a note or discount code (optional)</summary>
+          <div className="mt-3 space-y-4">
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold text-muted">Notes (optional)</span>
           <textarea
@@ -498,6 +525,8 @@ export default function BookingFlow() {
           )}
         </label>
 
+          </div>
+        </details>
         {quoteError&&<p role="alert" className="rounded-xl border border-red-400/30 px-3 py-2.5 text-sm text-red-700 dark:text-red-300">{quoteError}</p>}
         {error && (
           <p role="alert" className="rounded-xl border border-red-400/30 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">
@@ -505,7 +534,10 @@ export default function BookingFlow() {
           </p>
         )}
 
-        {quote&&<p aria-live="polite" className="text-base font-semibold text-fg lg:hidden">Estimated total: {inr(quote.totalAmount)}</p>}
+        {quote&&<div aria-live="polite" className="space-y-3 rounded-xl border border-line p-4 lg:hidden">
+          <ul className="space-y-2 text-sm">{quote.breakdown.map(line=><li key={line.label} className="flex justify-between gap-3"><span className="text-muted">{line.label}</span><span className="shrink-0 font-medium text-fg">{inr(line.amount)}</span></li>)}</ul>
+          <p className="border-t border-line pt-3 text-base font-semibold text-fg">Estimated total: {inr(quote.totalAmount)}</p>
+        </div>}
         <Button type="submit" variant="accent" size="lg" fullWidth loading={submitting} disabled={!quote||quoting||(requiresRoadRoute&&!roadRoute)}>
           {!isLoading && !user
             ? "Sign in to book"
@@ -518,7 +550,7 @@ export default function BookingFlow() {
         </p>
       </form>
 
-      <aside>
+      <aside className="hidden lg:block">
         <Card padded hover={false} className="sticky top-24">
           <p className="text-xs font-semibold uppercase tracking-wider text-faint">Price estimate</p>
           {quote ? (

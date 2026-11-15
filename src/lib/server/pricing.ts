@@ -19,6 +19,8 @@ export type BookingTypeCode =
 
 /** Flat view of one `pricing_rules` row — all money in INR. */
 export interface PricingRuleInput {
+  emptyReturnEnabled?: boolean;
+  emptyReturnPerKmRate?: number;
   baseAmount: number;
   perKmRate: number;
   perHourRate: number;
@@ -35,6 +37,8 @@ export interface PricingRuleInput {
 
 /** Normalized trip facts. Distances in km, durations in whole units. */
 export interface TripInput {
+  /** Reverse road distance resolved by the server, never client supplied. */
+  emptyReturnKm?: number;
   bookingType: BookingTypeCode;
   distanceKm?: number;
   hours?: number;
@@ -58,6 +62,7 @@ export interface PriceLine {
 }
 
 export interface PriceBreakdown {
+  emptyReturnAmount?: number;
   baseAmount: number;
   vehicleAmount: number;
   driverAllowance: number;
@@ -161,13 +166,16 @@ export function calculatePrice(
   extraKmCharges = money(extraKmCharges);
   packageAmount = money(packageAmount);
 
+  const emptyReturnAmount = rule.emptyReturnEnabled && ["point_to_point", "airport_transfer"].includes(trip.bookingType)
+    ? money(num(trip.emptyReturnKm) * num(rule.emptyReturnPerKmRate)) : 0;
+
   const subtotal = money(
     baseAmount +
       vehicleAmount +
       driverAllowance +
       nightCharges +
       extraKmCharges +
-      packageAmount,
+      packageAmount + emptyReturnAmount,
   );
 
   // Seasonal multiplier on the subtotal, before discount + tax.
@@ -201,6 +209,10 @@ export function calculatePrice(
     breakdown.push({ label: "Night charges", amount: nightCharges });
   if (extraKmCharges)
     breakdown.push({ label: "Extra distance", amount: extraKmCharges });
+  if (emptyReturnAmount) breakdown.push({
+    label: `Empty vehicle return (${num(trip.emptyReturnKm)} km × ₹${num(rule.emptyReturnPerKmRate)}/km)`,
+    amount: emptyReturnAmount,
+  });
   if (seasonalAdjustment)
     breakdown.push({
       label: trip.seasonalLabel
@@ -214,6 +226,7 @@ export function calculatePrice(
     breakdown.push({ label: `Tax (${taxPercent}% GST)`, amount: taxAmount });
 
   return {
+    ...(emptyReturnAmount ? { emptyReturnAmount } : {}),
     baseAmount,
     vehicleAmount,
     driverAllowance,

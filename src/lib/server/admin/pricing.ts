@@ -7,7 +7,8 @@ import type { Pool, PoolClient } from "pg";
 export class PricingError extends Error { status:number; constructor(message: string, status = 400) { super(message); this.status=status; } }
 const fields = { baseAmount: "base_amount", perKmRate: "per_km_rate", perHourRate: "per_hour_rate", includedKm: "included_km",
   extraKmRate: "extra_km_rate", perDayRate: "per_day_rate", driverAllowancePerDay: "driver_allowance_per_day",
-  nightCharge: "night_charge", flatRate: "flat_rate", taxPercent: "tax_percent", minKm: "min_km", minHours: "min_hours" } as const;
+  nightCharge: "night_charge", flatRate: "flat_rate", taxPercent: "tax_percent", minKm: "min_km", minHours: "min_hours",
+  emptyReturnPerKmRate: "empty_return_per_km_rate" } as const;
 export type PricingValues = Record<keyof typeof fields, number>;
 export async function listPricing() {
   const [rules, vehicles, types, bookingTypes] = await Promise.all([
@@ -21,7 +22,7 @@ export async function listPricing() {
   ]);
   return { rules: rules.rows.map(row => ({ id: row.pricing_rule_id, name: row.name, bookingType: row.booking_type,
     vehicleId: row.vehicle_id, vehicleTypeId: row.vehicle_type_id, vehicleName: row.vehicle_name, vehicleTypeName: row.vehicle_type_name,
-    isActive: row.is_active, priority: row.priority, effectiveFrom: row.effective_from, effectiveTo: row.effective_to,
+    isActive: row.is_active, emptyReturnEnabled: row.empty_return_enabled, priority: row.priority, effectiveFrom: row.effective_from, effectiveTo: row.effective_to,
     ...Object.fromEntries(Object.entries(fields).map(([key, column]) => [key, Number(row[column] ?? 0)])) })),
     vehicles: vehicles.rows, vehicleTypes: types.rows, bookingTypes: bookingTypes.rows };
 }
@@ -33,11 +34,15 @@ export async function savePricing(input: Record<string, unknown>, actor: string)
   const vehicleTypeId = vehicleId !== null ? null : input.vehicleTypeId ?? null;
   for (const value of [id, vehicleId, vehicleTypeId]) if (value !== null && (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0 || value > 2147483647)) throw new PricingError("Invalid pricing target.");
   if (typeof input.isActive !== "boolean") throw new PricingError("Choose whether the rate is active.");
+  const emptyReturnEnabled = input.emptyReturnEnabled ?? false;
+  if (typeof emptyReturnEnabled !== "boolean") throw new PricingError("Choose whether empty-return charges apply.");
+  if (emptyReturnEnabled && (vehicleId === null || !["point_to_point", "airport_transfer"].includes(input.bookingType))) throw new PricingError("Empty-return charges require an individual car and a one-way or airport trip.");
   const values = Object.keys(fields).map(key => {
-    const value = input[key];
-    if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > (key === "taxPercent" ? 100 : 999999) || (key === "minHours" && !Number.isInteger(value))) throw new PricingError(`Invalid ${key}.`);
+    const value = key === "emptyReturnPerKmRate" ? input[key] ?? 0 : input[key];
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > (key === "taxPercent" ? 100 : 999999) || (key === "minHours" && !Number.isInteger(value)) || (key === "emptyReturnPerKmRate" && Math.abs(value * 100 - Math.round(value * 100)) > 0.00001)) throw new PricingError(`Invalid ${key}.`);
     return value;
   });
+  if (emptyReturnEnabled && !(Number(input.emptyReturnPerKmRate) > 0)) throw new PricingError("Enter a positive empty-return rate per km.");
   const priority = input.priority ?? 0;
   if (typeof priority !== "number" || !Number.isInteger(priority) || Math.abs(priority) > 10000) throw new PricingError("Invalid priority.");
   if (input.isActive) {
@@ -69,15 +74,15 @@ export async function savePricing(input: Record<string, unknown>, actor: string)
           AND vehicle_type_id IS NOT DISTINCT FROM $3::integer AND NOT is_deleted ORDER BY priority DESC,pricing_rule_id LIMIT 1 FOR UPDATE`, [bookingTypeId, vehicleId, vehicleTypeId])).rows[0];
     if (id !== null && !existing) throw new PricingError("Pricing rule not found.", 404);
     const columns = Object.values(fields);
-    const args = [bookingTypeId, vehicleId, vehicleTypeId, `${target} – ${input.bookingType}`.slice(0,150), ...values, input.isActive, priority, actor];
+    const args = [bookingTypeId, vehicleId, vehicleTypeId, `${target} – ${input.bookingType}`.slice(0,150), ...values, input.isActive, priority, actor, emptyReturnEnabled];
     if (existing) {
       args.push(existing.pricing_rule_id);
       await client.query(`UPDATE pricing_rules SET booking_type_id=$1,vehicle_id=$2,vehicle_type_id=$3,name=$4,
-        ${columns.map((column,i) => `${column}=$${i+5}`).join(",")},is_active=$17,priority=$18,updated_by=$19 WHERE pricing_rule_id=$20`, args);
+        ${columns.map((column,i) => `${column}=$${i+5}`).join(",")},is_active=$18,priority=$19,updated_by=$20,empty_return_enabled=$21 WHERE pricing_rule_id=$22`, args);
       savedId = existing.pricing_rule_id;
     } else {
-      const result = await client.query(`INSERT INTO pricing_rules(booking_type_id,vehicle_id,vehicle_type_id,name,${columns.join(",")},is_active,priority,created_by,updated_by)
-        VALUES(${Array.from({length:19},(_,i) => `$${i+1}`).join(",")},$19) RETURNING pricing_rule_id`, args);
+      const result = await client.query(`INSERT INTO pricing_rules(booking_type_id,vehicle_id,vehicle_type_id,name,${columns.join(",")},is_active,priority,created_by,empty_return_enabled,updated_by)
+        VALUES(${Array.from({length:21},(_,i) => `$${i+1}`).join(",")},$20) RETURNING pricing_rule_id`, args);
       savedId = result.rows[0].pricing_rule_id;
     }
     await client.query("COMMIT");

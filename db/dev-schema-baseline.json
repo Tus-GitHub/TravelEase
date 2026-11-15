@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "recordedAt": "2026-11-15T18:07:25.392Z",
-  "note": "Observed development baseline; historical applied SQL bytes cannot be proven retroactively. Approved migration028 added on development; prior baseline archived; old definitions/checksums unchanged. Approved development migration029; prior28 baseline archived. Four tables/six columns verified. Approved development030 reviewed: two map tables, nine map columns, one pricing vehicle FK column, four indexes; original29 definitions/checksums retained. Reviewed031: only two existing provider CHECK constraints additionally accept photon; all30 previous hashes and other definitions retained.",
+  "recordedAt": "2026-11-15T18:21:15.214Z",
+  "note": "Observed development baseline; historical applied SQL bytes cannot be proven retroactively. Approved migration028 added on development; prior baseline archived; old definitions/checksums unchanged. Approved development migration029; prior28 baseline archived. Four tables/six columns verified. Approved development030 reviewed: two map tables, nine map columns, one pricing vehicle FK column, four indexes; original29 definitions/checksums retained. Reviewed031: only two existing provider CHECK constraints additionally accept photon; all30 previous hashes and other definitions retained. Reviewed032: exactly three user-approved pricing/package columns and four validation/NOT NULL constraints; all31 previous hashes and all other definitions/grants retained.",
   "hashes": {
     "001_create_auth_tables.sql": "49af6321b9ca6fd6d8671b1276a178e29eff488812dfbb90b3b97bbf0adf89d1",
     "002_create_vehicle_tables.sql": "93af44cafc8f775574671563122c99abe27f6d8c7347d70da589cf15aedbd92a",
@@ -33,7 +33,8 @@
     "028_create_cms_pages.sql": "a3c21f818a0d457ec35d646d25a88e09937019753dadef0257d2db8f5886ec95",
     "029_weekend_trip_departures.sql": "5a1c104e6342f3117c62f963d0f2e5153640dd36570c102d4a02066e8f4eba5f",
     "030_car_pricing_and_map_services.sql": "c18d8ba1a68738c6c0c586f1b7db72bf7c0d98bff2b0923ce87bbc47ecc63f01",
-    "031_photon_autocomplete.sql": "5d863c12dabb6c0e86634cdbd9158d116ababe27b2e8df901b3b393a6f74bf86"
+    "031_photon_autocomplete.sql": "5d863c12dabb6c0e86634cdbd9158d116ababe27b2e8df901b3b393a6f74bf86",
+    "032_trip_pricing_and_package_content.sql": "457eb272eeddf5ce8f96ba84aadd44b90cde1f825b17a0c621ecf488ac314f3d"
   },
   "snapshot": {
     "migrations": [
@@ -67,7 +68,8 @@
       "028_create_cms_pages.sql",
       "029_weekend_trip_departures.sql",
       "030_car_pricing_and_map_services.sql",
-      "031_photon_autocomplete.sql"
+      "031_photon_autocomplete.sql",
+      "032_trip_pricing_and_package_content.sql"
     ],
     "tables": [
       {
@@ -2927,6 +2929,17 @@
         }
       },
       {
+        "key": "packages.trip_content",
+        "definition": {
+          "type": "jsonb",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
         "key": "packages.updated_at",
         "definition": {
           "type": "timestamp with time zone",
@@ -3306,6 +3319,28 @@
           "type": "date",
           "notNull": false,
           "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "pricing_rules.empty_return_enabled",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "false",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "pricing_rules.empty_return_per_km_rate",
+        "definition": {
+          "type": "numeric(10,2)",
+          "notNull": true,
+          "default": "0",
           "identity": "",
           "generated": "",
           "collation": null
@@ -8321,6 +8356,13 @@
         }
       },
       {
+        "key": "packages.packages_trip_content_object",
+        "definition": {
+          "definition": "CHECK (trip_content IS NULL OR jsonb_typeof(trip_content) = 'object'::text)",
+          "validated": true
+        }
+      },
+      {
         "key": "packages.packages_updated_at_not_null",
         "definition": {
           "definition": "NOT NULL updated_at",
@@ -8538,6 +8580,13 @@
         }
       },
       {
+        "key": "pricing_rules.pricing_empty_return_policy",
+        "definition": {
+          "definition": "CHECK (empty_return_per_km_rate >= 0::numeric AND (NOT empty_return_enabled OR vehicle_id IS NOT NULL AND empty_return_per_km_rate > 0::numeric))",
+          "validated": true
+        }
+      },
+      {
         "key": "pricing_rules.pricing_rules_base_amount_not_null",
         "definition": {
           "definition": "NOT NULL base_amount",
@@ -8583,6 +8632,20 @@
         "key": "pricing_rules.pricing_rules_driver_allowance_per_day_not_null",
         "definition": {
           "definition": "NOT NULL driver_allowance_per_day",
+          "validated": true
+        }
+      },
+      {
+        "key": "pricing_rules.pricing_rules_empty_return_enabled_not_null",
+        "definition": {
+          "definition": "NOT NULL empty_return_enabled",
+          "validated": true
+        }
+      },
+      {
+        "key": "pricing_rules.pricing_rules_empty_return_per_km_rate_not_null",
+        "definition": {
+          "definition": "NOT NULL empty_return_per_km_rate",
           "validated": true
         }
       },

@@ -31,7 +31,8 @@ export async function resolvePricingRule(
   const r = await getPool().query(
     `SELECT base_amount, per_km_rate, per_hour_rate, included_km, extra_km_rate,
             per_day_rate, driver_allowance_per_day, night_charge, flat_rate,
-            tax_percent, min_hours, min_km
+            tax_percent, min_hours, min_km, vehicle_id,
+            empty_return_enabled, empty_return_per_km_rate
        FROM pricing_rules
       WHERE booking_type_id = $1
         AND (vehicle_id = $3 OR (vehicle_id IS NULL AND (vehicle_type_id = $2 OR vehicle_type_id IS NULL)))
@@ -47,6 +48,8 @@ export async function resolvePricingRule(
 
   // NUMERIC comes back from pg as a string.
   return {
+    emptyReturnEnabled: row.vehicle_id != null && row.vehicle_id === vehicleId && row.empty_return_enabled === true,
+    emptyReturnPerKmRate: Number(row.empty_return_per_km_rate),
     baseAmount: Number(row.base_amount),
     perKmRate: Number(row.per_km_rate),
     perHourRate: Number(row.per_hour_rate),

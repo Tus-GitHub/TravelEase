@@ -1,5 +1,7 @@
 import { randomBytes } from "crypto";
 import { bookingContact } from "../booking-contact";
+import { tripDuration } from "../booking-duration";
+import { emptyReturnRoute } from "./empty-return";
 import type { PoolClient } from "pg";
 import { TripError } from "@/lib/weekend-trips";
 import { lockDeparture, tripTransaction } from "./weekend-trips";
@@ -551,6 +553,10 @@ export async function createBooking(
     catch(error){const{MapServiceError}=await import("./map-services");return{ok:false,status:error instanceof MapServiceError?error.status:503,message:error instanceof MapServiceError?error.message:"Could not validate the road route."};}
   }
   let durationDays = input.durationDays;
+  if (input.bookingType === "outstation") {
+    try { const duration = tripDuration(start, input.endDateTime ?? ""); durationDays = duration.days; input = { ...input, nights: duration.nights }; }
+    catch(error) { return { ok: false, status: 400, message: (error as Error).message }; }
+  }
   let packageStops: { tourist_spot_id: number; stop_order: number }[] = [];
 
   if (input.bookingType === "package" && (input.packageId != null || input.packageSlug != null)) {
@@ -607,19 +613,6 @@ export async function createBooking(
     if (passengerCount > selected.seating_capacity) {
       return { ok: false, status: 400, message: "That vehicle cannot accommodate that many passengers." };
     }
-    const win = bookingWindow({
-      startDateTime: start,
-      endDateTime: input.endDateTime ? new Date(input.endDateTime) : null,
-      durationDays,
-      estimatedHours: input.estimatedHours,
-    });
-    if (await hasConflict(input.vehicleId, win.start, win.end)) {
-      return {
-        ok: false,
-        status: 409,
-        message: "That vehicle isn't available for those dates.",
-      };
-    }
   }
 
   // Custom itinerary — validate spot ids up front.
@@ -651,6 +644,21 @@ export async function createBooking(
   // Seasonal multiplier for the trip start date (chunk 2.8).
   const season = await resolveSeason(start, bookingTypeId, vehicleTypeId ?? null);
 
+  let reverseRoute: import("../booking-route").BookingRoute | undefined;
+  try { reverseRoute = await emptyReturnRoute(input.bookingType, rule, verifiedRoute); }
+  catch(error) { const { MapServiceError } = await import("./map-services"); return { ok: false, status: error instanceof MapServiceError ? error.status : 503, message: error instanceof MapServiceError ? error.message : "Could not calculate the empty return." }; }
+  if (verifiedRoute && input.bookingType !== "outstation") {
+    // Availability includes the paid empty leg; a caller cannot shorten it with
+    // a forged end time. Distance/fare still show the customer's outbound leg.
+    input = { ...input, estimatedHours: verifiedRoute.durationHours + (reverseRoute?.durationHours ?? 0), endDateTime: null };
+    durationDays = undefined;
+  }
+  if (verifiedRoute && input.bookingType === "outstation" && Date.parse(input.endDateTime!) < start.getTime() + verifiedRoute.durationHours * 3600000) return { ok: false, status: 400, message: "Return time must allow the road travel time shown." };
+  if (typeof input.vehicleId === "number") {
+    const win = bookingWindow({ startDateTime: start, endDateTime: input.endDateTime ? new Date(input.endDateTime) : null, durationDays, estimatedHours: input.estimatedHours });
+    if (await hasConflict(input.vehicleId, win.start, win.end)) return { ok: false, status: 409, message: "That vehicle isn't available for those dates." };
+  }
+
   const trip: TripInput = {
     bookingType: input.bookingType,
     distanceKm: posNum(input.estimatedDistanceKm),
@@ -659,6 +667,7 @@ export async function createBooking(
     nights: posNum(input.nights),
     passengers: passengerCount,
     packagePricePerPerson,
+    emptyReturnKm: reverseRoute?.distanceKm,
     seasonalMultiplier: season?.multiplier,
     seasonalLabel: season?.name,
   };
@@ -736,7 +745,7 @@ export async function createBooking(
           posNum(input.estimatedDistanceKm) ?? null,
           posNum(input.estimatedHours) ?? null,
           posNum(durationDays) ?? null,
-          JSON.stringify({ ...price, ...(verifiedRoute ? { route: { ...verifiedRoute, geometry: undefined } } : {}) }),
+          JSON.stringify({ ...price, ...(verifiedRoute ? { route: { ...verifiedRoute, geometry: undefined } } : {}), ...(reverseRoute ? { emptyReturnRoute: { ...reverseRoute, geometry: undefined }, emptyReturnPerKmRate: rule.emptyReturnPerKmRate } : {}) }),
           price.subtotal,
           price.discountAmount,
           price.taxAmount,

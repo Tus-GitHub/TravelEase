@@ -2,11 +2,11 @@
   "format": 1,
   "kind": "schema-only-migration-replay",
   "verified": true,
-  "verifiedAt": "2026-11-15T18:07:25.372Z",
+  "verifiedAt": "2026-11-15T18:21:15.190Z",
   "cleanupComplete": true,
   "targetDatabase": "travel_weekend_release_check_20261106",
   "pending": [
-    "031_photon_autocomplete.sql"
+    "032_trip_pricing_and_package_content.sql"
   ],
   "migrationHashes": {
     "001_create_auth_tables.sql": "49af6321b9ca6fd6d8671b1276a178e29eff488812dfbb90b3b97bbf0adf89d1",
@@ -39,11 +39,12 @@
     "028_create_cms_pages.sql": "a3c21f818a0d457ec35d646d25a88e09937019753dadef0257d2db8f5886ec95",
     "029_weekend_trip_departures.sql": "5a1c104e6342f3117c62f963d0f2e5153640dd36570c102d4a02066e8f4eba5f",
     "030_car_pricing_and_map_services.sql": "c18d8ba1a68738c6c0c586f1b7db72bf7c0d98bff2b0923ce87bbc47ecc63f01",
-    "031_photon_autocomplete.sql": "5d863c12dabb6c0e86634cdbd9158d116ababe27b2e8df901b3b393a6f74bf86"
+    "031_photon_autocomplete.sql": "5d863c12dabb6c0e86634cdbd9158d116ababe27b2e8df901b3b393a6f74bf86",
+    "032_trip_pricing_and_package_content.sql": "457eb272eeddf5ce8f96ba84aadd44b90cde1f825b17a0c621ecf488ac314f3d"
   },
   "productionEndpoint": "d4f04c6e23dd43772644a017f5ef85618d9d1ac8dbd7433e41ddfa2a0679f8cb",
   "developmentEndpoint": "10a9099f2708f3526d559753b82b1454eaef7bb94f7db3ba714808e0657d724a",
-  "productionSchema": "cd9233ea89fc776e615bfba629da8f67e506d46f817164e1bda7cb8988b2a788",
-  "developmentSchema": "87a38ff24c74ab82024db1081018c1fccc3d883023dba5b89dad400044224bb1",
-  "replayedSchema": "87a38ff24c74ab82024db1081018c1fccc3d883023dba5b89dad400044224bb1"
+  "productionSchema": "87a38ff24c74ab82024db1081018c1fccc3d883023dba5b89dad400044224bb1",
+  "developmentSchema": "3f0f5335e4bfb8438e90294be34ca258ed2dd595e65b5489ea26b482c8ed1b4b",
+  "replayedSchema": "3f0f5335e4bfb8438e90294be34ca258ed2dd595e65b5489ea26b482c8ed1b4b"
 }

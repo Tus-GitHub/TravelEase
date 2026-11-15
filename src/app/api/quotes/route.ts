@@ -12,6 +12,9 @@ import { quoteSharedTrip } from "@/lib/server/weekend-bookings";
 import { tripResponse, tripFailure } from "@/lib/server/weekend-http";
 import { carTripFacts, distanceTrip } from "@/lib/server/car-trip";
 import { MapServiceError, verifiedBookingRoute } from "@/lib/server/map-services";
+import { emptyReturnRoute } from "@/lib/server/empty-return";
+import { tripDuration } from "@/lib/booking-duration";
+import type { BookingRoute } from "@/lib/booking-route";
 
 /**
  * POST /api/quotes — a server-computed price for a prospective booking
@@ -68,16 +71,17 @@ export async function POST(request: Request) {
 
   let vehicleTypeId = asInt(body.vehicleTypeId);
   let vehicleId: number | null = null;
+  let verifiedRoute: BookingRoute | undefined;
   if (body.vehicleId != null) {
     try {
       const facts = await carTripFacts({ vehicleId: body.vehicleId, vehicleTypeId: body.vehicleTypeId, bookingType: trip.bookingType,
         passengers: body.passengers, routeId: body.routeId, pickupPoint: body.pickupPoint, dropPoint: body.dropPoint });
       vehicleId = body.vehicleId as number;
       vehicleTypeId = facts.vehicleTypeId;
-      if (facts.route) { trip.distanceKm = facts.route.distanceKm; trip.hours = facts.route.durationHours; }
+      if (facts.route) { verifiedRoute = facts.route; trip.distanceKm = facts.route.distanceKm; trip.hours = facts.route.durationHours; }
     } catch(error) { return NextResponse.json({ error: error instanceof MapServiceError ? error.message : "Could not validate the car route." }, { status: error instanceof MapServiceError ? error.status : 503 }); }
   } else if(distanceTrip(trip.bookingType)) {
-    try {const route=await verifiedBookingRoute(body.routeId,body.pickupPoint,body.dropPoint,trip.bookingType==="outstation");trip.distanceKm=route.distanceKm;trip.hours=route.durationHours;}
+    try {const route=await verifiedBookingRoute(body.routeId,body.pickupPoint,body.dropPoint,trip.bookingType==="outstation");verifiedRoute=route;trip.distanceKm=route.distanceKm;trip.hours=route.durationHours;}
     catch(error){return NextResponse.json({error:error instanceof MapServiceError?error.message:"Could not validate the road route."},{status:error instanceof MapServiceError?error.status:503});}
   }
 
@@ -123,6 +127,13 @@ export async function POST(request: Request) {
       { status: 422 },
     );
   }
+  if (trip.bookingType === "outstation") {
+    try { const duration = tripDuration(String(body.startDate ?? ""), String(body.endDateTime ?? "")); trip.days = duration.days; trip.nights = duration.nights; }
+    catch(error) { return NextResponse.json({ error: (error as Error).message }, { status: 400 }); }
+    if (verifiedRoute && Date.parse(String(body.endDateTime)) < Date.parse(String(body.startDate)) + verifiedRoute.durationHours * 3600000) return NextResponse.json({ error: "Return time must allow the road travel time shown." }, { status: 400 });
+  }
+  try { const reverse = await emptyReturnRoute(trip.bookingType, rule, verifiedRoute); trip.emptyReturnKm = reverse?.distanceKm; }
+  catch(error) { return NextResponse.json({ error: error instanceof MapServiceError ? error.message : "Could not calculate the empty return." }, { status: error instanceof MapServiceError ? error.status : 503 }); }
 
   // Seasonal multiplier for the trip start date, if the client sent one (2.8).
   if (typeof body.startDate === "string") {

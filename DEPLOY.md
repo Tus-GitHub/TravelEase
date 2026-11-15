@@ -1,5 +1,33 @@
 # Deploying TravelEase (free)
 
+## Empty returns and round-trip dates — 15 November 2026
+
+In **Admin → Car pricing**, edit an individual car's **Point to point** or
+**Airport transfer** rate. Enable **Charge for this car’s empty return on this
+trip type** and enter its separate ₹/km rate. Leave it off when it does not apply.
+The server calculates the actual reverse road distance from destination to pickup
+through the existing free routing cache/quota. It never doubles outbound km or
+trusts customer-supplied return km. Quotes itemise this charge before confirmation;
+it participates in the same subtotal, coupon, seasonal and tax calculation.
+Existing bookings keep their saved rate and route snapshot. Changing the ordinary
+vehicle ₹/km rate preserves its empty-return policy. No live prices are invented.
+Vehicle availability includes the outbound and paid empty-return driving time;
+a caller cannot shorten that reservation by supplying a false one-way end time.
+
+**Outstation (round trip)** asks for a return date/time in the same branded selector.
+The server derives days/nights from Indian calendar dates, stores the actual return
+time and checks the car's whole reservation window. The customer travels back too:
+both road directions are already included, with no additional empty-return charge.
+The selected return must allow at least the calculated road driving time.
+The checkout keeps optional address instructions, notes and discount codes collapsed.
+
+Migration032 adds the three user-approved columns: two pricing-rule policy fields
+and packages.trip_content JSONB (reserved for the next package-template release).
+Old rates remain disabled for empty returns by default. Development migration and
+strict baseline/replay review precede publication; production migration is automatic.
+Run test:pricing, test:empty-return and test:booking-contact-db, plus typecheck/lint,
+then test admin policy changes and customer one-way/round-trip bookings live.
+
 ## Fewer-click pickup, destination and contact — 15 November 2026
 
 Booking pickup/destination fields suggest Indian places while typing, using
