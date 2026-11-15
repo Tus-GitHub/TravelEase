@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "@/components/common/Logo";
@@ -40,6 +40,19 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
   const { logout } = useAuth();
   const { canAccess } = useAdminPermissions();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  useEffect(() => { setIsMobileOpen(false); }, [pathname]);
+  useEffect(() => {
+    if (!isMobileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileOpen(false);
+        document.getElementById("admin-mobile-menu-trigger")?.focus();
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [isMobileOpen]);
 
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
@@ -97,14 +110,15 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
         <div className="flex items-center gap-1">
           <ThemeToggle tone="light" />
           <button
+            id="admin-mobile-menu-trigger"
             type="button"
             onClick={() => setIsMobileOpen((v) => !v)}
-            aria-label={isMobileOpen ? "Close menu" : "Open menu"}
+            aria-label={isMobileOpen ? "Close menu" : "Open admin account and navigation"}
             aria-expanded={isMobileOpen}
             aria-controls="admin-mobile-menu"
-            className="flex h-11 w-11 shrink-0 items-center justify-center text-white"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
           >
-            <Icon name={isMobileOpen ? "close" : "menu"} className="h-6 w-6" />
+            <Avatar name={user.name} className="!h-10 !w-10 border-2 border-accent-500/60 text-sm" />
           </button>
         </div>
       </div>
@@ -116,6 +130,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
         }`}
       >
         <div className="px-4 py-4">
+          <div className="mb-4 border-b border-white/10 px-3 pb-4"><p className="truncate text-sm font-semibold text-white">{user.name}</p><p className="mt-1 truncate text-xs text-white/70">{user.email}</p><Link href="/profile" className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-white">My account</Link></div>
           <NavList onNavigate={() => setIsMobileOpen(false)} />
           <div className="mt-4 border-t border-white/10 pt-4">
             <Link
