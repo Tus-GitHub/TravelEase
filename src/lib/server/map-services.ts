@@ -2,7 +2,7 @@ import { createHash } from "crypto";
 import { getPool } from "./db";
 import { routePoint, samePoint, type BookingRoute, type RoutePoint } from "../booking-route";
 
-type Provider = "nominatim" | "fossgis";
+type Provider = "nominatim" | "fossgis" | "photon";
 export class MapServiceError extends Error {
   status: number;
   retryAfter: number;
@@ -14,7 +14,7 @@ const DAILY_LIMIT = 200;
 const GAP_MS = 1100;
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
 const origin = (provider: Provider) => {
-  const raw = provider === "nominatim" ? process.env.BOOKING_GEOCODE_ORIGIN ?? "https://nominatim.openstreetmap.org" : process.env.BOOKING_ROUTING_ORIGIN ?? "https://routing.openstreetmap.de";
+  const raw = provider === "photon" ? process.env.BOOKING_AUTOCOMPLETE_ORIGIN ?? "https://photon.komoot.io" : provider === "nominatim" ? process.env.BOOKING_GEOCODE_ORIGIN ?? "https://nominatim.openstreetmap.org" : process.env.BOOKING_ROUTING_ORIGIN ?? "https://routing.openstreetmap.de";
   const url = new URL(raw);
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || url.pathname !== "/") throw new MapServiceError("Map service is not configured.");
   return url.origin;
@@ -63,6 +63,31 @@ async function upstream(url: URL): Promise<unknown> {
 }
 
 export interface MapPlace extends RoutePoint { label: string; city: string; state: string; pincode: string }
+/** Photon permits search-as-you-type; public Nominatim expressly forbids it.
+ * The same shared cache, hard daily cap and spacing gate protect its free API. */
+export async function suggestMapPlaces(query: string): Promise<MapPlace[]> {
+  const q = query.trim().replace(/\s+/g, " ");
+  if (q.length < 3 || q.length > 150) throw new MapServiceError("Enter at least three characters for a place.", 400);
+  const key = hash(`photon:suggest:${origin("photon")}:${q.toLowerCase()}`);
+  return cachedMapRequest("photon", key, async () => {
+    const url = new URL(`${origin("photon")}/api/`);
+    url.search = new URLSearchParams({ q, countrycode: "IN", limit: "6", lang: "en" }).toString();
+    const data = await upstream(url) as { features?: unknown[] };
+    if (!Array.isArray(data?.features)) throw new MapServiceError("Invalid place search response.");
+    const found: MapPlace[] = [];
+    for (const item of data.features.slice(0, 6)) {
+      const f = item as { geometry?: { type?: string; coordinates?: unknown[] }; properties?: Record<string, unknown> };
+      const coords = f?.geometry?.coordinates, p = f?.properties;
+      if (f?.geometry?.type !== "Point" || !coords || !p || String(p.countrycode).toUpperCase() !== "IN") continue;
+      const point = routePoint({ lat: coords[1], lng: coords[0] });
+      const parts = [p.name, [p.housenumber, p.street].filter(v => typeof v === "string").join(" "), p.city ?? p.town ?? p.village ?? p.county, p.state, p.country];
+      const label = Array.from(new Set(parts.filter(v => typeof v === "string" && v.trim()).map(v => String(v).trim()))).join(", ").slice(0, 280);
+      if (!point || !label || found.some(v => samePoint(v, point) && v.label === label)) continue;
+      found.push({ ...point, label, city: typeof p.city === "string" ? p.city : "", state: typeof p.state === "string" ? p.state : "", pincode: typeof p.postcode === "string" ? p.postcode : "" });
+    }
+    return found;
+  });
+}
 function place(item: Record<string, unknown>): MapPlace | null {
   const point = routePoint({ lat: Number(item.lat), lng: Number(item.lon) });
   if (!point || typeof item.display_name !== "string") return null;

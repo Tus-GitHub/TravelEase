@@ -30,11 +30,17 @@ const providerKeys=new Set<string>();
 const hash=(value:string)=>createHash("sha256").update(value).digest("hex");
 providerKeys.add(hash(`nominatim:search:https://geocode-acceptance.invalid:pickup test ${tag}`));
 providerKeys.add(hash(`nominatim:search:https://geocode-acceptance.invalid:destination test ${tag}`));
+providerKeys.add(hash(`photon:suggest:https://geocode-acceptance.invalid:pickup test ${tag}`));
+providerKeys.add(hash(`photon:suggest:https://geocode-acceptance.invalid:destination test ${tag}`));
 providerKeys.add(hash("fossgis:https://car-acceptance.invalid:77.2295,28.6129;77.241,28.6562"));
 const providerRequests:{kind:string;path:string}[]=[];
 const provider=createServer((req,res)=>{
   const url=new URL(req.url!,"http://127.0.0.1");res.setHeader("Content-Type","application/json");
-  if(url.pathname==="/search"){
+  if(url.pathname==="/api/"){
+    providerRequests.push({kind:"suggest",path:url.pathname});
+    const drop=url.searchParams.get("q")?.toLowerCase().includes("destination");
+    res.end(JSON.stringify({features:[{geometry:{type:"Point",coordinates:drop?[77.241,28.6562]:[77.2295,28.6129]},properties:{name:drop?"Destination test landmark":"Pickup test landmark",city:"Delhi",state:"Delhi",country:"India",countrycode:"IN"}}]}));
+  }else if(url.pathname==="/search"){
     providerRequests.push({kind:"search",path:url.pathname});
     const drop=url.searchParams.get("q")?.toLowerCase().includes("destination");
     res.end(JSON.stringify([{lat:drop?"28.65620":"28.61290",lon:drop?"77.24100":"77.22950",display_name:drop?"Destination test landmark, Delhi, India":"Pickup test landmark, Delhi, India",address:{city:"Delhi",state:"Delhi"}}]));
@@ -51,7 +57,7 @@ async function expectStatus(response:Promise<Response>,status:number,label:strin
 async function waitBudget(providerName:string){const state=(await pool.query("SELECT EXTRACT(EPOCH FROM(clock_timestamp()-last_request_at))*1000 AS gap FROM map_service_usage WHERE provider=$1",[providerName])).rows[0];if(state&&Number(state.gap)<1150)await new Promise(r=>setTimeout(r,1150-Number(state.gap)));}
 try{
   for(let i=0;i<ids.length;i++){
-    await pool.query("INSERT INTO users(user_id,name,email,phone,password_hash,email_verified_at,role_id) VALUES($1,$2,$3,'9999999999','unusable-test-hash',now(),(SELECT role_id FROM roles WHERE name=$4))",[ids[i],`Car booking ${tag}`,emails[i],i?"admin":"customer"]);
+    await pool.query("INSERT INTO users(user_id,name,email,phone,password_hash,email_verified_at,role_id) VALUES($1,$2,$3,$5,'unusable-test-hash',now(),(SELECT role_id FROM roles WHERE name=$4))",[ids[i],`Car booking ${tag}`,emails[i],i?"admin":"customer",i?"9999999999":""]);
     await pool.query("INSERT INTO sessions(token,user_id,expires_at) VALUES($1,$2,now()+interval '2 hours')",[tokens[i],ids[i]]);
   }
   vehicleType=(await pool.query("INSERT INTO vehicle_types(slug,title) VALUES($1,$2) RETURNING vehicle_type_id",[`car-${tag}`,`Car acceptance ${tag}`])).rows[0].vehicle_type_id;
@@ -62,7 +68,7 @@ try{
   child=fork(path.resolve("db/tests/_booking-server.cjs"),[],{execArgv:[],silent:true,windowsHide:true,env:{...process.env,
     NODE_OPTIONS:`${process.env.NODE_OPTIONS??""} --require=${preload}`,DATABASE_URL_PRODUCTION:undefined,VERCEL_ENV:undefined,DATABASE_URL:runtime,
     BOOKING_SMOKE_SERVER:"dev-only",BOOKING_SMOKE_BUILD:process.argv.includes("--built")?"1":"0",NODE_ENV:process.argv.includes("--built")?"production":"development",APP_ORIGIN:base,
-    BOOKING_ROUTING_ORIGIN:"https://car-acceptance.invalid",BOOKING_GEOCODE_ORIGIN:"https://geocode-acceptance.invalid",
+    BOOKING_ROUTING_ORIGIN:"https://car-acceptance.invalid",BOOKING_GEOCODE_ORIGIN:"https://geocode-acceptance.invalid",BOOKING_AUTOCOMPLETE_ORIGIN:"https://geocode-acceptance.invalid",
     CAR_BOOKING_MAP_STUB_URL:`http://127.0.0.1:${address.port}`,SMTP_HOST:"127.0.0.1",SMTP_PORT:String(sink.port),SMTP_USER:"test",SMTP_PASS:"test",EMAIL_FROM:"Car acceptance <test@example.invalid>"}});
   for(const stream of[child.stdout,child.stderr])stream?.on("data",chunk=>{log=(log+chunk.toString()).slice(-10000);});
   await new Promise<void>((resolve,reject)=>{const timer=setTimeout(()=>reject(Error("Server startup timed out")),process.argv.includes("--built")?600000:120000);child!.on("message",(m:{ready?:boolean;sandbox?:string})=>{if(m.sandbox)sandbox=m.sandbox;if(m.ready){clearTimeout(timer);resolve();}});child!.once("exit",code=>{clearTimeout(timer);reject(Error(`Server exited ${code}`));});});
@@ -106,10 +112,12 @@ try{
   // The two-day target may be in the next calendar month.
   if(!await dialog.getByRole("button",{name:future,exact:true}).count())await dialog.getByRole("button",{name:"Next month",exact:true}).click();
   await dialog.getByRole("button",{name:future,exact:true}).click();await dialog.getByRole("button",{name:"Use this date & time",exact:true}).click();
-  await page.getByLabel("Pickup location",{exact:true}).fill(`Pickup test ${tag}`);await waitBudget("nominatim");
-  await page.getByRole("button",{name:"Search pickup",exact:true}).click();await page.getByRole("button",{name:"Pickup test landmark, Delhi, India",exact:true}).click();
-  await page.getByLabel("Destination location",{exact:true}).fill(`Destination test ${tag}`);await waitBudget("nominatim");
-  await page.getByRole("button",{name:"Search destination",exact:true}).click();await page.getByRole("button",{name:"Destination test landmark, Delhi, India",exact:true}).click();
+  await waitBudget("photon");await page.getByLabel("Pickup location",{exact:true}).fill(`Pickup test ${tag}`);
+  await page.getByRole("option",{name:"Pickup test landmark, Delhi, India",exact:true}).click();
+  await waitBudget("photon");await page.getByLabel("Destination location",{exact:true}).fill(`Destination test ${tag}`);
+  await page.getByRole("option",{name:"Destination test landmark, Delhi, India",exact:true}).click();
+  assert.equal(await page.getByRole("button",{name:/Search pickup|Search destination|Calculate road distance/}).count(),0,"No manual search/calculate click needed");
+  await page.getByLabel("Booking contact number",{exact:true}).fill("9999999999");
   await page.getByRole("status").filter({hasText:"12.34 km by road"}).waitFor({timeout:90000});
   await page.getByText("₹338.23",{exact:true}).waitFor({timeout:90000});
   assert.equal(await page.getByLabel("Distance (km)",{exact:true}).getAttribute("readonly"),"");
@@ -127,8 +135,10 @@ try{
   assert.equal(new Date(stored.start_datetime).getUTCHours(),5);assert.equal(new Date(stored.start_datetime).getUTCMinutes(),0,"10:30 IST is 05:00 UTC even on an overseas device");
   assert.equal(stored.price_breakdown.route.pickup.lat,28.6129);assert.equal(stored.price_breakdown.route.provider,"fossgis");
   assert.equal(stored.pickup_address,"Pickup test landmark, Delhi, India");assert.equal(stored.drop_address,"Destination test landmark, Delhi, India");
+  assert.equal((await pool.query("SELECT phone FROM booking_passengers WHERE booking_id=$1 AND is_primary",[booking.id])).rows[0].phone,"9999999999");
+  await expectStatus(api("/api/bookings",{...submitted,passengers:[]}),400,"Lead phone required when OAuth profile has none");
   assert.equal((await pool.query("SELECT count(*)::int n FROM booking_status_history WHERE booking_id=$1",[booking.id])).rows[0].n,1);
-  console.log("PASS custom date/time, explicit place search, optional map, automatic km, car-specific quote, saved booking/route/fare and mobile layout.");
+  console.log("PASS custom date/time, automatic suggestions, required contact snapshot, optional map, automatic km/price, saved booking and mobile layout.");
   const quote={bookingType:"point_to_point",vehicleId:vehicle,vehicleTypeId:vehicleType,passengers:2,routeId:submitted.routeId,pickupPoint:submitted.pickupPoint,dropPoint:submitted.dropPoint,distanceKm:0.01};
   const tampered=(await(await expectStatus(api("/api/quotes",quote),200,"Client distance is ignored")).json()).quote;assert.equal(tampered.totalAmount,338.23);
   await expectStatus(api("/api/quotes",{...quote,routeId:"f".repeat(64)}),422,"Unknown route rejected");

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { matchesRequestOrigin } from "@/lib/server/request-origin";
 import { readBoundedJsonObject } from "@/lib/server/http-json";
 import { routePoint } from "@/lib/booking-route";
-import { searchMapPlaces, calculateBookingRoute, MapServiceError } from "@/lib/server/map-services";
+import { searchMapPlaces, suggestMapPlaces, calculateBookingRoute, MapServiceError } from "@/lib/server/map-services";
 
 export async function POST(request: Request) {
   if (!matchesRequestOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
@@ -10,6 +10,9 @@ export async function POST(request: Request) {
   try { body = await readBoundedJsonObject(request.body, 4096); }
   catch { return NextResponse.json({ error: "Invalid map request." }, { status: 400 }); }
   try {
+    if (body.action === "suggest" && typeof body.query === "string") {
+      return NextResponse.json({ results: await suggestMapPlaces(body.query) }, { headers: { "Cache-Control": "no-store" } });
+    }
     if (body.action === "search" && typeof body.query === "string") {
       return NextResponse.json({ results: await searchMapPlaces(body.query) }, { headers: { "Cache-Control": "no-store" } });
     }

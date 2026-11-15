@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cachedMapRequest, calculateBookingRoute, verifiedBookingRoute, searchMapPlaces, MapServiceError } from "../../src/lib/server/map-services";
+import { cachedMapRequest, calculateBookingRoute, verifiedBookingRoute, searchMapPlaces, suggestMapPlaces, MapServiceError } from "../../src/lib/server/map-services";
 import { routePoint } from "../../src/lib/booking-route";
 import {bookingInstant,bookingTimeValue,validBookingTime} from "../../src/lib/booking-datetime";
 
@@ -56,3 +56,22 @@ test("route uses actual road distance, includes return leg, and verifies trusted
 }));
 test("invalid/no-road responses are rejected and counted",()=>withDb({},async db=>{const old=globalThis.fetch;globalThis.fetch=async()=>Response.json({code:"NoRoute",routes:[]});try{await assert.rejects(calculateBookingRoute(a,b,false),error=>error instanceof MapServiceError&&error.status===422);assert.equal(db.state.count,1);}finally{globalThis.fetch=old;}}));
 test("search length and identical route points fail before provider access",()=>withDb({},async db=>{await assert.rejects(searchMapPlaces("ab"));await assert.rejects(searchMapPlaces("x".repeat(151)));await assert.rejects(calculateBookingRoute(a,a,false));assert.equal(db.state.count,0);}));
+
+test("type-ahead uses Photon with India filtering, shared quota/cache and validated coordinates",()=>withDb({},async db=>{
+  const previous=globalThis.fetch;let requested="",calls=0;
+  globalThis.fetch=async url=>{calls++;requested=String(url);return Response.json({features:[
+    {geometry:{type:"Point",coordinates:[77.2295,28.6129]},properties:{name:"India Gate",city:"New Delhi",state:"Delhi",countrycode:"IN"}},
+    {geometry:{type:"Point",coordinates:[77.2295,28.6129]},properties:{name:"India Gate",city:"New Delhi",state:"Delhi",countrycode:"IN"}},
+    {geometry:{type:"Point",coordinates:[-73,40]},properties:{name:"Outside India",countrycode:"US"}},
+    {geometry:{type:"Point",coordinates:[999,999]},properties:{name:"Invalid",countrycode:"IN"}}
+  ]});};
+  try{const places=await suggestMapPlaces(" India Gate ");assert.equal(places.length,1);assert.equal(places[0].label,"India Gate, New Delhi, Delhi");
+    assert.equal(new URL(requested).hostname,"photon.komoot.io");assert.equal(new URL(requested).searchParams.get("countrycode"),"IN");
+    assert.deepEqual(await suggestMapPlaces("india gate"),places);assert.equal(calls,1);assert.equal(db.state.count,1);
+    await assert.rejects(suggestMapPlaces("ab"));
+  }finally{globalThis.fetch=previous;}
+}));
+test("Photon daily allowance fails closed without a provider request",()=>withDb({count:200},async()=>{
+  const previous=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;return Response.json({features:[]});};
+  try{await assert.rejects(suggestMapPlaces("Dehradun"),e=>e instanceof MapServiceError&&e.status===429);assert.equal(calls,0);}finally{globalThis.fetch=previous;}
+}));

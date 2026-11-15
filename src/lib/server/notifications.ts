@@ -78,7 +78,8 @@ export async function captureBookingNotification(bookingId: string, client: Pool
   const result = await client.query(
     `SELECT b.booking_id, b.booking_reference, b.status, b.start_datetime, b.total_amount,
             b.passenger_count, bt.code AS type_code,b.departure_id,b.seat_hold_expires_at,
-            u.user_id AS owner_user_id, u.email AS owner_email, u.name AS owner_name, u.phone AS owner_phone,
+            u.user_id AS owner_user_id, u.email AS owner_email, u.name AS owner_name,
+            COALESCE((SELECT NULLIF(bp.phone,'') FROM booking_passengers bp WHERE bp.booking_id=b.booking_id AND bp.is_primary AND NOT bp.is_deleted ORDER BY bp.booking_passenger_id LIMIT 1),u.phone) AS owner_phone,
             b.pickup_address, b.drop_address,
             dr.name AS driver_name, dr.phone AS driver_phone, rf.amount AS refund_amount,
             (SELECT string_agg(COALESCE(ts.name, bs.custom_label, 'Stop'), ' → '

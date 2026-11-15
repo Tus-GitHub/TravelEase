@@ -11,11 +11,12 @@ import DateTimeSelector from "./DateTimeSelector";
 import { bookingInstant, bookingTimeValue, validBookingTime as validDateTime } from "@/lib/booking-datetime";
 import TripRouteSelector from "./TripRouteSelector";
 import { routePoint, type BookingRoute, type RoutePoint } from "@/lib/booking-route";
+import { isValidPhone, normalizePhone } from "@/lib/validation";
 
 type Mode = "curated" | "custom" | "vehicle" | "generic";
 
 const BOOKING_TYPES: { code: BookingTypeCode; label: string }[] = [
-  { code: "point_to_point", label: "Point to point" },
+  { code: "point_to_point", label: "One-way drop" },
   { code: "hourly", label: "Hourly rental" },
   { code: "outstation", label: "Outstation (round trip)" },
   { code: "airport_transfer", label: "Airport transfer" },
@@ -42,6 +43,8 @@ export default function BookingFlow() {
   const params = useSearchParams();
   const router = useRouter();
   const { user, isLoading } = useAuth();
+  const [contactPhone, setContactPhone] = useState("");
+  useEffect(() => { if (user?.phone) setContactPhone(previous => previous || user.phone); }, [user?.phone]);
 
   const packageSlug = params.get("package");
   const vehicleId = params.get("vehicle");
@@ -263,6 +266,7 @@ export default function BookingFlow() {
       router.push(`/login?redirect=${encodeURIComponent(currentUrlWithState())}`);
       return;
     }
+    if (!isValidPhone(contactPhone)) { setError("Enter a contact number so we can coordinate your trip."); return; }
 
     setSubmitting(true);
     const payload: Record<string, unknown> = {
@@ -274,6 +278,7 @@ export default function BookingFlow() {
       customerNotes: notes || undefined,
       couponCode: couponCode.trim() || undefined,
       expectedTotal: quote.totalAmount,
+      passengers: [{ name: user.name, phone: normalizePhone(contactPhone), isPrimary: true }],
       ...(requiresRoadRoute&&roadRoute?{routeId:roadRoute.id,pickupPoint,dropPoint}:{}),
     };
     if (bookingType === "package") {
@@ -378,7 +383,7 @@ export default function BookingFlow() {
           </label>
         </div>
 
-        {requiresRoadRoute&&<TripRouteSelector roundTrip={bookingType==="outstation"} pickup={pickupPoint} drop={dropPoint} onPickup={choosePickup} onDrop={chooseDrop} onRoute={setRoadRoute}/>}
+        {requiresRoadRoute&&<TripRouteSelector roundTrip={bookingType==="outstation"} pickup={pickupPoint} drop={dropPoint} pickupLabel={pickupAddress} dropLabel={dropAddress} onPickup={choosePickup} onDrop={chooseDrop} onRoute={setRoadRoute}/>}
 
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold text-muted">Pickup address</span>
@@ -455,6 +460,12 @@ export default function BookingFlow() {
             </label>
           )}
         </div>
+
+        {user && <label className="block">
+          <span className="mb-1.5 block text-xs font-semibold text-muted">Booking contact number</span>
+          <input type="tel" autoComplete="tel" required maxLength={30} className={fieldCls} value={contactPhone} onChange={e=>setContactPhone(e.target.value)} placeholder="Mobile number for trip updates" />
+          <span className="mt-1 block text-xs text-muted">We’ll use this number to coordinate pickup and your trip.</span>
+        </label>}
 
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold text-muted">Notes (optional)</span>

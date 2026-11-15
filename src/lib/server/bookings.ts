@@ -1,4 +1,5 @@
 import { randomBytes } from "crypto";
+import { bookingContact } from "../booking-contact";
 import type { PoolClient } from "pg";
 import { TripError } from "@/lib/weekend-trips";
 import { lockDeparture, tripTransaction } from "./weekend-trips";
@@ -671,11 +672,15 @@ export async function createBooking(
   const passengers = (Array.isArray(input.passengers) ? input.passengers : [])
     .filter((p) => p && typeof p.name === "string" && p.name.trim().length > 0)
     .slice(0, 50);
-  if (passengers.length === 0) {
-    passengers.push({ name: user.name, phone: user.phone, isPrimary: true });
-  } else if (!passengers.some((p) => p.isPrimary)) {
-    passengers[0].isPrimary = true;
-  }
+  try {
+    const lead = bookingContact(input.passengers, user);
+    if (passengers.length === 0) passengers.push(lead);
+    else {
+      const index = Math.max(0, passengers.findIndex(p => p.isPrimary));
+      passengers.forEach((p,i) => { p.isPrimary = i === index; });
+      passengers[index] = { ...passengers[index], ...lead };
+    }
+  } catch (error) { return { ok: false, status: 400, message: (error as Error).message }; }
 
   const client = await pool.connect();
   let bookingId: string | null = null;

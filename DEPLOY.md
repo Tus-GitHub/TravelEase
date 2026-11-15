@@ -1,5 +1,25 @@
 # Deploying TravelEase (free)
 
+## Fewer-click pickup, destination and contact — 15 November 2026
+
+Booking pickup/destination fields suggest Indian places while typing, using
+Photon's public reasonable-use service. Public Nominatim remains for deliberate
+manual searches/reverse lookup; its API is never used for type-ahead. Photon
+uses the existing shared cache and durable per-provider200/day,1.1s request gate.
+The client waits1.2s after typing, cancels stale results, caches recent queries,
+supports keyboard selection and retries a short throttle once. Hard daily caps
+stop requests; optional map pins remain available. No paid fallback/key/billing.
+`BOOKING_AUTOCOMPLETE_ORIGIN` optionally replaces the default HTTPS Photon origin;
+no environment change is required for this release. Road route/fare calculation
+starts after both points are selected; no Search or Calculate button is required.
+
+Private checkout prefills the profile contact number or requires one on the same
+screen. The server validates it and saves the lead contact in booking_passengers;
+booking/admin email snapshots use that number even for an OAuth account without
+a profile phone. This does not change the profile or enable phone authentication.
+Test with test:booking-contact, test:booking-maps, test:booking-email and the real
+development car-booking acceptance harness (Photon/routes/SMTP loopback only).
+
 ## Database connection recovery and first paint — 15 November 2026
 
 The existing shared pg pool attaches to Vercel's Fluid lifecycle using
