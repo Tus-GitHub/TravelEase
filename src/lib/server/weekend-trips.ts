@@ -47,11 +47,11 @@ export async function listAdminDepartures() {
     COALESCE((SELECT sum(b.passenger_count) FROM bookings b WHERE b.departure_id=d.departure_id AND NOT b.is_deleted AND (b.status IN ('Confirmed','Ongoing','Completed') OR (b.status='PendingPayment' AND b.seat_hold_expires_at>now()))),0)::int AS "reservedSeats"
     FROM trip_departures d JOIN cities c ON c.city_id=d.pickup_city_id WHERE NOT d.is_deleted ORDER BY d.starts_at DESC LIMIT 200`)).rows;
 }
-export interface TripOptions { packages: { id: number; name: string; mode: string; days: number; price: number; capacity: number }[]; cities: { id: number; name: string }[]; vehicles: { id: number; name: string; capacity: number }[]; drivers: { id: number; name: string }[]; guides: { id: number; name: string }[] }
+export interface TripOptions { packages: import("../package-template").PackageTemplateOption[]; cities: { id: number; name: string }[]; vehicles: { id: number; name: string; capacity: number }[]; drivers: { id: number; name: string }[]; guides: { id: number; name: string }[] }
 export async function tripOptions(): Promise<TripOptions> {
   const db = getPool();
   const [packages, cities, vehicles, drivers, guides] = await Promise.all([
-    db.query("SELECT package_id AS id,name,booking_mode AS mode,duration_days AS days,price_per_person::float8 AS price,max_persons AS capacity FROM packages WHERE NOT is_deleted AND is_active ORDER BY name"),
+    db.query("SELECT package_id AS id,name,booking_mode AS mode,duration_days AS days,price_per_person::float8 AS price,max_persons AS capacity,trip_content AS \"tripContent\",image_url AS \"imageUrl\" FROM packages WHERE NOT is_deleted AND is_active ORDER BY name"),
     db.query("SELECT city_id AS id,name FROM cities WHERE NOT is_deleted AND is_active ORDER BY name"),
     db.query("SELECT vehicle_id AS id,name,seating_capacity AS capacity FROM vehicles WHERE NOT is_deleted AND is_active ORDER BY name"),
     db.query("SELECT driver_id AS id,name FROM drivers WHERE NOT is_deleted AND is_active ORDER BY name"),
@@ -116,8 +116,9 @@ export async function saveGuide(raw: unknown, actorId: string, id?: number): Pro
   return result;
 }
 export function assertTripReady(data: AdminDeparture) {
+  const verified = validateDeparture(data);
   if (!data.vehicleId || !data.driverId || !data.guideId) throw new TripError("Assign a vehicle, driver and guide before opening bookings.");
   if (Date.parse(data.bookingClosesAt) <= Date.now()) throw new TripError("The booking window has already closed.");
   if (!data.content.summary || !data.content.description || !data.content.imageUrl || !data.content.inclusions.length) throw new TripError("Add a cover photo, introduction, description and inclusions before publishing.");
-  if (hotelCapacity(data.content.stayNights, data.stays) < data.capacity) throw new TripError("Confirm enough hotel beds for every included night before opening bookings.");
+  if (hotelCapacity(verified.content.stayNights, verified.stays) < data.capacity) throw new TripError("Confirm enough hotel beds for every included night before opening bookings.");
 }

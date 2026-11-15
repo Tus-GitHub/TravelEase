@@ -20,6 +20,8 @@ import {
 import { listReviewsForPackage } from "@/lib/server/reviews";
 import ReviewList from "@/components/reviews/ReviewList";
 import SavePackageButton from "@/components/packages/SavePackageButton";
+import PackagePlanView from "@/components/packages/PackagePlanView";
+import GuidedPackagePlanner from "@/components/packages/GuidedPackagePlanner";
 
 export const dynamic = "force-dynamic";
 
@@ -86,7 +88,7 @@ export default async function PackageDetailPage({
               <StarRating rating={pkg.rating} showValue />
             )}
             <span className="inline-flex items-center gap-1.5">
-              <Icon name="calendar" className="h-4 w-4" /> {pkg.durationDays} days
+              <Icon name="calendar" className="h-4 w-4" /> {pkg.durationDays}{pkg.durationMaxDays&&pkg.durationMaxDays>pkg.durationDays?`–${pkg.durationMaxDays}`:""} days
               {nights > 0 ? ` · ${nights} nights` : ""}
             </span>
             <span className="inline-flex items-center gap-1.5">
@@ -96,7 +98,7 @@ export default async function PackageDetailPage({
 
           <div className="mt-5 flex items-end gap-1">
             <span className="font-display text-3xl font-bold text-primary-900 dark:text-primary-300 ">
-              {priceLabel}
+              {pkg.isGuided?"From ":""}{priceLabel}
             </span>
             <span className="pb-1 text-sm text-muted">/ person</span>
           </div>
@@ -119,12 +121,13 @@ export default async function PackageDetailPage({
           <div className="mt-7 flex flex-wrap items-start gap-3">
             <Magnetic>
               <Button
-                href={`/booking/new?package=${pkg.slug}`}
+                href={pkg.isGuided?"#build-trip":`/booking/new?package=${pkg.slug}`}
+                disabled={!pkg.isBookable}
                 variant="accent"
                 size="lg"
                 iconRight="arrow-right"
               >
-                Book This Package
+                {!pkg.isBookable?"Temporarily unavailable":pkg.isGuided?"Build this trip":"Book This Package"}
               </Button>
             </Magnetic>
             <SavePackageButton
@@ -139,7 +142,9 @@ export default async function PackageDetailPage({
         </div>
       </div>
 
-      {pkg.stops.length > 0 && (
+      {pkg.isGuided&&pkg.tripContent&&<div className="mt-10"><GuidedPackagePlanner slug={pkg.slug} name={pkg.name} content={pkg.tripContent} destinations={pkg.routeDestinations} basePrice={pkg.basePricePerPerson}/></div>}
+      {!pkg.isGuided&&pkg.tripContent&&<div className="mt-10"><PackagePlanView content={pkg.tripContent}/></div>}
+      {!pkg.tripContent&&pkg.stops.length > 0 && (
         <div className="mt-12">
           <h2 className="font-display text-xl font-bold text-fg">Itinerary</h2>
           <ol className="mt-6 space-y-4 border-l-2 border-line pl-6">
@@ -168,10 +173,10 @@ export default async function PackageDetailPage({
         </div>
       )}
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-surface p-5">
+      {!pkg.tripContent&&<div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-surface p-5">
         <p className="text-sm text-muted">Explore hotel options for your stay. Hotel enquiries are separate from this booking.</p>
         <Button href={`/hotels?region=${pkg.regionId}`} variant="outline" size="sm" iconLeft="map-pin">Explore hotels</Button>
-      </div>
+      </div>}
       <ReviewList reviews={reviews} />
 
       {similar.length > 0 && (

@@ -17,6 +17,7 @@ export async function applyPartialUpdate(
   input: Record<string, unknown>,
   columnMap: Record<string, string>,
   actorId: string,
+  beforeWrite?: (db: Pool | PoolClient) => Promise<void>,
 ): Promise<boolean> {
   const cols: string[] = [];
   const vals: unknown[] = [];
@@ -34,6 +35,7 @@ export async function applyPartialUpdate(
 
   const result = await catalogueWrite(table, async client => {
     await assertCatalogueParents(client, table, input);
+    await beforeWrite?.(client);
     return protectedResourceMutation(table,id,input,db => db.query(
       `UPDATE ${table} SET ${cols.join(", ")}
        WHERE ${idColumn} = $${vals.length} AND is_deleted = false`,

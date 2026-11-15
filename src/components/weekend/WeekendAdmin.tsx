@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import EditButton from "@/components/admin/EditButton";
@@ -10,12 +10,15 @@ import type { TripOptions } from "@/lib/server/weekend-trips";
 import DepartureEditor, { blankDeparture } from "./DepartureEditor";
 import { tripApi, tripInput } from "./TripFields";
 import TripOperations from "./TripOperations";
+import { applyPackageTemplate } from "@/lib/package-template";
 type Summary = { id: string; title: string; startsAt: string; endsAt: string; status: string; capacity: number; pricePerPerson: number | string; version: number; pickupCity: string; imageUrl: string; reservedSeats: number };
 export default function WeekendAdmin() {
+  const templateOpened=useRef(false);
   const [operations,setOperations]=useState<string>();
   const [items, setItems] = useState<Summary[]>([]), [options, setOptions] = useState<TripOptions>(), [editor, setEditor] = useState<{ value: DepartureInput; id?: string; version?: number }>(), [loading, setLoading] = useState(true), [error, setError] = useState(""), [search, setSearch] = useState("");
   async function reload() { try { const data = await tripApi<{ items: Summary[]; options: TripOptions }>("/api/admin/weekend-trips"); setItems(data.items); setOptions(data.options); } catch (error) { setError((error as Error).message); } finally { setLoading(false); } }
   useEffect(() => { void reload(); }, []);
+  useEffect(()=>{if(!options||templateOpened.current)return;const id=Number(new URLSearchParams(window.location.search).get("template"));if(!id)return;templateOpened.current=true;const pkg=options.packages.find(pkg=>pkg.id===id);if(!pkg){setError("That package template is unavailable.");return;}try{setEditor({value:applyPackageTemplate({...blankDeparture(options),packageId:id},pkg)});}catch(error){setError((error as Error).message);}},[options]);
   async function edit(id: string, copy = false) {
     setError("");
     try { const { item } = await tripApi<{ item: AdminDeparture }>(`/api/admin/weekend-trips/${id}`);

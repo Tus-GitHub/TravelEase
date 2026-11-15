@@ -9,6 +9,7 @@ import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
 import { useAdminResource } from "@/lib/admin/useAdminResource";
 import { allowedTransitions, type BookingStatus } from "@/lib/bookingStatus";
 import BookingStatusBadge from "@/components/booking/BookingStatusBadge";
+import BookingPackagePlan from "@/components/admin/BookingPackagePlan";
 
 interface AdminBooking {
   departureId:string|null;
@@ -297,6 +298,7 @@ export default function AdminBookingsPage() {
                               <span className="sm:col-span-2">Notes: {b.customerNotes}</span>
                             )}
                           </div>
+                          {b.packageName&&<BookingPackagePlan id={b.id}/>}
                           {b.refund && (
                             <div className="mt-3 border-t border-line-subtle pt-3">
                               <p className="font-semibold text-fg">

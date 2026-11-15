@@ -13,6 +13,8 @@ import TripRouteSelector from "./TripRouteSelector";
 import { routePoint, type BookingRoute, type RoutePoint } from "@/lib/booking-route";
 import { isValidPhone, normalizePhone } from "@/lib/validation";
 import { tripDuration } from "@/lib/booking-duration";
+import { selectPackageRoute, type PackageContent, type SelectedRoute } from "@/lib/package-content";
+import PackagePlanView from "@/components/packages/PackagePlanView";
 
 type Mode = "curated" | "custom" | "vehicle" | "generic";
 
@@ -29,6 +31,7 @@ interface QuoteLine {
   amount: number;
 }
 interface Quote {
+  packageFingerprint?: string;
   subtotal: number;
   taxAmount: number;
   totalAmount: number;
@@ -48,6 +51,10 @@ export default function BookingFlow() {
   useEffect(() => { if (user?.phone) setContactPhone(previous => previous || user.phone); }, [user?.phone]);
 
   const packageSlug = params.get("package");
+  const guidedPathParam = params.get("path");
+  const guidedPath = useMemo(() => guidedPathParam ? guidedPathParam.split(',').map(Number) : [], [guidedPathParam]);
+  const [packageRefresh, setPackageRefresh] = useState(0);
+  const [packagePreview, setPackagePreview] = useState<{ content: PackageContent; selectedRoute?: SelectedRoute } | null>(null);
   const vehicleId = params.get("vehicle");
   const spotsParam = params.get("spots");
   const typeParam = params.get("type") as BookingTypeCode | null;
@@ -113,18 +120,23 @@ export default function BookingFlow() {
     (async () => {
       try {
         if (mode === "curated" && packageSlug) {
-          const res = await fetch(`/api/packages/${encodeURIComponent(packageSlug)}`);
+          setLoadErr(null);
+          const res = await fetch(`/api/packages/${encodeURIComponent(packageSlug)}`, { cache: "no-store" });
           if (!res.ok) throw new Error("Package not found.");
           const { package: pkg } = await res.json();
           if (cancelled) return;
+          if (pkg.isBookable === false) throw new Error("This package is temporarily unavailable. Choose another trip or contact the team.");
+          if (pkg.isGuided && !guidedPath.length) throw new Error("Choose your route on the package page before continuing.");
+          const selectedRoute = pkg.tripContent?.routeTree ? selectPackageRoute(pkg.tripContent.routeTree, guidedPath, pkg.basePricePerPerson, new Map(pkg.routeDestinations.map((spot:{id:number;name:string})=>[spot.id,spot.name]))) : undefined;
+          setPackagePreview(pkg.tripContent ? { content: pkg.tripContent, selectedRoute } : null);
           setMeta({
             title: pkg.name,
-            subtitle: `${pkg.regionName} · ${pkg.durationDays} days · ${pkg.destinations.join(" → ")}`,
-            pricePerPerson: pkg.pricePerPerson,
+            subtitle: `${pkg.regionName} · ${selectedRoute?.days ?? pkg.durationDays} days · ${selectedRoute ? selectedRoute.stops.map(stop=>stop.name).join(" → ") : pkg.destinations.join(" → ")}`,
+            pricePerPerson: selectedRoute?.pricePerPerson ?? pkg.pricePerPerson,
           });
-          setDays(pkg.durationDays);
+          setDays(selectedRoute?.days ?? pkg.durationDays);
           setCapacity(pkg.maxPersons);
-          setNights(Math.max(0, pkg.durationDays - 1));
+          setNights(selectedRoute?.nights ?? Math.max(0, pkg.durationDays - 1));
         } else if (mode === "custom" && spotsParam) {
           const ids = spotsParam
             .split(",")
@@ -183,7 +195,7 @@ export default function BookingFlow() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, packageSlug, vehicleId, spotsParam]);
+  }, [mode, packageSlug, vehicleId, spotsParam, packageRefresh, guidedPath]);
 
   // ---- live quote ----
   const quoteBody = useMemo(() => {
@@ -192,6 +204,7 @@ export default function BookingFlow() {
     if (requiresRoadRoute && roadRoute) { body.routeId=roadRoute.id;body.pickupPoint=pickupPoint;body.dropPoint=dropPoint; }
     if (bookingType === "package") {
       if (packageSlug) body.packageSlug = packageSlug;
+      if (guidedPath.length) body.guidedPath = guidedPath;
       body.days = days || undefined;
       body.nights = nights || undefined;
       if (vehicleTypeId) body.vehicleTypeId = vehicleTypeId;
@@ -206,7 +219,7 @@ export default function BookingFlow() {
     if (validDateTime(startDate)) body.startDate = bookingInstant(startDate).toISOString();
     if (bookingType === "outstation" && validDateTime(endDate)) body.endDateTime = bookingInstant(endDate).toISOString();
     return body;
-  }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours, couponCode, startDate, endDate, vehicleId, requiresRoadRoute, roadRoute, pickupPoint, dropPoint]);
+  }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours, couponCode, startDate, endDate, vehicleId, requiresRoadRoute, roadRoute, pickupPoint, dropPoint, guidedPath]);
 
   useEffect(() => {
     if (!meta) return;
@@ -285,11 +298,13 @@ export default function BookingFlow() {
       startDateTime: bookingInstant(startDate).toISOString(),
       ...(bookingType === "outstation" ? { endDateTime: bookingInstant(endDate).toISOString() } : {}),
       passengerCount: passengers,
+      ...(vehicleId ? { vehicleId: Number(vehicleId) } : {}),
       pickupAddress: pickupAddress || undefined,
       dropAddress: dropAddress || undefined,
       customerNotes: notes || undefined,
       couponCode: couponCode.trim() || undefined,
       expectedTotal: quote.totalAmount,
+      ...(packageSlug ? { expectedPackageFingerprint: quote.packageFingerprint, guidedPath } : {}),
       passengers: [{ name: user.name, phone: normalizePhone(contactPhone), isPrimary: true }],
       ...(requiresRoadRoute&&roadRoute?{routeId:roadRoute.id,pickupPoint,dropPoint}:{}),
     };
@@ -316,7 +331,7 @@ export default function BookingFlow() {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (res.status===409) setQuoteRefresh(n=>n+1);
+        if (res.status===409) { setQuoteRefresh(n=>n+1); if(packageSlug){setQuote(null);setMeta(null);setPackageRefresh(n=>n+1);} }
         setSubmitting(false);
         setError(data.error ?? "Couldn't create the booking.");
         return;
@@ -333,6 +348,7 @@ export default function BookingFlow() {
       <Card padded hover={false} className="mx-auto max-w-lg text-center">
         <p className="text-sm text-muted">{loadErr}</p>
         <div className="mt-4 flex justify-center gap-3">
+          {packageSlug&&<Button href={`/packages/${encodeURIComponent(packageSlug)}`} variant="primary" size="sm">Review this package</Button>}
           <Button href="/packages" variant="outline" size="sm">
             Browse packages
           </Button>
@@ -362,6 +378,11 @@ export default function BookingFlow() {
           <h2 className="mt-1 font-display text-xl font-bold text-fg">{meta.title}</h2>
           <p className="mt-1 text-sm text-muted">{meta.subtitle}</p>
         </div>
+        {packagePreview&&<section className="space-y-4 rounded-2xl border border-line p-4">
+          {packagePreview.content.guideIncluded&&<p className="text-sm font-semibold text-fg">Guide / trip leader included</p>}
+          <div className="grid gap-4 sm:grid-cols-2">{([['inclusions','Included in your price'],['exclusions','Excluded / additional charges']] as const).map(([key,label])=><div key={key}><h3 className="text-sm font-semibold text-fg">{label}</h3><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-muted">{packagePreview.content[key].map((line,i)=><li key={i}>{line}</li>)}</ul>{!packagePreview.content[key].length&&<p className="mt-2 text-xs text-muted">Confirm these details with the team before payment.</p>}</div>)}</div>
+          <details><summary className="min-h-11 cursor-pointer text-sm font-medium text-fg">Review itinerary, included meals and hotel stays</summary><div className="mt-4"><PackagePlanView content={packagePreview.content} selectedRoute={packagePreview.selectedRoute}/></div></details>
+        </section>}
 
         {(mode === "vehicle" || mode === "generic") && (
           <label className="block">

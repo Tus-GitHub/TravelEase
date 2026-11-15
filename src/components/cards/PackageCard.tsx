@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import type { TravelPackage, PackageTag } from "@/types";
@@ -71,7 +72,7 @@ export default function PackageCard({ pkg }: PackageCardProps) {
         {/* Duration pill */}
         <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 backdrop-blur-sm">
           <Icon name="calendar" className="h-3.5 w-3.5 text-primary-700" />
-          {pkg.duration} Days
+          {pkg.duration}{pkg.durationMaxDays&&pkg.durationMaxDays>pkg.duration?`–${pkg.durationMaxDays}`:""} Days
         </span>
 
         {/* Region at bottom of image */}
@@ -84,7 +85,7 @@ export default function PackageCard({ pkg }: PackageCardProps) {
       <div className="flex flex-1 flex-col p-5">
         {/* Name */}
         <h3 className="font-display text-lg font-bold text-fg leading-snug">
-          {pkg.name}
+          <Link href={`/packages/${pkg.id}`} className="hover:underline">{pkg.name}</Link>
         </h3>
 
         {/* Destination route */}
@@ -135,7 +136,7 @@ export default function PackageCard({ pkg }: PackageCardProps) {
             </div>
             <p className="mt-1">
               <span className="font-display text-xl font-extrabold text-primary-900 dark:text-primary-300 ">
-                {formatPrice(pkg.pricePerPerson)}
+                {pkg.isGuided?"From ":""}{formatPrice(pkg.pricePerPerson)}
               </span>
               <span className="ml-1 text-xs text-faint">/person</span>
             </p>
@@ -149,9 +150,10 @@ export default function PackageCard({ pkg }: PackageCardProps) {
             size="md"
             fullWidth
             iconRight="arrow-right"
-            href={`/booking/new?package=${pkg.id}`}
+            href={pkg.isGuided?`/packages/${pkg.id}#build-trip`:`/booking/new?package=${pkg.id}`}
+            disabled={pkg.isBookable===false}
           >
-            Book This Package
+            {pkg.isBookable===false?"Temporarily unavailable":pkg.isGuided?"Build this trip":"Book This Package"}
           </Button>
         </div>
       </div>

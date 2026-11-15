@@ -16,7 +16,7 @@ import type { CmsNavItem } from "@/lib/server/cms";
 
 /**
  * Sticky, responsive navbar. Transparent over the hero, turns solid on scroll.
- * Collapses to a hamburger drawer below `lg`.
+ * Mobile navigation uses the signed-in traveller's avatar as its trigger.
  */
 export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[] } = {}) {
   const links = cmsNavigationLinks(navLinks, cmsNavigation, "header");
@@ -46,6 +46,18 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+        document.getElementById("site-mobile-menu-trigger")?.focus();
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [isOpen]);
 
   // Published CMS pages can put a dark hero behind the transparent navbar.
   const overDarkHero = (cmsNavigation ? cmsNavigation.some(page => page.href === pathname && page.darkHero) : pathname === "/") || pathname === "/booking";
@@ -109,14 +121,15 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
         <div className="flex items-center gap-1 lg:hidden">
           <ThemeToggle tone={solid ? "default" : "light"} />
           <button
+            id="site-mobile-menu-trigger"
             type="button"
-            aria-label={isOpen ? "Close menu" : "Open menu"}
+            aria-label={isOpen ? "Close menu" : user ? "Open account and navigation" : "Open menu"}
             aria-expanded={isOpen}
             aria-controls="site-mobile-menu"
             onClick={() => setIsOpen((v) => !v)}
-            className={`flex h-11 w-11 shrink-0 items-center justify-center ${solid ? "text-fg" : "text-white"}`}
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${solid ? "text-fg" : "text-white"}`}
           >
-            <Icon name={isOpen ? "close" : "menu"} className="h-7 w-7" />
+            {user ? <Avatar name={user.name} className="!h-10 !w-10 border-2 border-accent-500/60 text-sm" /> : <Icon name={isOpen ? "close" : "menu"} className="h-7 w-7" />}
           </button>
         </div>
       </nav>
@@ -130,6 +143,7 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
         }`}
       >
         <ul className="section-container flex flex-col gap-1 py-4">
+          {user && <li className="mb-2 grid grid-cols-2 gap-2 border-b border-line-subtle pb-3"><Link href="/profile" onClick={() => setIsOpen(false)} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-surface-muted px-3 py-2.5 text-sm font-semibold text-fg"><Icon name="user" className="h-4 w-4" />My account</Link><Link href="/profile/bookings" onClick={() => setIsOpen(false)} className="flex min-h-11 items-center justify-center rounded-xl bg-surface-muted px-3 py-2.5 text-sm font-semibold text-fg">My bookings</Link>{user.role === "admin" && <Link href="/admin" onClick={() => setIsOpen(false)} className="col-span-2 flex min-h-11 items-center justify-center rounded-xl border border-line px-3 py-2.5 text-sm font-semibold text-fg">Admin panel</Link>}</li>}
           <li><Link href="/install" onClick={() => setIsOpen(false)} className="block rounded-xl px-3 py-3 text-sm font-semibold text-accent-600 dark:text-accent-400">Add to home screen</Link></li>
           {links.map((link) => {
             const active = isActive(link.href);

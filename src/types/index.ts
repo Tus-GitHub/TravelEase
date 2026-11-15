@@ -129,6 +129,9 @@ export interface Region {
 export type PackageTag = "Popular" | "Best Value" | "Premium" | "Adventure";
 
 export interface TravelPackage {
+  isGuided?: boolean;
+  isBookable?: boolean;
+  durationMaxDays?: number;
   id: string;
   name: string;
   region: string;

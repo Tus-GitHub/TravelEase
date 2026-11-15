@@ -12,6 +12,8 @@ import { ErrorNote, EmptyRow, LoadingRow } from "@/components/admin/tableBits";
 import { useAdminSectionGuard } from "@/lib/admin/useAdminSectionGuard";
 import { useAdminResource } from "@/lib/admin/useAdminResource";
 import { useCrudForm } from "@/lib/admin/useCrudForm";
+import PackagePlanEditor from "@/components/packages/PackagePlanEditor";
+import { blankPackageContent, packagePlanDays, validateRouteTree, type PackageContent } from "@/lib/package-content";
 
 interface Region {
   id: number;
@@ -34,6 +36,7 @@ interface PackageStop {
   nightsHere: number;
 }
 interface CataloguePackage {
+  tripContent: PackageContent | null;
   bookingMode: "private" | "shared" | "both";
   id: number;
   regionId: number;
@@ -62,6 +65,7 @@ export default function AdminPackagesPage() {
 
   const form = useCrudForm({
     empty: {
+      tripContent: null as PackageContent | null,
       bookingMode: "private",
       regionId: "",
       vehicleTypeId: "",
@@ -148,10 +152,10 @@ export default function AdminPackagesPage() {
               <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Coorg Coffee Trail" />
             </FormField>
             <FormField label="Booking mode" icon="users">
-              <select className={fieldBase} value={form.draft.bookingMode} onChange={e => form.patch({ bookingMode: e.target.value })}><option value="private">Private vehicle trips</option><option value="shared">Shared Friday departures</option><option value="both">Private and shared trips</option></select>
+              <select aria-label="Booking mode" className={fieldBase} value={form.draft.bookingMode} onChange={e => form.patch({ bookingMode: e.target.value })}><option value="private">Private vehicle trips</option><option value="shared">Shared Friday departures</option><option value="both">Private and shared trips</option></select>
             </FormField>
             <FormField label="Region" icon="map-pin">
-              <select required value={form.draft.regionId} onChange={(e) => form.patch({ regionId: e.target.value })} className={`${fieldBase} appearance-none`}>
+              <select aria-label="Region" required value={form.draft.regionId} onChange={(e) => form.patch({ regionId: e.target.value })} className={`${fieldBase} appearance-none`}>
                 <option value="" disabled>Select region</option>
                 {regions.items.map((x) => (
                   <option key={x.id} value={x.id}>{x.name}</option>
@@ -159,7 +163,7 @@ export default function AdminPackagesPage() {
               </select>
             </FormField>
             <FormField label="Vehicle Type" icon="car">
-              <select required value={form.draft.vehicleTypeId} onChange={(e) => form.patch({ vehicleTypeId: e.target.value })} className={`${fieldBase} appearance-none`}>
+              <select aria-label="Vehicle Type" required value={form.draft.vehicleTypeId} onChange={(e) => form.patch({ vehicleTypeId: e.target.value })} className={`${fieldBase} appearance-none`}>
                 <option value="" disabled>Select type</option>
                 {types.items.map((x) => (
                   <option key={x.id} value={x.id}>{x.title}</option>
@@ -170,17 +174,22 @@ export default function AdminPackagesPage() {
               <input value={form.draft.tag} onChange={(e) => form.patch({ tag: e.target.value })} className={fieldBase} placeholder="Popular / Premium / …" />
             </FormField>
             <FormField label="Duration (days)" icon="calendar">
-              <input type="number" min={1} required value={form.draft.durationDays} onChange={(e) => form.patch({ durationDays: e.target.value })} className={fieldBase} placeholder="4" />
+              <input type="number" min={1} required readOnly={Boolean(form.draft.tripContent)} value={form.draft.durationDays} onChange={(e) => form.patch({ durationDays: e.target.value })} className={fieldBase} placeholder="4" />
             </FormField>
             <FormField label="Max persons" icon="users">
               <input type="number" min={1} required value={form.draft.maxPersons} onChange={(e) => form.patch({ maxPersons: e.target.value })} className={fieldBase} placeholder="6" />
             </FormField>
             <FormField label="Price / person (₹)" icon="tag">
-              <input type="number" min={0} required value={form.draft.pricePerPerson} onChange={(e) => form.patch({ pricePerPerson: e.target.value })} className={fieldBase} placeholder="8200" />
+              <input type="number" min={form.draft.tripContent?0.01:0} step="0.01" required value={form.draft.pricePerPerson} onChange={(e) => form.patch({ pricePerPerson: e.target.value })} className={fieldBase} placeholder="8200" />
             </FormField>
             <FormField label="Rating (0–5)" icon="star">
               <input type="number" min={0} max={5} step={0.1} value={form.draft.rating} onChange={(e) => form.patch({ rating: e.target.value })} className={fieldBase} placeholder="4.7" />
             </FormField>
+            <div className="space-y-4 sm:col-span-2 lg:col-span-4">
+              <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={Boolean(form.draft.tripContent)} onChange={e=>{const count=Math.max(1,Math.min(14,Number(form.draft.durationDays)||1));form.patch({tripContent:e.target.checked?{...blankPackageContent(),itinerary:Array.from({length:count},(_,i)=>({day:i+1,title:`Day ${i+1}`,description:"",meals:[]}))}:null,durationDays:String(count)});}}/>Include a reusable itinerary, meals, hotels and guide details</label>
+              {form.draft.tripContent&&<PackagePlanEditor spots={spots.items} value={form.draft.tripContent} onChange={tripContent=>{let durationDays=form.draft.durationDays;const bookingMode=tripContent.routeTree?"private":form.draft.bookingMode;try{if(tripContent.routeTree)validateRouteTree(tripContent.routeTree);durationDays=String(packagePlanDays(tripContent,bookingMode,Number(form.draft.pricePerPerson),Number(durationDays)));}catch{/* show setup guidance and keep the last valid duration */}form.patch({tripContent,bookingMode,durationDays});}}/>}
+              {form.draft.tripContent&&<p className="text-xs text-muted">Duration follows the plan. For a guided tree it shows the shortest allowed trip; checkout uses the selected branch. The base per-person price plus selected destination extras is priced by the existing engine; configured package tax still applies.</p>}
+            </div>
             {form.error && <div className="sm:col-span-2 lg:col-span-4"><ErrorNote message={form.error} /></div>}
             <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
               <Button type="submit" variant="primary" size="sm" disabled={form.saving}>
@@ -220,6 +229,7 @@ export default function AdminPackagesPage() {
                   onToggleExpand={() => setExpanded(expanded === p.id ? null : p.id)}
                   onEdit={() =>
                     form.startEdit(p.id, {
+                      tripContent: p.tripContent,
                       bookingMode: p.bookingMode,
                       regionId: String(p.regionId),
                       vehicleTypeId: String(p.vehicleTypeId),
@@ -275,7 +285,7 @@ function PackageRows({
   return (
     <>
       <tr className="hover:bg-surface-hover/60">
-        <td className="px-5 py-3.5 font-medium text-fg">{pkg.name}</td>
+        <td className="px-5 py-3.5 font-medium text-fg">{pkg.name}{pkg.tripContent&&<p className="mt-1 text-xs font-normal text-muted">{pkg.tripContent.routeTree?"Guided destination tree":"Reusable day plan"}</p>}{pkg.tripContent&&!pkg.tripContent.routeTree&&["shared","both"].includes(pkg.bookingMode)&&<Button className="mt-2" href={`/admin/weekend-trips?template=${pkg.id}`} variant="outline" size="sm">Schedule Friday departure</Button>}</td>
         <td className="px-5 py-3.5 text-muted">{regionName}</td>
         <td className="px-5 py-3.5 text-muted">{typeTitle}</td>
         <td className="px-5 py-3.5 text-muted">{pkg.durationDays}</td>
@@ -369,6 +379,7 @@ function PackageRows({
 }
 
 function toBody(d: {
+  tripContent: PackageContent | null;
   bookingMode: string;
   regionId: string;
   vehicleTypeId: string;
@@ -380,6 +391,7 @@ function toBody(d: {
   rating: string;
 }) {
   return {
+    tripContent: d.tripContent,
     bookingMode: d.bookingMode,
     regionId: Number(d.regionId),
     vehicleTypeId: Number(d.vehicleTypeId),

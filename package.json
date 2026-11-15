@@ -19,6 +19,8 @@
     "test:db": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/db-crud.test.ts",
     "test:pricing": "node --experimental-strip-types db/tests/pricing.test.ts",
     "test:empty-return": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/empty-return.test.ts",
+    "test:package-plans": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/package-content.test.ts db/tests/package-template.test.ts",
+    "test:package-plan-db": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/package-plan-db.mjs --dev",
     "test:bookings": "node --experimental-strip-types db/tests/bookings.test.ts",
     "test:refund": "node --experimental-strip-types db/tests/refund.test.ts",
     "publish": "node db/publish.js",

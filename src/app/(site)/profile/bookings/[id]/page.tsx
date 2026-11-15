@@ -19,6 +19,8 @@ import { useSiteContact } from "@/context/SiteContactContext";
 import { calculateRefund } from "@/lib/refund";
 import SharedBookingInfo from "@/components/weekend/SharedBookingInfo";
 import type { SharedTripSnapshot } from "@/lib/server/weekend-bookings";
+import PackagePlanView from "@/components/packages/PackagePlanView";
+import type { PackagePlanSnapshot } from "@/lib/package-content";
 
 interface Stop {
   name: string | null;
@@ -71,7 +73,7 @@ interface Booking {
   dropAddress: string | null;
   totalAmount: number;
   customerNotes: string | null;
-  priceBreakdown: { breakdown: Line[]; totalAmount: number } | null;
+  priceBreakdown: { breakdown: Line[]; totalAmount: number; packagePlan?: PackagePlanSnapshot } | null;
   stops: Stop[];
   passengers: Passenger[];
   history: StatusEvent[];
@@ -171,6 +173,7 @@ export default function BookingDetailPage() {
               <BookingStatusBadge status={booking.status} />
             </div>
             {booking.tripSnapshot&&<SharedBookingInfo snapshot={booking.tripSnapshot} status={booking.status} expiresAt={booking.seatHoldExpiresAt} expired={holdExpired} guide={booking.guide} rooms={booking.roomAssignments}/>}
+            {booking.priceBreakdown?.packagePlan&&<Card padded hover={false}><h2 className="mb-4 text-lg font-semibold text-fg">Your saved package plan</h2><PackagePlanView content={booking.priceBreakdown.packagePlan.content} selectedRoute={booking.priceBreakdown.packagePlan.selectedRoute}/></Card>}
 
             <Card padded hover={false} className="mt-5">
               <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">

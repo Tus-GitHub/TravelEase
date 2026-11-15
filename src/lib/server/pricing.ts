@@ -9,6 +9,7 @@
  *   hourly:  500 + 250×8 + 15 extra km × 18  = 2770  + 5% GST 138.50 = 2908.50
  *   package: 4500×5 + 500×5 + 300×4          = 26200 + 5% GST 1310   = 27510
  */
+import type { PackagePlanSnapshot } from "../package-content";
 
 export type BookingTypeCode =
   | "point_to_point"
@@ -34,6 +35,11 @@ export interface PricingRuleInput {
   minHours: number | null;
   minKm: number | null;
 }
+
+/** A per-person catalogue package needs no unrelated transport rate. Optional
+ * configured package rules still supply tax; this fallback adds no extra fees. */
+export const PER_PERSON_PACKAGE_RULE: PricingRuleInput = { baseAmount: 0, perKmRate: 0, perHourRate: 0, includedKm: 0,
+  extraKmRate: 0, perDayRate: 0, driverAllowancePerDay: 0, nightCharge: 0, flatRate: 0, taxPercent: 0, minHours: null, minKm: null };
 
 /** Normalized trip facts. Distances in km, durations in whole units. */
 export interface TripInput {
@@ -62,6 +68,7 @@ export interface PriceLine {
 }
 
 export interface PriceBreakdown {
+  packagePlan?: PackagePlanSnapshot;
   emptyReturnAmount?: number;
   baseAmount: number;
   vehicleAmount: number;

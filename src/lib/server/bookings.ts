@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import { bookingContact } from "../booking-contact";
 import { tripDuration } from "../booking-duration";
 import { emptyReturnRoute } from "./empty-return";
+import { resolvePrivatePackage } from "./package-plan";
 import type { PoolClient } from "pg";
 import { TripError } from "@/lib/weekend-trips";
 import { lockDeparture, tripTransaction } from "./weekend-trips";
@@ -12,6 +13,7 @@ import { getPool } from "./db";
 import type { PublicUser } from "./users";
 import {
   calculatePrice,
+  PER_PERSON_PACKAGE_RULE,
   type BookingTypeCode,
   type PriceBreakdown,
   type TripInput,
@@ -462,6 +464,8 @@ export async function getBookingForUser(
 // ─── Create (plan.md §6 recompute, §33 snapshot) ────────────────────────────
 
 export interface CreateBookingInput {
+  guidedPath?: number[];
+  expectedPackageFingerprint?: string;
   routeId?: string;
   pickupPoint?: { lat: number; lng: number };
   dropPoint?: { lat: number; lng: number };
@@ -531,6 +535,7 @@ export async function createBooking(
 
   // Package (curated) — load server-side; its price/vehicle-type/duration win.
   let packageId: number | null = null;
+  let packagePlan: Awaited<ReturnType<typeof resolvePrivatePackage>> | undefined;
   let packagePricePerPerson: number | undefined;
   let vehicleTypeId = input.vehicleTypeId;
   let verifiedRoute: import("../booking-route").BookingRoute | undefined;
@@ -560,32 +565,16 @@ export async function createBooking(
   let packageStops: { tourist_spot_id: number; stop_order: number }[] = [];
 
   if (input.bookingType === "package" && (input.packageId != null || input.packageSlug != null)) {
-    const asId = typeof input.packageId === "number" && Number.isInteger(input.packageId)
-      ? input.packageId
-      : null;
-    const pkg = (
-      await pool.query(
-        `SELECT package_id, vehicle_type_id, price_per_person, duration_days, max_persons
-           FROM packages
-          WHERE is_deleted = false AND is_active = true AND booking_mode IN ('private','both')
-            AND ($1::int IS NOT NULL AND package_id = $1 OR slug = $2)
-          LIMIT 1`,
-        [asId, input.packageSlug ?? null],
-      )
-    ).rows[0];
-    if (!pkg) return { ok: false, status: 404, message: "Package not found." };
-    packageId = pkg.package_id;
-    packagePricePerPerson = Number(pkg.price_per_person);
-    vehicleTypeId = pkg.vehicle_type_id;
-    durationDays = pkg.duration_days;
-    if (passengerCount > pkg.max_persons) return { ok: false, status: 400, message: "This package cannot accommodate that many passengers." };
-    packageStops = (
-      await pool.query(
-        `SELECT tourist_spot_id, stop_order FROM package_stops
-          WHERE package_id = $1 AND is_deleted = false ORDER BY stop_order`,
-        [packageId],
-      )
-    ).rows;
+    try { packagePlan = await resolvePrivatePackage(input); }
+    catch(error) { return { ok: false, status: error instanceof TripError ? error.status : 503, message: error instanceof TripError ? error.message : "Could not load the package plan." }; }
+    packageId = packagePlan.id;
+    packagePricePerPerson = packagePlan.pricePerPerson;
+    vehicleTypeId = packagePlan.vehicleTypeId;
+    durationDays = packagePlan.days;
+    input = { ...input, endDateTime: null, nights: packagePlan.nights };
+    if (passengerCount > packagePlan.maxPersons) return { ok: false, status: 400, message: "This package cannot accommodate that many passengers." };
+    packageStops = packagePlan.stops;
+    if (packagePlan.snapshot && input.expectedPackageFingerprint !== packagePlan.fingerprint) return { ok: false, status: 409, message: "The package plan has changed. Review the current itinerary, inclusions and fare before confirming." };
   }
 
   if (!vehicleTypeId || !Number.isInteger(vehicleTypeId)) {
@@ -636,7 +625,7 @@ export async function createBooking(
   if (bookingTypeId == null) {
     return { ok: false, status: 500, message: "Booking type is not configured." };
   }
-  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId, input.vehicleId ?? null, start);
+  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId, input.vehicleId ?? null, start) ?? (packagePricePerPerson && packagePricePerPerson > 0 ? PER_PERSON_PACKAGE_RULE : null);
   if (!rule) {
     return { ok: false, status: 422, message: "No pricing is configured for this trip yet." };
   }
@@ -696,6 +685,19 @@ export async function createBooking(
   let notification: BookingNotificationSnapshot | null = null;
   try {
     await client.query("BEGIN");
+    if (packagePlan) {
+      let current: Awaited<ReturnType<typeof resolvePrivatePackage>>;
+      try { current = await resolvePrivatePackage(input, client, true); }
+      catch(error) {
+        if (!(error instanceof TripError)) throw error;
+        await client.query("ROLLBACK");
+        return { ok: false, status: 409, message: "The package is no longer available as quoted. Review it before confirming." };
+      }
+      if (current.fingerprint !== packagePlan.fingerprint) {
+        await client.query("ROLLBACK");
+        return { ok: false, status: 409, message: "The package plan has changed. Review it before confirming." };
+      }
+    }
     if (couponCode) {
       const res = await validateCoupon(couponCode, price.subtotal, user.id, client);
       if (!res.ok) {
@@ -745,7 +747,7 @@ export async function createBooking(
           posNum(input.estimatedDistanceKm) ?? null,
           posNum(input.estimatedHours) ?? null,
           posNum(durationDays) ?? null,
-          JSON.stringify({ ...price, ...(verifiedRoute ? { route: { ...verifiedRoute, geometry: undefined } } : {}), ...(reverseRoute ? { emptyReturnRoute: { ...reverseRoute, geometry: undefined }, emptyReturnPerKmRate: rule.emptyReturnPerKmRate } : {}) }),
+          JSON.stringify({ ...price, ...(packagePlan?.snapshot ? { packagePlan: packagePlan.snapshot } : {}), ...(verifiedRoute ? { route: { ...verifiedRoute, geometry: undefined } } : {}), ...(reverseRoute ? { emptyReturnRoute: { ...reverseRoute, geometry: undefined }, emptyReturnPerKmRate: rule.emptyReturnPerKmRate } : {}) }),
           price.subtotal,
           price.discountAmount,
           price.taxAmount,

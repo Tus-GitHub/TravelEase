@@ -7,6 +7,7 @@ import { getPool } from "./db";
 import { getAdminDeparture, lockDeparture, tripSeats, tripTransaction } from "./weekend-trips";
 import { notifyBookingCreated, captureBookingNotification } from "./notifications";
 import { logActivity } from "./activity-log";
+import { isValidPhone, normalizePhone } from "../validation";
 
 export const WEEKEND_CANCELLATION_POLICY = "Whole-booking cancellation: more than 72 hours before pickup — full refund; 24–72 hours — 50% refund; less than 24 hours — no refund. If we cancel the departure, paid bookings receive a full refund. Offline refunds are settled by our team.";
 const inclusiveRule = (taxPercent: number): PricingRuleInput => ({ baseAmount:0, perKmRate:0, perHourRate:0, includedKm:0, extraKmRate:0, perDayRate:0, driverAllowancePerDay:0, nightCharge:0, flatRate:0, taxPercent, minHours:null, minKm:null });
@@ -48,7 +49,11 @@ export async function createSharedBooking(raw: unknown, user: PublicUser) {
   const notes = tripText(input.customerNotes ?? "","Booking notes",1000);
   if (!Array.isArray(input.passengers) || input.passengers.length !== quantity) throw new TripError("Enter details for every traveller.");
   const passengers = input.passengers.map((value,index)=> { const p = tripObject(value); return { name:tripText(p.name,"Traveller name",200,true), age:p.age == null || p.age === "" ? null : tripNumber(p.age,"Age",0,120), phone:tripText(p.phone ?? "","Traveller phone",30), isPrimary:index===0 }; });
-  if (!passengers[0].phone) throw new TripError("Add a contact number for the lead traveller.");
+  if (!isValidPhone(passengers[0].phone)) throw new TripError("Add a valid contact number for the lead traveller.");
+  for (const passenger of passengers) {
+    if (passenger.phone && !isValidPhone(passenger.phone)) throw new TripError("Check the traveller contact numbers.");
+    if (passenger.phone) passenger.phone = normalizePhone(passenger.phone);
+  }
   const result = await tripTransaction(async client => {
     // Request-level lock also serializes the same key submitted for two departures.
     await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))",[`${user.id}:${requestId}`]);

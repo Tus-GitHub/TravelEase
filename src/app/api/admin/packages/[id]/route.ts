@@ -2,11 +2,16 @@ import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
 import { dbErrorResponse } from "@/lib/server/api-errors";
 import { deletePackage, updatePackage } from "@/lib/server/admin/catalog";
+import { validatePackageContent, type PackageContent } from "@/lib/package-content";
+import { TripError } from "@/lib/weekend-trips";
+import { readBoundedJsonObject } from "@/lib/server/http-json";
+import { matchesRequestOrigin } from "@/lib/server/request-origin";
 
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } },
 ) {
+  if (!matchesRequestOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
   const auth = await requireRole("admin");
   if (!auth.ok) return auth.response;
 
@@ -17,12 +22,13 @@ export async function PATCH(
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    body = await readBoundedJsonObject(request.body, 256 * 1024);
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
   const input: {
+    tripContent?: PackageContent | null;
     bookingMode?: "private" | "shared" | "both";
     regionId?: number;
     vehicleTypeId?: number;
@@ -91,10 +97,12 @@ export async function PATCH(
   if (typeof body.isActive === "boolean") input.isActive = body.isActive;
 
   try {
+    if (body.tripContent !== undefined) input.tripContent = validatePackageContent(body.tripContent);
     const item = await updatePackage(id, input, auth.user.id);
     if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
     return NextResponse.json({ item });
   } catch (err) {
+    if (err instanceof TripError) return NextResponse.json({ error: err.message }, { status: err.status });
     const res = dbErrorResponse(err, {
       fk: "The chosen region or vehicle type doesn't exist.",
     });

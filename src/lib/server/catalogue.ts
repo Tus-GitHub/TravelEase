@@ -1,4 +1,6 @@
 import { getPool } from "./db";
+import { validatePackageContent, availableRouteTree, routeRange, type PackageContent } from "../package-content";
+import { planSpotNames } from "./package-plan";
 import { unavailableVehicleIds } from "./availability";
 import type { Vehicle, TravelPackage, PackageTag, Region } from "@/types";
 
@@ -204,6 +206,9 @@ export interface PublicPackageStop {
 }
 
 export interface PublicPackage {
+  isGuided: boolean;
+  isBookable: boolean;
+  durationMaxDays?: number;
   id: number;
   slug: string;
   name: string;
@@ -223,6 +228,9 @@ export interface PublicPackage {
 }
 
 export interface PublicPackageDetail extends PublicPackage {
+  tripContent: PackageContent | null;
+  basePricePerPerson: number;
+  routeDestinations: { id: number; name: string }[];
   stops: PublicPackageStop[];
 }
 
@@ -230,10 +238,10 @@ const PACKAGE_SELECT = `
   SELECT p.package_id, p.slug, p.name, p.region_id, r.name AS region_name,
          vt.slug AS vehicle_type_slug, vt.title AS vehicle_type_title,
          p.duration_days, p.image_url, p.highlights, p.max_persons,
-         p.price_per_person, p.tag, p.rating, p.review_count
+         p.price_per_person, p.tag, p.rating, p.review_count, p.trip_content
   FROM packages p
-  JOIN regions r ON r.region_id = p.region_id AND r.is_deleted = false
-  JOIN vehicle_types vt ON vt.vehicle_type_id = p.vehicle_type_id
+  JOIN regions r ON r.region_id = p.region_id AND r.is_deleted = false AND r.is_active = true
+  JOIN vehicle_types vt ON vt.vehicle_type_id = p.vehicle_type_id AND NOT vt.is_deleted AND vt.is_active
   WHERE p.is_deleted = false AND p.is_active = true AND p.booking_mode IN ('private','both')`;
 
 const PACKAGE_STOPS_SELECT = `
@@ -244,6 +252,7 @@ const PACKAGE_STOPS_SELECT = `
   WHERE ps.is_deleted = false`;
 
 interface PackageRow {
+  trip_content: PackageContent | null;
   package_id: number;
   slug: string;
   name: string;
@@ -284,8 +293,18 @@ function toStop(r: StopRow): PublicPackageStop {
   };
 }
 
-function toPublicPackage(r: PackageRow, stops: PublicPackageStop[]): PublicPackageDetail {
+function toPublicPackage(r: PackageRow, stops: PublicPackageStop[], names: Map<number,string>, includePlan = false): PublicPackageDetail {
+  let content: PackageContent | null = null, invalid = false;
+  try { content = r.trip_content == null ? null : validatePackageContent(r.trip_content); } catch { invalid = true; }
+  const isGuided = Boolean(content?.routeTree);
+  if (content?.routeTree) content = { ...content, routeTree: availableRouteTree(content.routeTree, new Set(names.keys())) };
+  const range = content?.routeTree ? routeRange(content.routeTree, Number(r.price_per_person)) : null;
   return {
+    isGuided, isBookable: !invalid && (isGuided ? Boolean(range?.minDays) : stops.every(stop=>names.has(stop.touristSpotId))),
+    ...(range ? { durationMaxDays: range.maxDays } : {}),
+    tripContent: includePlan ? content : null,
+    basePricePerPerson: Number(r.price_per_person),
+    routeDestinations: includePlan && content?.routeTree ? content.routeTree.nodes.map(node=>({id:node.spotId,name:names.get(node.spotId)!})) : [],
     id: r.package_id,
     slug: r.slug,
     name: r.name,
@@ -293,11 +312,11 @@ function toPublicPackage(r: PackageRow, stops: PublicPackageStop[]): PublicPacka
     regionName: r.region_name,
     vehicleTypeSlug: r.vehicle_type_slug,
     vehicleTypeTitle: r.vehicle_type_title,
-    durationDays: r.duration_days,
+    durationDays: range?.minDays || r.duration_days,
     imageUrl: r.image_url,
-    highlights: Array.isArray(r.highlights) ? r.highlights : [],
+    highlights: content ? content.inclusions.slice(0,3) : Array.isArray(r.highlights) ? r.highlights : [],
     maxPersons: r.max_persons,
-    pricePerPerson: Number(r.price_per_person),
+    pricePerPerson: range?.minDays ? range.minPrice : Number(r.price_per_person),
     tag: r.tag,
     rating: r.rating != null ? Number(r.rating) : null,
     reviewCount: r.review_count,
@@ -309,6 +328,9 @@ function toPublicPackage(r: PackageRow, stops: PublicPackageStop[]): PublicPacka
 /** Adapt a PublicPackage to the `@/types` TravelPackage shape the cards render. */
 export function toCardPackage(p: PublicPackage): TravelPackage {
   return {
+    isGuided: p.isGuided,
+    isBookable: p.isBookable,
+    durationMaxDays: p.durationMaxDays,
     id: p.slug,
     name: p.name,
     region: p.regionName,
@@ -337,7 +359,10 @@ export async function listPublicPackages(): Promise<PublicPackage[]> {
     list.push(toStop(row));
     byPackage.set(row.package_id, list);
   }
-  return pkgs.rows.map((r) => toPublicPackage(r, byPackage.get(r.package_id) ?? []));
+  const spotIds = new Set<number>(stops.rows.map(row=>row.tourist_spot_id));
+  for(const row of pkgs.rows){ try { const content = row.trip_content == null ? null : validatePackageContent(row.trip_content);content?.routeTree?.nodes.forEach(node=>spotIds.add(node.spotId)); } catch { /* malformed plans are marked unavailable */ } }
+  const names = await planSpotNames(pool,Array.from(spotIds));
+  return pkgs.rows.map((r) => toPublicPackage(r, byPackage.get(r.package_id) ?? [], names));
 }
 
 /** Looks a package up by numeric id or by slug. */
@@ -355,7 +380,9 @@ export async function getPublicPackage(
     `${PACKAGE_STOPS_SELECT} AND ps.package_id = $1 ORDER BY ps.stop_order`,
     [pkg.rows[0].package_id],
   );
-  return toPublicPackage(pkg.rows[0], (stops.rows as StopRow[]).map(toStop));
+  let content: PackageContent | null = null; try { content = pkg.rows[0].trip_content == null ? null : validatePackageContent(pkg.rows[0].trip_content); } catch { /* unavailable malformed plan */ }
+  const names = await planSpotNames(pool, content?.routeTree?.nodes.map(node=>node.spotId) ?? stops.rows.map(row=>row.tourist_spot_id));
+  return toPublicPackage(pkg.rows[0], (stops.rows as StopRow[]).map(toStop), names, true);
 }
 
 // ─── Regions (with spots, for the Package Builder) ───────────────────────────

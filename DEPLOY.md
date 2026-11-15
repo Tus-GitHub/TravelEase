@@ -963,3 +963,35 @@ sessions, tokens and activity rows are removed and absence checked. No DDL.
 Run typecheck/lint and the required db:check gate before and after publication.
 
 Production outcome: commit75db0e2, Vercel READY on2026-11-10. Saved production contact inbox configured with the previously selected verified-sender mailbox; no other content copied. Final db:check IN SYNC29/29. See focused release record for live checks and limitations.
+
+## Reusable packages and guided routes — 2026-11-16
+
+Admin → Packages → Add / Edit package now has an optional reusable plan: day-by-day
+activities, included meals, guest-facing hotel/category and sharing details, guide,
+inclusions and excluded/additional charges. Duration follows the plan. Enter actual
+business prices and promises; publication does not seed sample offers.
+
+For a private custom package, enable approved next destinations. Add existing active
+destinations, select roots and allowed next stops, nights, meals and extra per-person
+prices, and where a trip can finish. The base per-person price plus chosen stop
+extras determines the route price; configured package tax/discount is shown at
+checkout. Loops, disconnected stops and invalid paths are rejected. Customers choose
+successive cards without Search/Next buttons. Checkout collects date, traveller
+count and a valid lead phone, displays the promised plan and final total, and rejects
+changed prices or plans until the customer reviews again. Bookings retain their
+agreed guest plan even after catalogue edits.
+
+For a fixed Friday group, choose Shared or Both and use Schedule Friday departure
+from the package list, or Use selected package plan in the departure editor. This
+copies a draft, including dated meals/stays. Review dates/times, fare, capacity,
+vehicle, driver and guide. Copied hotel rooms start at zero and pending: arrange
+and confirm real beds in Hotels before opening sales. Copying a plan never reserves
+a supplier or confirms accommodation. Shared inventory, seat holds, payment and
+hotel/vehicle/driver checks use the existing departure system. Customer payment is
+still verified manually by the operator before final confirmation.
+
+Admin booking details and customer receipt/history show the saved plan. Notifications
+use the saved lead phone. Existing mail configuration is reused; SMTP acceptance
+alone does not prove inbox delivery. No paid map service, new provider, billing or
+OTP activation is introduced. Signed-in mobile/PWA navigation shows a circular
+initials avatar, with account/bookings shortcuts and the full navigation drawer.

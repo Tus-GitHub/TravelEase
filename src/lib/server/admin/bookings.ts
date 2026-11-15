@@ -10,6 +10,7 @@ import { tripTransaction } from "../weekend-trips";
 import { assertDriverWindow } from "../weekend-resources";
 import { bookingWindow } from "../availability";
 import { TripError } from "@/lib/weekend-trips";
+import type { PackagePlanSnapshot } from "@/lib/package-content";
 
 /**
  * Admin view of bookings (plan.md §36 chunk 1.13). Status changes still go
@@ -18,6 +19,7 @@ import { TripError } from "@/lib/weekend-trips";
  */
 
 export interface AdminBookingRow {
+  packagePlan?: PackagePlanSnapshot | null;
   departureId:string|null;
   holdExpired:boolean;
   seatHoldExpiresAt:string|null;
@@ -57,7 +59,8 @@ const ADMIN_SELECT = `
   SELECT b.booking_id, b.booking_reference, b.status, bt.code AS booking_type_code,
          b.start_datetime, b.total_amount, b.currency, b.created_at,b.departure_id,b.seat_hold_expires_at,
          (b.status='PendingPayment' AND b.seat_hold_expires_at<=clock_timestamp()) AS hold_expired,
-         cu.name AS customer_name, cu.email AS customer_email, cu.phone AS customer_phone,
+         cu.name AS customer_name, cu.email AS customer_email,
+         COALESCE((SELECT NULLIF(bp.phone,'') FROM booking_passengers bp WHERE bp.booking_id=b.booking_id AND bp.is_primary ORDER BY bp.booking_passenger_id LIMIT 1),cu.phone) AS customer_phone,
          b.assigned_agent_user_id, ag.name AS agent_name,
          vt.title AS vehicle_type_title, p.name AS package_name,
          b.pickup_address, b.drop_address, b.passenger_count, b.customer_notes,
@@ -153,8 +156,8 @@ export async function listAdminBookings(status?: string): Promise<AdminBookingRo
 }
 
 export async function getAdminBooking(id: string): Promise<AdminBookingRow | null> {
-  const result = await getPool().query(`${ADMIN_SELECT} AND b.booking_id = $1`, [id]);
-  return result.rows[0] ? toRow(result.rows[0]) : null;
+  const result = await getPool().query(`${ADMIN_SELECT.replace("SELECT b.booking_id", "SELECT b.price_breakdown->'packagePlan' AS package_plan,b.booking_id")} AND b.booking_id = $1`, [id]);
+  return result.rows[0] ? { ...toRow(result.rows[0]), packagePlan: result.rows[0].package_plan ?? null } : null;
 }
 
 /** Admin status change — delegates to the state machine with the admin actor. */

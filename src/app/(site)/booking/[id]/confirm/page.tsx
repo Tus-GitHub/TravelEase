@@ -11,6 +11,7 @@ import { getUserIdForToken, SESSION_COOKIE } from "@/lib/server/session";
 import { findUserById, toPublicUser } from "@/lib/server/users";
 import { getBookingForUser } from "@/lib/server/bookings";
 import { getSiteSettings } from "@/lib/server/site-settings";
+import PackagePlanView from "@/components/packages/PackagePlanView";
 
 export const dynamic = "force-dynamic";
 
@@ -110,6 +111,8 @@ export default async function BookingConfirmPage({
             </div>
           )}
         </Card>
+
+        {bd?.packagePlan&&<Card padded hover={false} className="mt-6"><h2 className="mb-4 text-lg font-semibold text-fg">Your saved package plan</h2><PackagePlanView content={bd.packagePlan.content} selectedRoute={bd.packagePlan.selectedRoute}/></Card>}
 
         {booking.driver && (
           <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-4 text-sm">

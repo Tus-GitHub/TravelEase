@@ -2,6 +2,9 @@ import type { Pool, PoolClient } from "pg";
 import { catalogueWrite, assertCatalogueParents } from "./_catalogue";
 import { getPool } from "../db";
 import { applyPartialUpdate, softDelete } from "./_util";
+import { validatePackageContent, packagePlanDays, type PackageContent } from "../../package-content";
+import { TripError } from "../../weekend-trips";
+import { assertPlanDestinations } from "../package-plan";
 
 export interface PackageStop {
   id: number;
@@ -12,6 +15,7 @@ export interface PackageStop {
 }
 
 export interface CataloguePackage {
+  tripContent: PackageContent | null;
   bookingMode: "private" | "shared" | "both";
   id: number;
   regionId: number;
@@ -30,6 +34,7 @@ export interface CataloguePackage {
 }
 
 interface PackageRow {
+  trip_content: PackageContent | null;
   booking_mode: "private" | "shared" | "both";
   package_id: number;
   region_id: number;
@@ -48,6 +53,7 @@ interface PackageRow {
 
 function toPackage(r: PackageRow, stops: PackageStop[]): CataloguePackage {
   return {
+    tripContent: r.trip_content,
     bookingMode: r.booking_mode,
     id: r.package_id,
     regionId: r.region_id,
@@ -70,7 +76,7 @@ const P_SELECT = `
   SELECT p.package_id, p.region_id, r.name AS region_name,
          p.vehicle_type_id, vt.title AS vehicle_type_title,
          p.name, p.slug, p.duration_days, p.max_persons, p.price_per_person,
-         p.tag, p.rating, p.is_active, p.booking_mode
+         p.tag, p.rating, p.is_active, p.booking_mode, p.trip_content
   FROM packages p
   JOIN regions r ON r.region_id = p.region_id
   JOIN vehicle_types vt ON vt.vehicle_type_id = p.vehicle_type_id
@@ -143,6 +149,7 @@ async function uniqueSlug(base: string): Promise<string> {
 }
 
 export interface PackageInput {
+  tripContent?: PackageContent | null;
   bookingMode?: "private" | "shared" | "both";
   regionId: number;
   vehicleTypeId: number;
@@ -158,27 +165,32 @@ export async function createPackage(
   input: PackageInput,
   actorId: string,
 ): Promise<CataloguePackage> {
+  const tripContent = input.tripContent == null ? null : validatePackageContent(input.tripContent);
+  const durationDays = packagePlanDays(tripContent, input.bookingMode ?? "private", input.pricePerPerson, input.durationDays);
+  if (tripContent && input.bookingMode !== "shared" && !(input.pricePerPerson > 0)) throw new TripError("Enter a positive per-person price for a bookable package plan.");
   const slug = await uniqueSlug(slugify(input.name));
   return catalogueWrite("packages", async db => {
     await assertCatalogueParents(db, "packages", { ...input });
+    await assertPlanDestinations(db, tripContent);
     const result = await db.query(
       `INSERT INTO packages
          (region_id, vehicle_type_id, name, slug, duration_days, max_persons,
-          price_per_person, tag, rating, highlights, created_by, updated_by, booking_mode)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '[]'::jsonb, $10, $10, $11)
+          price_per_person, tag, rating, highlights, created_by, updated_by, booking_mode, trip_content)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '[]'::jsonb, $10, $10, $11, $12::jsonb)
        RETURNING package_id`,
       [
         input.regionId,
         input.vehicleTypeId,
         input.name,
         slug,
-        input.durationDays,
+        durationDays,
         input.maxPersons,
         input.pricePerPerson,
         input.tag || null,
         input.rating,
         actorId,
         input.bookingMode ?? "private",
+        tripContent,
       ],
     );
     return (await getPackage(result.rows[0].package_id, db))!;
@@ -190,11 +202,17 @@ export async function updatePackage(
   input: Partial<PackageInput & { isActive: boolean }>,
   actorId: string,
 ): Promise<CataloguePackage | null> {
+  const current = await getPackage(id);
+  if (!current) return null;
+  const patch = { ...input };
+  if (input.tripContent !== undefined) patch.tripContent = validatePackageContent(input.tripContent);
+  const content = patch.tripContent === undefined ? current.tripContent : patch.tripContent;
+  if (content) patch.durationDays = packagePlanDays(content, patch.bookingMode ?? current.bookingMode, patch.pricePerPerson ?? current.pricePerPerson, patch.durationDays ?? current.durationDays);
   const ok = await applyPartialUpdate(
     "packages",
     "package_id",
     id,
-    input,
+    patch,
     {
       regionId: "region_id",
       vehicleTypeId: "vehicle_type_id",
@@ -206,8 +224,18 @@ export async function updatePackage(
       rating: "rating",
       isActive: "is_active",
       bookingMode: "booking_mode",
+      tripContent: "trip_content",
     },
     actorId,
+    async db => {
+      const row = (await db.query("SELECT booking_mode,price_per_person,duration_days,trip_content,is_active FROM packages WHERE package_id=$1 AND NOT is_deleted FOR UPDATE", [id])).rows[0];
+      if (!row) return;
+      const saved = patch.tripContent === undefined ? row.trip_content == null ? null : validatePackageContent(row.trip_content) : patch.tripContent;
+      const mode = patch.bookingMode ?? row.booking_mode, price = patch.pricePerPerson ?? Number(row.price_per_person), days = patch.durationDays ?? row.duration_days;
+      if (saved && packagePlanDays(saved, mode, price, days) !== days) throw new TripError("The package plan changed. Reload it before saving.", 409);
+      if (saved && mode !== "shared" && !(price > 0)) throw new TripError("Enter a positive per-person price for a bookable package plan.");
+      if (patch.isActive ?? row.is_active) await assertPlanDestinations(db, saved);
+    },
   );
   return ok ? getPackage(id) : null;
 }

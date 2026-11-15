@@ -1,4 +1,5 @@
 import { cmsSafeImage } from "./cms";
+import { dayExtras, type DayExtras } from "./trip-plan";
 
 export const DEPARTURE_STATUSES = ["draft", "open", "guaranteed", "closed", "ongoing", "completed", "cancelled"] as const;
 export type DepartureStatus = typeof DEPARTURE_STATUSES[number];
@@ -43,8 +44,8 @@ export function tripDate(value: unknown, label = "Date"): string {
 export const indiaDate = (iso: string) => new Date(new Date(iso).getTime() + 330 * 60000).toISOString().slice(0, 10);
 export const indiaInput = (iso: string) => new Date(new Date(iso).getTime() + 330 * 60000).toISOString().slice(0, 16);
 export const fromIndiaInput = (value: string) => timestamp(value + ":00+05:30", "Trip time");
-export interface TripDay { day: number; title: string; description: string }
-export interface TripContent { summary: string; description: string; imageUrl: string; imageAlt: string; itinerary: TripDay[]; inclusions: string[]; exclusions: string[]; stayNights: string[]; routeStops?:{id:number;name:string}[] }
+export interface TripDay extends DayExtras { day: number; title: string; description: string }
+export interface TripContent { summary: string; description: string; imageUrl: string; imageAlt: string; itinerary: TripDay[]; inclusions: string[]; exclusions: string[]; stayNights: string[]; routeStops?:{id:number;name:string}[]; guideIncluded?: boolean }
 const lines = (value: unknown, label: string, count: number, max: number) => {
   if (!Array.isArray(value) || value.length > count) throw new TripError(`${label} supports up to ${count} entries.`);
   return value.map(item => tripText(item, label, max, true));
@@ -52,8 +53,10 @@ const lines = (value: unknown, label: string, count: number, max: number) => {
 export function validateTripContent(value: unknown): TripContent {
   const c = tripObject(value);
   if (!Array.isArray(c.itinerary) || !c.itinerary.length || c.itinerary.length > 14) throw new TripError("Add between one and fourteen itinerary days.");
+  if (c.guideIncluded !== undefined && typeof c.guideIncluded !== "boolean") throw new TripError("Choose whether a guide is included.");
   return { summary: tripText(c.summary, "Short introduction", 500), description: tripText(c.description, "Description", 6000), imageUrl: photo(c.imageUrl), imageAlt: tripText(c.imageAlt ?? "", "Photo description", 200),
-    itinerary: c.itinerary.map((value, i) => { const day = tripObject(value); return { day: i + 1, title: tripText(day.title, "Day title", 200, true), description: tripText(day.description, "Day plan", 4000) }; }),
+    ...(c.guideIncluded === undefined ? {} : { guideIncluded: c.guideIncluded }),
+    itinerary: c.itinerary.map((value, i) => { const day = tripObject(value); let extras: DayExtras; try { extras = dayExtras(day); } catch(error) { throw new TripError((error as Error).message); } return { day: i + 1, title: tripText(day.title, "Day title", 200, true), description: tripText(day.description, "Day plan", 4000), ...extras }; }),
     inclusions: lines(c.inclusions, "Inclusions", 30, 300), exclusions: lines(c.exclusions, "Exclusions", 30, 300), stayNights: Array.from(new Set(lines(c.stayNights, "Hotel nights", 14, 10).map(date => tripDate(date)))) };
 }
 export interface GuideInput { name: string; phone: string; imageUrl: string; bio: string; languages: string[]; privateNotes: string; isActive: boolean }
@@ -85,6 +88,8 @@ export function validateDeparture(value: unknown): DepartureInput {
   if (new Date(indiaDate(startsAt)).getUTCDay() !== 5) throw new TripError("Weekend trips depart on Friday in India time.");
   if (!(bookingOpensAt < decisionDeadline && decisionDeadline <= bookingClosesAt && bookingClosesAt < startsAt)) throw new TripError("Use booking open < group decision ≤ booking close < departure.");
   const capacity = tripNumber(d.capacity, "Customer seats", 1, 1000), content = validateTripContent(d.content);
+  const promisedNights = content.itinerary.flatMap((day,i)=>day.hotel?[new Date(Date.parse(indiaDate(startsAt))+i*86400000).toISOString().slice(0,10)]:[]);
+  content.stayNights = Array.from(new Set([...content.stayNights,...promisedNights])).sort();
   if (content.stayNights.some(night => night < indiaDate(startsAt) || night >= indiaDate(endsAt))) throw new TripError("Hotel nights must fall within the trip dates.");
   if (!Array.isArray(d.stays) || d.stays.length > 30) throw new TripError("A trip supports up to thirty hotel room groups.");
   const stays = d.stays.map(validateStay);

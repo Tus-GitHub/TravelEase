@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
 import { dbErrorResponse } from "@/lib/server/api-errors";
 import { createPackage, listPackages } from "@/lib/server/admin/catalog";
+import { validatePackageContent } from "@/lib/package-content";
+import { TripError } from "@/lib/weekend-trips";
+import { readBoundedJsonObject } from "@/lib/server/http-json";
+import { matchesRequestOrigin } from "@/lib/server/request-origin";
 
 function optRating(value: unknown): number | null {
   if (value === "" || value === null || value === undefined) return null;
@@ -16,12 +20,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!matchesRequestOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
   const auth = await requireRole("admin");
   if (!auth.ok) return auth.response;
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    body = await readBoundedJsonObject(request.body, 256 * 1024);
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
@@ -66,11 +71,13 @@ export async function POST(request: Request) {
         bookingMode: bookingMode as "private" | "shared" | "both",
         tag: typeof body.tag === "string" ? body.tag.trim() : "",
         rating: optRating(body.rating),
+        ...(body.tripContent === undefined ? {} : { tripContent: validatePackageContent(body.tripContent) }),
       },
       auth.user.id,
     );
     return NextResponse.json({ item }, { status: 201 });
   } catch (err) {
+    if (err instanceof TripError) return NextResponse.json({ error: err.message }, { status: err.status });
     const res = dbErrorResponse(err, {
       fk: "The chosen region or vehicle type doesn't exist.",
     });

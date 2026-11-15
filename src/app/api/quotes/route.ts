@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { readBoundedJsonObject } from "@/lib/server/http-json";
 import { matchesRequestOrigin } from "@/lib/server/request-origin";
-import { calculatePrice, type BookingTypeCode, type TripInput } from "@/lib/server/pricing";
+import { calculatePrice, PER_PERSON_PACKAGE_RULE, type BookingTypeCode, type TripInput } from "@/lib/server/pricing";
 import { resolveBookingTypeId, resolvePricingRule } from "@/lib/server/pricing-rules";
-import { getPool } from "@/lib/server/db";
 import { validateCoupon } from "@/lib/server/coupons";
 import { resolveSeason } from "@/lib/server/seasonal-pricing";
 import { getUserIdForToken, SESSION_COOKIE } from "@/lib/server/session";
@@ -15,6 +14,8 @@ import { MapServiceError, verifiedBookingRoute } from "@/lib/server/map-services
 import { emptyReturnRoute } from "@/lib/server/empty-return";
 import { tripDuration } from "@/lib/booking-duration";
 import type { BookingRoute } from "@/lib/booking-route";
+import { resolvePrivatePackage } from "@/lib/server/package-plan";
+import { TripError } from "@/lib/weekend-trips";
 
 /**
  * POST /api/quotes — a server-computed price for a prospective booking
@@ -86,26 +87,19 @@ export async function POST(request: Request) {
   }
 
   // Per-person package pricing — price comes from the packages table, never the client.
+  let packagePlan: Awaited<ReturnType<typeof resolvePrivatePackage>> | undefined;
   if (
     trip.bookingType === "package" &&
     (body.packageId != null || body.packageSlug != null)
   ) {
-    const res = await getPool().query(
-      `SELECT price_per_person, duration_days, vehicle_type_id, max_persons
-         FROM packages
-        WHERE is_deleted = false AND is_active = true AND booking_mode IN ('private','both')
-          AND (($1::int IS NOT NULL AND package_id = $1)
-            OR ($2::text IS NOT NULL AND slug = $2))
-        LIMIT 1`,
-      [asInt(body.packageId), typeof body.packageSlug === "string" ? body.packageSlug : null],
-    );
-    if (!res.rows[0]) {
-      return NextResponse.json({ error: "Package not found." }, { status: 404 });
-    }
-    trip.packagePricePerPerson = Number(res.rows[0].price_per_person);
-    trip.days = Number(res.rows[0].duration_days);
-    vehicleTypeId = Number(res.rows[0].vehicle_type_id);
-    if ((trip.passengers ?? 1) > Number(res.rows[0].max_persons)) {
+    try { packagePlan = await resolvePrivatePackage({ packageId: body.packageId, packageSlug: body.packageSlug, guidedPath: body.guidedPath }); }
+    catch(error) { return NextResponse.json({ error: error instanceof TripError ? error.message : "Could not load the package plan." }, { status: error instanceof TripError ? error.status : 503 }); }
+    if (vehicleId !== null && vehicleTypeId !== packagePlan.vehicleTypeId) return NextResponse.json({ error: "Choose a car matching this package’s vehicle type." }, { status: 400 });
+    trip.packagePricePerPerson = packagePlan.pricePerPerson;
+    trip.days = packagePlan.days;
+    trip.nights = packagePlan.nights;
+    vehicleTypeId = packagePlan.vehicleTypeId;
+    if ((trip.passengers ?? 1) > packagePlan.maxPersons) {
       return NextResponse.json({ error: "This package cannot accommodate that many passengers." }, { status: 400 });
     }
   }
@@ -120,7 +114,7 @@ export async function POST(request: Request) {
 
   const date = typeof body.startDate === "string" ? new Date(body.startDate) : undefined;
   if (date && Number.isNaN(date.getTime())) return NextResponse.json({ error: "Choose a valid travel date." }, { status: 400 });
-  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId, vehicleId, date);
+  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId, vehicleId, date) ?? (packagePlan && packagePlan.pricePerPerson > 0 ? PER_PERSON_PACKAGE_RULE : null);
   if (!rule) {
     return NextResponse.json(
       { error: "No pricing is configured for this trip yet." },
@@ -147,7 +141,8 @@ export async function POST(request: Request) {
     }
   }
 
-  const quote = calculatePrice(trip, rule);
+  const packageMetadata = packagePlan ? { packageFingerprint: packagePlan.fingerprint, packageDays: packagePlan.days, packageNights: packagePlan.nights } : {};
+  const quote = { ...calculatePrice(trip, rule), ...packageMetadata };
 
   // Optional coupon preview (chunk 2.3). Per-user limit is checked only if we
   // can identify the visitor; it's still enforced for real at booking time.
@@ -164,10 +159,10 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({
-    quote: calculatePrice(
+    quote: { ...calculatePrice(
       { ...trip, discountAmount: applied.coupon.discountAmount },
       rule,
-    ),
+    ), ...packageMetadata },
     coupon: { code: applied.coupon.code, discountAmount: applied.coupon.discountAmount },
   });
 }

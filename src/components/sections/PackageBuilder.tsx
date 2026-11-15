@@ -44,13 +44,13 @@ function TabSwitcher({
 }) {
   return (
     <div className="flex justify-center mb-12">
-      <div className="relative flex rounded-2xl bg-surface-hover p-1.5 gap-1">
+      <div className="relative flex min-w-0 rounded-2xl bg-surface-hover p-1.5 gap-1">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`relative z-10 flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${
+            className={`relative z-10 flex min-w-0 items-center gap-1.5 rounded-xl px-3 py-3 text-sm font-semibold transition-colors duration-200 sm:gap-2 sm:px-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${
               active === tab.id
                 ? "text-white"
                 : "text-muted hover:text-fg"
@@ -707,6 +707,8 @@ export default function PackageBuilder({ regions, packages, cms }: PackageBuilde
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
           >
+            {packages.some(pkg=>pkg.isGuided&&pkg.isBookable!==false)&&<div className="mb-8 space-y-4"><h3 className="text-xl font-semibold text-fg">Choose a route to customise</h3><p className="text-sm text-muted">Start with a trip our team can arrange, then choose the next destinations and see how the price changes.</p><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{packages.filter(pkg=>pkg.isGuided&&pkg.isBookable!==false).map(pkg=><PackageCard key={pkg.id} pkg={pkg}/>)}</div></div>}
+            <details open={!packages.some(pkg=>pkg.isGuided&&pkg.isBookable!==false)} className="space-y-6"><summary className="mb-6 min-h-11 cursor-pointer text-sm font-medium text-fg">Plan a transport-only route with your own stops</summary><p className="mb-6 text-sm text-muted">This option arranges vehicle transport. Hotels, meals and a guide are included only when explicitly stated in a curated package.</p>
             <StepIndicator current={step} />
 
             {/* Animated step container */}
@@ -834,6 +836,7 @@ export default function PackageBuilder({ regions, packages, cms }: PackageBuilde
                 </motion.div>
               )}
             </AnimatePresence>
+            </details>
           </motion.div>
         )}
       </AnimatePresence>
