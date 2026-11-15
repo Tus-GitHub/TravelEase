@@ -38,6 +38,7 @@
     "test:contact": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/contact.test.ts",
     "test:booking-email": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/booking-email.test.ts",
     "test:booking-contact": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/booking-contact.test.ts",
+    "test:booking-contact-db": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/booking-contact-db.mjs --dev",
     "test:login-identifier": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/login-identifier.test.ts",
     "test:vehicle-image": "node --experimental-strip-types --test db/tests/vehicle-image.test.ts",
     "test:loading": "node --experimental-strip-types --import ./db/tests/_register.mjs --test --test-concurrency=1 db/tests/db-pool-lifecycle.test.ts db/tests/cms-read.test.ts",
