@@ -1,5 +1,25 @@
 # Deploying TravelEase (free)
 
+## Database connection recovery and first paint — 15 November 2026
+
+The existing shared pg pool attaches to Vercel's Fluid lifecycle using
+`@vercel/functions/db-connections`. It waits for idle sockets to close before
+suspension; idle timeout is5s, TCP keepalive enabled, max3 connections retained.
+TLS verification and10s connection/15s statement/5s lock deadlines remain intact.
+No keep-warm cron, always-on compute, database upgrade or new service is used.
+
+Only the two published CMS SELECTs retry once, after100ms, for known transient
+connection failures. SQL, authorization and statement/lock timeout errors still
+fail immediately. Transactions, booking/payment/auth writes are never replayed.
+Existing tagged60s CMS caching and publication invalidation remain; prices and
+availability stay dynamic. A sustained provider outage can still fail requests.
+
+The hero text, priority image and trip search remain visible through hydration.
+Phones skip the hero entrance/scroll animations; desktop keeps a short lift and
+ambient motion. Route entry no longer fades or clips all content. Check with
+`npm run test:loading`, native CMS tests, built CMS acceptance and mobile/browser
+timings; verify the live request path and runtime logs after the normal publish.
+
 ## Development changes prepared on 15 November 2026
 
 Vehicle framing is under **Admin → Fleet → Vehicles → Edit → Photos → Crop & preview**.

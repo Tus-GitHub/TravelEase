@@ -383,18 +383,14 @@ html:has(.auth-scope)::-webkit-scrollbar {
 /* ─── Route-enter transition (§17) ────────────────────────── */
 @keyframes route-enter {
   from {
-    opacity: 0;
-    transform: translateY(14px);
-    clip-path: inset(0 0 6% 0);
+      transform: translateY(6px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
-    clip-path: inset(0 0 0 0);
   }
 }
 .route-enter {
-  animation: route-enter 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: route-enter 0.18s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 @media (prefers-reduced-motion: reduce) {
   .route-enter { animation: none; }
@@ -452,8 +448,7 @@ html:has(.auth-scope)::-webkit-scrollbar {
   .animate-pop-check { animation: none; }
 }
 
-/* GSAP sets the start state; this keeps content hidden pre-hydration only when
-   the timeline will actually run (JS on, motion allowed). */
+/* Optional compositor hints; hero content stays visible before hydration. */
 .js-hero [data-hero] { will-change: transform, opacity; }
 
 @media (prefers-reduced-motion: reduce) {

@@ -4,6 +4,7 @@ import { logActivity } from "./activity-log";
 import { CmsError, cmsDefaultDocument, cmsPath, validateCmsDocument, validateCmsSlug, type CmsDocument } from "../cms";
 import { isUniqueViolation } from "./db-errors";
 import { markUploadRolledBack } from "./upload-persistence";
+import { retryCmsRead } from "./cms-read";
 
 export interface CmsPageSummary {
   id: string; slug: string; title: string; status: "draft" | "published"; version: number;
@@ -101,7 +102,7 @@ export async function listCmsRevisions(id: string): Promise<CmsRevision[]> {
 }
 /** Read only the published snapshot. No query parameter can enable draft mode. */
 export const getPublishedCmsPage = cache(async (slug: string): Promise<CmsDocument | null> => {
-  const result = await getPool().query("SELECT published_content,status,is_active,is_deleted FROM cms_pages WHERE slug=$1", [slug]);
+  const result = await retryCmsRead(() => getPool().query("SELECT published_content,status,is_active,is_deleted FROM cms_pages WHERE slug=$1", [slug]));
   const row = result.rows[0];
   // Defaults support the reviewed migration's initial empty tables; unpublishing
   // an existing About page must never accidentally fall back to its old content.
@@ -109,9 +110,9 @@ export const getPublishedCmsPage = cache(async (slug: string): Promise<CmsDocume
   return row.status === "published" && row.is_active && !row.is_deleted ? validateCmsDocument(row.published_content) : null;
 });
 export const getCmsNavigation = cache(async (): Promise<CmsNavItem[]> => {
-  const result = await getPool().query(`SELECT slug,published_content->'navigation' AS navigation,
+  const result = await retryCmsRead(() => getPool().query(`SELECT slug,published_content->'navigation' AS navigation,
     jsonb_path_query_first(published_content, '$.sections[*] ? (@.visible == true)') AS first_section,status,is_active,is_deleted FROM cms_pages
-    WHERE (status='published' AND is_active AND NOT is_deleted) OR slug IN ('home','about')`);
+    WHERE (status='published' AND is_active AND NOT is_deleted) OR slug IN ('home','about')`));
   const rows = result.rows;
   for (const slug of ["home", "about"]) if (!rows.some(row => row.slug === slug)) { const document = cmsDefaultDocument(slug); rows.push({ slug, navigation: document.navigation, first_section: document.sections[0], status: "published", is_active: true, is_deleted: false }); }
   return rows.filter(row => row.status === "published" && row.is_active && !row.is_deleted).map(row => ({ href: cmsPath(row.slug), ...row.navigation,

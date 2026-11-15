@@ -39,6 +39,7 @@
     "test:booking-email": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/booking-email.test.ts",
     "test:login-identifier": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/login-identifier.test.ts",
     "test:vehicle-image": "node --experimental-strip-types --test db/tests/vehicle-image.test.ts",
+    "test:loading": "node --experimental-strip-types --import ./db/tests/_register.mjs --test --test-concurrency=1 db/tests/db-pool-lifecycle.test.ts db/tests/cms-read.test.ts",
     "test:contact-db": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/contact-settings.test.ts --dev",
     "test:integration-origins": "node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/tests/integration-origin-smoke.ts --dev",
     "test:support": "node --experimental-strip-types --import ./db/tests/_register.mjs --test db/tests/support-requests.test.ts",
@@ -58,6 +59,7 @@
   "dependencies": {
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
+    "@vercel/functions": "3.11.3",
     "framer-motion": "^11.18.2",
     "gsap": "^3.15.0",
     "jose": "^6.2.17",

@@ -34,39 +34,17 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
     if (prefersReducedMotion() || !root.current) return;
     const el = root.current;
     const mobile = window.innerWidth < 768;
+    // The SSR text, image and trip search stay visible on phones. No
+    // hydration-time hide/reveal or perpetual float competes with first paint.
+    if (mobile) return;
 
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(el);
-      const rise = { opacity: 0, y: 24 };
-      const risen = { opacity: 1, y: 0 };
-
-      // ── entrance timeline ──────────────────────────────────────────────
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      tl.from(q("[data-hero-layer]"), {
-        opacity: 0,
-        scale: 1.15,
-        duration: 1.4,
-        stagger: 0.12,
-        ease: "power2.out",
-      })
-        .fromTo(q('[data-hero="brand"]'), rise, { ...risen, duration: 0.6 }, 0.35)
-        .fromTo(
-          q('[data-hero="title-line"]'),
-          { opacity: 0, yPercent: 120 },
-          { opacity: 1, yPercent: 0, duration: 0.9, stagger: 0.12 },
-          0.5,
-        )
-        .fromTo(q('[data-hero="sub"]'), rise, { ...risen, duration: 0.7 }, "-=0.4")
-        .fromTo(q('[data-hero="cta"]'), rise, { ...risen, duration: 0.6 }, "-=0.35")
-        .fromTo(
-          q('[data-hero="vehicle"]'),
-          { opacity: 0, x: 60, scale: 0.96 },
-          { opacity: 1, x: 0, scale: 1, duration: 1.1, ease: "power2.out" },
-          "-=0.9",
-        )
-        .fromTo(q('[data-hero="search"]'), rise, { ...risen, duration: 0.6 }, "-=0.5")
-        .fromTo(q('[data-hero="stats"]'), rise, { ...risen, duration: 0.6 }, "-=0.4")
-        .fromTo(q('[data-hero="scroll"]'), { opacity: 0 }, { opacity: 1, duration: 0.5 }, "-=0.2");
+      // A short desktop lift preserves the visual treatment without hiding
+      // already-rendered copy, controls or the priority image after hydration.
+      gsap.from(q('[data-hero="brand"], [data-hero="sub"], [data-hero="cta"]'), {
+        y: 8, duration: 0.25, ease: "power3.out",
+      });
 
       // ── ambient vehicle float ─────────────────────────────────────────
       gsap.to(q('[data-hero="vehicle"]'), {

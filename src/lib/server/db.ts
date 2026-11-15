@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { attachDatabasePool } from "@vercel/functions/db-connections";
 import { runtimeDatabaseConfig } from "./db-config";
 
 // Kept on `globalThis` so the pool survives Next.js dev-mode module reloads
@@ -15,6 +16,9 @@ export function getPool(): Pool {
     // the migration connection. Older environments retain their existing URL
     // until a separately authorised credential rollout.
     globalForDb.__pgPool = new Pool(runtimeDatabaseConfig(connectionString));
+    // Fluid can freeze timers between invocations. Let Vercel close idle
+    // sockets before suspension rather than reusing dead sockets on resume.
+    if (process.env.VERCEL === "1") attachDatabasePool(globalForDb.__pgPool);
     globalForDb.__pgPool.on("error", (error: Error & { code?: string }) => {
       // Do not log messages/configuration: server errors can contain private data.
       const code = /^[A-Z0-9_]{2,32}$/.test(error.code ?? "") ? error.code : "UNKNOWN";
