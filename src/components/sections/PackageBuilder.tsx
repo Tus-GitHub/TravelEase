@@ -173,7 +173,7 @@ function RegionPicker({
               <p className="font-display text-sm font-bold text-white">
                 {region.name}
               </p>
-              <p className="text-xs text-white/70">{region.state}</p>
+              <p className="line-clamp-2 text-xs text-white/70" title={region.state}>{region.state}</p>
             </div>
           </motion.button>
         ))}

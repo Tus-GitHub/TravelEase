@@ -1,5 +1,25 @@
 # Geography masters
 
+The verified India master-data import contains all28 States and8 Union Territories
+under the six [Incredible India tourism regions](https://www.incredibleindia.gov.in/en):
+North, North East, East, Central, West and South. These are travel groupings rather
+than statutory Zonal Council membership; for example Uttar Pradesh stays in North
+and Andaman and Nicobar Islands is in East, matching the tourism directory.
+
+The data-only maintenance command is dry-run by default:
+
+```powershell
+node --env-file=.env.local --experimental-strip-types db/seed-india-geography.mjs --production
+```
+
+Add `--verify-rollback` to rehearse inserts and validation without committing, or
+`--apply` to insert missing entries. It reuses existing IDs, rejects ambiguous
+duplicates or conflicting parents, preserves existing active flags, and never
+changes Cities, Spots, packages or bookings. Repeating the import adds nothing.
+No schema or new provider/service is needed. Keep the development catalogue's
+independent demo data separate; ambiguous legacy records need review rather than
+automatic merging or reparenting.
+
 In **Admin → Geography**, use the four tabs in this order:
 
 1. **Regions:** create North once.

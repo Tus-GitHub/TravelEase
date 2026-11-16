@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "verifiedOn": "2026-11-16",
+  "grouping": "Incredible India tourism regions, not statutory Zonal Council membership",
+  "sources": ["https://www.incredibleindia.gov.in/en", "https://www.mha.gov.in/union-territories-divisions"],
+  "regions": [
+    {"name":"North","states":[
+      {"name":"Chandigarh","kind":"union_territory"},
+      {"name":"Delhi","kind":"union_territory","aliases":["National Capital Territory of Delhi","NCT of Delhi","NCT Delhi"]},
+      {"name":"Haryana","kind":"state"},
+      {"name":"Himachal Pradesh","kind":"state"},
+      {"name":"Jammu and Kashmir","kind":"union_territory","aliases":["Jammu & Kashmir"]},
+      {"name":"Ladakh","kind":"union_territory"},
+      {"name":"Punjab","kind":"state"},
+      {"name":"Rajasthan","kind":"state"},
+      {"name":"Uttar Pradesh","kind":"state"},
+      {"name":"Uttarakhand","kind":"state","aliases":["Uttaranchal"]}
+    ]},
+    {"name":"North East","states":[
+      {"name":"Arunachal Pradesh","kind":"state"},
+      {"name":"Assam","kind":"state"},
+      {"name":"Manipur","kind":"state"},
+      {"name":"Meghalaya","kind":"state"},
+      {"name":"Mizoram","kind":"state"},
+      {"name":"Nagaland","kind":"state"},
+      {"name":"Sikkim","kind":"state"},
+      {"name":"Tripura","kind":"state"}
+    ]},
+    {"name":"East","states":[
+      {"name":"Andaman and Nicobar Islands","kind":"union_territory","aliases":["Andaman & Nicobar Islands","Andaman & Nicobar","Andaman and Nicobar"]},
+      {"name":"Bihar","kind":"state"},
+      {"name":"Jharkhand","kind":"state"},
+      {"name":"Odisha","kind":"state","aliases":["Orissa"]},
+      {"name":"West Bengal","kind":"state"}
+    ]},
+    {"name":"Central","states":[
+      {"name":"Chhattisgarh","kind":"state"},
+      {"name":"Madhya Pradesh","kind":"state"}
+    ]},
+    {"name":"West","states":[
+      {"name":"Dadra and Nagar Haveli and Daman and Diu","kind":"union_territory","aliases":["Dadra & Nagar Haveli and Daman & Diu"]},
+      {"name":"Goa","kind":"state"},
+      {"name":"Gujarat","kind":"state"},
+      {"name":"Maharashtra","kind":"state"}
+    ]},
+    {"name":"South","states":[
+      {"name":"Andhra Pradesh","kind":"state"},
+      {"name":"Karnataka","kind":"state"},
+      {"name":"Kerala","kind":"state"},
+      {"name":"Lakshadweep","kind":"union_territory"},
+      {"name":"Puducherry","kind":"union_territory","aliases":["Pondicherry"]},
+      {"name":"Tamil Nadu","kind":"state"},
+      {"name":"Telangana","kind":"state"}
+    ]}
+  ]
+}
