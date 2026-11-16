@@ -41,7 +41,7 @@ export default async function VehiclesPage({
       bg="gray"
       eyebrow="Our Fleet"
       title="Browse Vehicles"
-      subtitle="Chauffeur-driven vehicles for every trip — from city rides to multi-day tours."
+      subtitle="Choose a vehicle for your getaway, then explore suitable packages or create your own trip."
     >
       <Suspense fallback={<p className="text-center text-sm text-muted">Loading…</p>}>
         <VehiclesBrowser vehicles={vehicles} types={types} />

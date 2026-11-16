@@ -6,16 +6,15 @@ import Button from "@/components/common/Button";
 import Magnetic from "@/components/motion/Magnetic";
 import SearchForm from "@/components/forms/SearchForm";
 import HeroBackdrop from "@/components/sections/hero/HeroBackdrop";
-import HeroVehicle from "@/components/sections/hero/HeroVehicle";
+import TripChoices from "@/components/packages/TripChoices";
 import ScrollCue from "@/components/sections/hero/ScrollCue";
 import { gsap, prefersReducedMotion } from "@/lib/motion";
 import { cmsText, cmsItems, type CmsSection } from "@/lib/cms";
 
 const stats = [
-  { value: "500+", label: "Vehicles" },
-  { value: "50K+", label: "Journeys" },
-  { value: "120+", label: "Cities" },
-  { value: "4.9", label: "Avg. rating" },
+  { value: "Planned", label: "Packages" },
+  { value: "Together", label: "Weekend trips" },
+  { value: "Your way", label: "Custom routes" },
 ];
 
 export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
@@ -25,10 +24,8 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
   const light = appearance?.background === "light" || appearance?.background === "muted";
   const muted = light ? "text-muted" : "text-white/70";
   const showVehicle = cms?.content.showVehicle !== false;
-  const showSearch = cms?.content.showSearch !== false;
+  const showSearch = cms?.content.showSearch === true;
   const root = useRef<HTMLElement>(null);
-  /** 0→1 hero scroll progress, read by the 3D rig without re-rendering React. */
-  const progressRef = useRef(0);
 
   useEffect(() => {
     if (prefersReducedMotion() || !root.current) return;
@@ -44,16 +41,6 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
       // already-rendered copy, controls or the priority image after hydration.
       gsap.from(q('[data-hero="brand"], [data-hero="sub"], [data-hero="cta"]'), {
         y: 8, duration: 0.25, ease: "power3.out",
-      });
-
-      // ── ambient vehicle float ─────────────────────────────────────────
-      gsap.to(q('[data-hero="vehicle"]'), {
-        y: -14,
-        duration: 4,
-        ease: "sine.inOut",
-        repeat: -1,
-        yoyo: true,
-        delay: 1.6,
       });
 
       // ── scroll: parallax layers + hero dissolves into the page ────────
@@ -79,9 +66,6 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
           start: "top top",
           end: "bottom 40%",
           scrub: true,
-          onUpdate: (self) => {
-            progressRef.current = self.progress;
-          },
         },
       });
     }, el);
@@ -115,7 +99,7 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
           <h1 className="mt-5 font-display text-display">
             <span className="block overflow-hidden">
               <span data-hero="title-line" className="block">
-                {cmsText(cms, "title", "Your journey.")}
+                {cmsText(cms, "title", "Less planning.")}
               </span>
             </span>
             <span className="block overflow-hidden">
@@ -123,29 +107,29 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
                 data-hero="title-line"
                 className="block bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent"
               >
-                {cmsText(cms, "highlight", "Elevated.")}
+                {cmsText(cms, "highlight", "More memories.")}
               </span>
             </span>
           </h1>
 
           <p data-hero="sub" className={`mt-6 max-w-md text-lg ${muted}`}>
-            {cmsText(cms, "subtitle", "Chauffeur-driven journeys across India, engineered around you — verified drivers, transparent fares, one seamless booking.")}
+            {cmsText(cms, "subtitle", "Ready-made getaways, weekend groups and trips shaped around you. Explore the itinerary, see what is included and make room for the memories.")}
           </p>
 
           <div data-hero="cta" className="mt-8 flex flex-wrap gap-3">
             <Magnetic>
-              <Button href={cmsText(cms, "primaryHref", "/vehicles")} variant="accent" size="lg" iconRight="arrow-right">
-                {cmsText(cms, "primaryLabel", "Explore the fleet")}
+              <Button href={cmsText(cms, "primaryHref", "/packages")} variant="accent" size="lg" iconRight="arrow-right">
+                {cmsText(cms, "primaryLabel", "Explore packages")}
               </Button>
             </Magnetic>
-            <Button href={cmsText(cms, "secondaryHref", "/booking")} variant={light ? "outline" : "glass"} size="lg">
-              {cmsText(cms, "secondaryLabel", "Build a trip")}
+            <Button href={cmsText(cms, "secondaryHref", "/weekend-trips")} variant={light ? "outline" : "glass"} size="lg">
+              {cmsText(cms, "secondaryLabel", "Weekend group trips")}
             </Button>
           </div>
 
           <dl
             data-hero="stats"
-            className="mt-12 grid max-w-lg grid-cols-4 gap-4 border-t border-white/10 pt-6"
+            className="mt-12 grid max-w-lg grid-cols-2 gap-4 sm:grid-cols-3 border-t border-white/10 pt-6"
           >
             {heroStats.map((s, i) => (
               <div key={i}>
@@ -158,7 +142,7 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
 
         {/* ── vehicle ── */}
         <div className={showVehicle ? "relative" : "hidden"}>
-          {showVehicle ? imageUrl ? <div data-hero="vehicle" className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border border-white/15 shadow-2xl"><Image src={imageUrl} alt={cmsText(cms, "imageAlt")} fill priority sizes="(max-width:1024px) 100vw,50vw" className="object-cover" /></div> : <HeroVehicle progressRef={progressRef} /> : <div data-hero="vehicle" />}
+          {showVehicle ? imageUrl ? <div data-hero="vehicle" className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border border-white/15 shadow-2xl"><Image src={imageUrl} alt={cmsText(cms, "imageAlt")} fill priority sizes="(max-width:1024px) 100vw,50vw" className="object-cover" /></div> : <TripChoices /> : <div data-hero="vehicle" />}
         </div>
 
         {/* ── search (spans) ── */}

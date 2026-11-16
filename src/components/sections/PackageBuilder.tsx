@@ -24,6 +24,8 @@ interface PackageBuilderProps {
   cms?: CmsSection;
   regions: Region[];
   packages: TravelPackage[];
+  initialMode?: Mode;
+  selectedVehicle?: { id: number; name: string; typeSlug: string; typeTitle: string };
 }
 
 // ─── Tab modes ────────────────────────────────────────────────────────────────
@@ -78,16 +80,19 @@ function TabSwitcher({
 function ChoosePackage({
   packages,
   onBuildOwn,
+  vehicleId,
 }: {
   packages: TravelPackage[];
   onBuildOwn: () => void;
+  vehicleId?: number;
 }) {
   return (
     <div>
+      {packages.length === 0 && <div className="rounded-2xl border border-line bg-surface p-6 text-center"><h3 className="text-lg font-semibold text-fg">No ready-made packages published{vehicleId ? " for this vehicle" : ""} yet</h3><p className="mt-2 text-sm text-muted">Create your own route below or contact our team to arrange a complete package with stays and meals.</p><Button href="/contact" variant="outline" className="mt-4">Ask about a package</Button></div>}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {packages.map((pkg, i) => (
           <AnimateInView key={pkg.id} delay={i * 0.08}>
-            <PackageCard pkg={pkg} />
+            <PackageCard pkg={pkg} vehicleId={vehicleId} />
           </AnimateInView>
         ))}
       </div>
@@ -402,6 +407,7 @@ function PackageSummary({
   onSave,
   saveState,
   canSave,
+  selectedVehicle,
 }: {
   region: Region;
   spots: TouristSpot[];
@@ -410,8 +416,9 @@ function PackageSummary({
   onSave: (vehicleSlug: string) => void;
   saveState: SaveState;
   canSave: boolean;
+  selectedVehicle?: PackageBuilderProps["selectedVehicle"];
 }) {
-  const [vehicle, setVehicle] = useState(vehicleOptions[0].value);
+  const [vehicle, setVehicle] = useState(selectedVehicle?.typeSlug ?? vehicleOptions[0].value);
 
   return (
     <div className="mx-auto max-w-2xl relative">
@@ -505,7 +512,7 @@ function PackageSummary({
                 Choose Vehicle
               </label>
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {vehicleOptions.map((opt) => (
+                {(selectedVehicle ? [{ value: selectedVehicle.typeSlug, label: selectedVehicle.name }] : vehicleOptions).map((opt) => (
                   <motion.button
                     key={opt.value}
                     type="button"
@@ -593,10 +600,10 @@ const stepVariants = {
 
 // ─── Main PackageBuilder section ──────────────────────────────────────────────
 
-export default function PackageBuilder({ regions, packages, cms }: PackageBuilderProps) {
+export default function PackageBuilder({ regions, packages, cms, initialMode = "packages", selectedVehicle }: PackageBuilderProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const [mode, setMode]               = useState<Mode>("packages");
+  const [mode, setMode]               = useState<Mode>(initialMode);
   const [step, setStep]               = useState(1);
   const [region, setRegion]           = useState<Region | null>(null);
   const [selectedSpots, setSelectedSpots] = useState<TouristSpot[]>([]);
@@ -616,6 +623,7 @@ export default function PackageBuilder({ regions, packages, cms }: PackageBuilde
       vehicleType: vehicleSlug,
       regionName: region.name,
     });
+    if (selectedVehicle) params.set("vehicle", String(selectedVehicle.id));
     router.push(`/booking/new?${params.toString()}`);
   };
 
@@ -697,6 +705,7 @@ export default function PackageBuilder({ regions, packages, cms }: PackageBuilde
             <ChoosePackage
               packages={packages}
               onBuildOwn={() => setMode("custom")}
+              vehicleId={selectedVehicle?.id}
             />
           </motion.div>
         ) : (
@@ -707,8 +716,9 @@ export default function PackageBuilder({ regions, packages, cms }: PackageBuilde
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
           >
-            {packages.some(pkg=>pkg.isGuided&&pkg.isBookable!==false)&&<div className="mb-8 space-y-4"><h3 className="text-xl font-semibold text-fg">Choose a route to customise</h3><p className="text-sm text-muted">Start with a trip our team can arrange, then choose the next destinations and see how the price changes.</p><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{packages.filter(pkg=>pkg.isGuided&&pkg.isBookable!==false).map(pkg=><PackageCard key={pkg.id} pkg={pkg}/>)}</div></div>}
-            <details open={!packages.some(pkg=>pkg.isGuided&&pkg.isBookable!==false)} className="space-y-6"><summary className="mb-6 min-h-11 cursor-pointer text-sm font-medium text-fg">Plan a transport-only route with your own stops</summary><p className="mb-6 text-sm text-muted">This option arranges vehicle transport. Hotels, meals and a guide are included only when explicitly stated in a curated package.</p>
+            {packages.some(pkg=>pkg.isGuided&&pkg.isBookable!==false)&&<div className="mb-8 space-y-4"><h3 className="text-xl font-semibold text-fg">Choose a route to customise</h3><p className="text-sm text-muted">Start with a trip our team can arrange, then choose the next destinations and see how the price changes.</p><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{packages.filter(pkg=>pkg.isGuided&&pkg.isBookable!==false).map(pkg=><PackageCard key={pkg.id} pkg={pkg} vehicleId={selectedVehicle?.id}/>)}</div></div>}
+            {!packages.some(pkg=>pkg.isGuided&&pkg.isBookable!==false)&&<div className="mb-8 rounded-2xl border border-line bg-surface-muted p-6"><h3 className="text-lg font-semibold text-fg">Let’s plan your getaway</h3><p className="mt-2 text-sm leading-relaxed text-muted">Guided custom packages will appear here when published. For a complete trip with accommodation, meals or a guide, contact our team to arrange the itinerary and quote.</p><Button href="/contact" variant="accent" className="mt-4">Talk to our trip team</Button></div>}
+            <details className="space-y-6"><summary className="mb-6 min-h-11 cursor-pointer text-sm font-medium text-fg">Plan a transport-only route with your own stops</summary><p className="mb-6 text-sm text-muted">This option arranges vehicle transport. Hotels, meals and a guide are included only when explicitly stated in a curated package.</p>
             <StepIndicator current={step} />
 
             {/* Animated step container */}
@@ -832,6 +842,7 @@ export default function PackageBuilder({ regions, packages, cms }: PackageBuilde
                     onSave={saveCustomPackage}
                     saveState={saveState}
                     canSave={!!user}
+                    selectedVehicle={selectedVehicle}
                   />
                 </motion.div>
               )}

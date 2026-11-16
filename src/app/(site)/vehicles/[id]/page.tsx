@@ -79,7 +79,7 @@ export default async function VehicleDetailPage({
             <span className="absolute left-4 top-4 flex gap-2">
               <Badge tone="primary">{vehicle.type}</Badge>
               <Badge tone={vehicle.isAvailable ? "success" : "neutral"}>
-                {vehicle.isAvailable ? "Available" : "Booked"}
+                {vehicle.isAvailable ? "Available" : "Unavailable"}
               </Badge>
             </span>
           </div>
@@ -110,7 +110,8 @@ export default async function VehicleDetailPage({
             <span className="text-sm text-muted">{vehicle.seatingCapacity} seater</span>
           </div>
 
-          <div className="mt-5 flex items-end gap-1">
+          <p className="mt-5 text-xs text-muted">Vehicle hire from · package totals depend on your itinerary</p>
+          <div className="mt-1 flex items-end gap-1">
             <span className="font-display text-3xl font-bold text-primary-900 dark:text-primary-300 ">
               {priceLabel}
             </span>
@@ -128,12 +129,13 @@ export default async function VehicleDetailPage({
           <div className="mt-7 flex flex-wrap gap-3">
             <Magnetic>
               <Button
-                href={`/booking/new?vehicle=${vehicle.id}`}
+                href={`/booking?vehicle=${vehicle.id}`}
+                disabled={!vehicle.isAvailable}
                 variant="accent"
                 size="lg"
                 iconRight="arrow-right"
               >
-                Book Now
+                Choose a package or create a trip
               </Button>
             </Magnetic>
             <Button href="/vehicles" variant="outline" size="lg">
@@ -143,7 +145,7 @@ export default async function VehicleDetailPage({
 
           <p className="mt-4 flex items-center gap-1.5 text-xs text-faint">
             <Icon name="shield-check" className="h-4 w-4" />
-            Chauffeur-driven. Driver allowance, fuel and tolls billed per trip type.
+            Vehicle hire rate only. Your package price and inclusions are shown in the trip plan before booking.
           </p>
         </div>
       </div>

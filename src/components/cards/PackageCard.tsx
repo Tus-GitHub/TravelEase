@@ -45,9 +45,12 @@ function formatPrice(n: number) {
 
 interface PackageCardProps {
   pkg: TravelPackage;
+  vehicleId?: number;
 }
 
-export default function PackageCard({ pkg }: PackageCardProps) {
+export default function PackageCard({ pkg, vehicleId }: PackageCardProps) {
+  const vehicleQuery = vehicleId ? `?vehicle=${vehicleId}` : "";
+  const bookingVehicle = vehicleId ? `&vehicle=${vehicleId}` : "";
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl bg-surface shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover">
       {/* Image */}
@@ -85,7 +88,7 @@ export default function PackageCard({ pkg }: PackageCardProps) {
       <div className="flex flex-1 flex-col p-5">
         {/* Name */}
         <h3 className="font-display text-lg font-bold text-fg leading-snug">
-          <Link href={`/packages/${pkg.id}`} className="hover:underline">{pkg.name}</Link>
+          <Link href={`/packages/${pkg.id}${vehicleQuery}`} className="hover:underline">{pkg.name}</Link>
         </h3>
 
         {/* Destination route */}
@@ -150,7 +153,7 @@ export default function PackageCard({ pkg }: PackageCardProps) {
             size="md"
             fullWidth
             iconRight="arrow-right"
-            href={pkg.isGuided?`/packages/${pkg.id}#build-trip`:`/booking/new?package=${pkg.id}`}
+            href={pkg.isGuided?`/packages/${pkg.id}${vehicleQuery}#build-trip`:`/booking/new?package=${pkg.id}${bookingVehicle}`}
             disabled={pkg.isBookable===false}
           >
             {pkg.isBookable===false?"Temporarily unavailable":pkg.isGuided?"Build this trip":"Book This Package"}

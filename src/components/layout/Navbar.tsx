@@ -60,7 +60,7 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
   }, [isOpen]);
 
   // Published CMS pages can put a dark hero behind the transparent navbar.
-  const overDarkHero = (cmsNavigation ? cmsNavigation.some(page => page.href === pathname && page.darkHero) : pathname === "/") || pathname === "/booking";
+  const overDarkHero = (cmsNavigation ? cmsNavigation.some(page => page.href === pathname && page.darkHero) : pathname === "/");
   const solid = isScrolled || isOpen || !overDarkHero;
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");

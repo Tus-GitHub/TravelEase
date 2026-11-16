@@ -1,3 +1,4 @@
+import { packageFirstHomepage } from "./package-first-home";
 import { categories } from "../data/categories";
 import { features } from "../data/features";
 import { aboutIntro, aboutStats, aboutStory } from "../data/pages";
@@ -34,8 +35,8 @@ export const CMS_SECTIONS = {
   catalogue: { label: 'Live catalogue', description: 'Choose Vehicles, Packages or Weekend Trips, curate the selection and choose the filters visitors can use.', repeatable: true,
     fields: [...heading, ...catalogueFields, text('buttonLabel', 'Button text'), url('buttonHref', 'Button link')], defaults: { ...headingDefaults('Explore together', 'Find your next journey'), ...catalogueDefaults, buttonLabel: 'View all Friday trips', buttonHref: '/weekend-trips' } },
   hero: { label: "Homepage hero", description: "Signature animated hero, photo option, search and calls to action.", repeatable: false,
-    fields: [text("brand", "Brand line"), text("title", "Main headline"), text("highlight", "Highlighted headline"), paragraph("subtitle", "Introduction"), photo("imageUrl", "Hero photo (optional)"), text("imageAlt", "Photo description"), text("primaryLabel", "Main button text"), url("primaryHref", "Main button link"), text("secondaryLabel", "Second button text"), url("secondaryHref", "Second button link"), { key: "showSearch", label: "Show trip search", type: "checkbox" }, { key: "showVehicle", label: "Show hero photo or animated vehicle", type: "checkbox" }, items([text("value", "Value"), text("label", "Label")])],
-    defaults: { brand: "Jagdamba Travellers", title: "Your journey.", highlight: "Elevated.", subtitle: "Chauffeur-driven journeys across India, engineered around you — verified drivers, transparent fares, one seamless booking.", imageUrl: "", imageAlt: "Chauffeur-driven travel", primaryLabel: "Explore the fleet", primaryHref: "/vehicles", secondaryLabel: "Build a trip", secondaryHref: "/booking", showSearch: true, showVehicle: true, items: [{ value: "500+", label: "Vehicles" }, { value: "50K+", label: "Journeys" }, { value: "120+", label: "Cities" }, { value: "4.9", label: "Avg. rating" }] } },
+    fields: [text("brand", "Brand line"), text("title", "Main headline"), text("highlight", "Highlighted headline"), paragraph("subtitle", "Introduction"), photo("imageUrl", "Hero photo (optional)"), text("imageAlt", "Photo description"), text("primaryLabel", "Main button text"), url("primaryHref", "Main button link"), text("secondaryLabel", "Second button text"), url("secondaryHref", "Second button link"), { key: "showSearch", label: "Show point-to-point search (secondary service)", type: "checkbox" }, { key: "showVehicle", label: "Show hero photo or trip choices", type: "checkbox" }, items([text("value", "Value"), text("label", "Label")])],
+    defaults: { brand: "Jagdamba Travellers", title: "Less planning.", highlight: "More memories.", subtitle: "Ready-made getaways, weekend groups and trips shaped around you. Explore the itinerary and see what is included before booking.", imageUrl: "", imageAlt: "Travel with Jagdamba Travellers", primaryLabel: "Explore packages", primaryHref: "/packages", secondaryLabel: "Weekend group trips", secondaryHref: "/weekend-trips", showSearch: false, showVehicle: true, items: [{ value: "Planned", label: "Packages" }, { value: "Together", label: "Weekend trips" }, { value: "Your way", label: "Custom routes" }] } },
   "travel-band": { label: "Animated road", description: "The existing night-road illustration, or a full-width photograph.", repeatable: false,
     fields: [photo("imageUrl", "Replace illustration with photo"), text("imageAlt", "Photo description")], defaults: { imageUrl: "", imageAlt: "A journey across India" } },
   destinations: { label: "Destination map", description: "Interactive India route map with editable introduction.", repeatable: false,
@@ -97,7 +98,7 @@ export function cmsDefaultDocument(slug: string, title = "New page"): CmsDocumen
   };
   if (about) document.sections[0] = { ...document.sections[0], appearance: { background: "muted", imageUrl: "", overlay: 50 }, content: { ...headingDefaults("About Us", "Travel across India, without the guesswork"), body: aboutIntro.join("\n\n"), items: aboutStats.map(item => ({ ...item })) } };
   if (!home && !about) document.sections[0].content.title = title;
-  return document;
+  return home ? packageFirstHomepage(document) : document;
 }
 
 export class CmsError extends Error {

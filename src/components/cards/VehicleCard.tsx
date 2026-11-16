@@ -36,7 +36,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
         </span>
         <span className="absolute right-3 top-3">
           <Badge tone={vehicle.isAvailable ? "success" : "neutral"}>
-            {vehicle.isAvailable ? "Available" : "Booked"}
+            {vehicle.isAvailable ? "Available" : "Unavailable"}
           </Badge>
         </span>
       </Link>
@@ -62,21 +62,23 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
           ))}
         </div>
 
-        <div className="mt-5 flex items-end justify-between border-t border-line-subtle pt-4">
+        <div className="mt-5 flex flex-wrap items-end justify-between gap-3 border-t border-line-subtle pt-4">
           <div>
-            <span className="font-display text-2xl font-bold text-primary-900 dark:text-primary-300 ">
+            <p className="mb-1 text-xs text-muted">Vehicle hire from</p>
+            <span className="font-display text-lg font-bold text-primary-900 dark:text-primary-300 ">
               ₹{vehicle.pricePerDay.toLocaleString("en-IN")}
             </span>
             <span className="text-sm text-muted"> / day</span>
           </div>
           <Magnetic strength={0.25} radius={70}>
             <Button
-              href={`/booking/new?vehicle=${vehicle.id}`}
+              href={`/booking?vehicle=${vehicle.id}`}
+              disabled={!vehicle.isAvailable}
               variant="accent"
               size="sm"
               iconRight="arrow-right"
             >
-              Book Now
+              Choose a trip
             </Button>
           </Magnetic>
         </div>

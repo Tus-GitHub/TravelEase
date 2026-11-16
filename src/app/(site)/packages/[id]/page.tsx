@@ -13,6 +13,7 @@ import Magnetic from "@/components/motion/Magnetic";
 import Spotlight from "@/components/motion/Spotlight";
 import {
   getPublicPackage,
+  getPublicVehicle,
   listPublicPackages,
   toCardPackage,
   PACKAGE_IMAGE_FALLBACK,
@@ -36,11 +37,16 @@ export async function generateMetadata({
 
 export default async function PackageDetailPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { vehicle?: string };
 }) {
   const pkg = await getPublicPackage(params.id);
   if (!pkg) notFound();
+  if (searchParams.vehicle && !/^[1-9]\d{0,8}$/.test(searchParams.vehicle)) notFound();
+  const vehicle = searchParams.vehicle ? await getPublicVehicle(Number(searchParams.vehicle)) : null;
+  if (searchParams.vehicle && (!vehicle || vehicle.typeSlug !== pkg.vehicleTypeSlug)) notFound();
 
   const nights = pkg.stops.reduce((sum, s) => sum + s.nightsHere, 0);
   const [allPkgs, reviews] = await Promise.all([
@@ -83,6 +89,7 @@ export default async function PackageDetailPage({
 
         <div>
           <h1 className="font-display text-display-sm text-fg">{pkg.name}</h1>
+          {vehicle && <p className="mt-3 rounded-xl border border-line bg-surface-muted p-3 text-sm text-fg">Selected vehicle: {vehicle.name}. Availability is checked for your dates at checkout.</p>}
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted">
             {pkg.rating != null && pkg.rating > 0 && (
               <StarRating rating={pkg.rating} showValue />
@@ -121,7 +128,7 @@ export default async function PackageDetailPage({
           <div className="mt-7 flex flex-wrap items-start gap-3">
             <Magnetic>
               <Button
-                href={pkg.isGuided?"#build-trip":`/booking/new?package=${pkg.slug}`}
+                href={pkg.isGuided?"#build-trip":`/booking/new?package=${pkg.slug}${vehicle ? `&vehicle=${vehicle.id}` : ""}`}
                 disabled={!pkg.isBookable}
                 variant="accent"
                 size="lg"
@@ -142,7 +149,7 @@ export default async function PackageDetailPage({
         </div>
       </div>
 
-      {pkg.isGuided&&pkg.tripContent&&<div className="mt-10"><GuidedPackagePlanner slug={pkg.slug} name={pkg.name} content={pkg.tripContent} destinations={pkg.routeDestinations} basePrice={pkg.basePricePerPerson}/></div>}
+      {pkg.isGuided&&pkg.tripContent&&<div className="mt-10"><GuidedPackagePlanner slug={pkg.slug} name={pkg.name} content={pkg.tripContent} destinations={pkg.routeDestinations} basePrice={pkg.basePricePerPerson} vehicleId={vehicle?.id}/></div>}
       {!pkg.isGuided&&pkg.tripContent&&<div className="mt-10"><PackagePlanView content={pkg.tripContent}/></div>}
       {!pkg.tripContent&&pkg.stops.length > 0 && (
         <div className="mt-12">

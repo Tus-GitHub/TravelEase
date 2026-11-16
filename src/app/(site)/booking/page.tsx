@@ -1,74 +1,30 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { notFound } from "next/navigation";
 import Section from "@/components/common/Section";
-import Grid from "@/components/common/Grid";
-import Card from "@/components/common/Card";
-import Icon from "@/components/common/Icon";
-import SearchForm from "@/components/forms/SearchForm";
-import { bookingSteps, popularRoutes } from "@/data/pages";
+import Button from "@/components/common/Button";
+import PackageBuilder from "@/components/sections/PackageBuilder";
+import { getPublicVehicle, listPublicPackages, listPublicRegions, toCardPackage, toBuilderRegion } from "@/lib/server/catalogue";
 
-export const metadata: Metadata = {
-  title: "Book a Trip — Jagdamba Travellers",
-  description:
-    "Search chauffeur-driven vehicles for airport transfers, outstation trips, hourly rentals and multi-day packages.",
-};
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Plan your trip — Jagdamba Travellers", description: "Choose a ready-made travel package, join a weekend group or create your own itinerary." };
 
-export default function BookingPage() {
-  return (
-    <>
-      <Section
-        bg="primary"
-        eyebrow="Book a Trip"
-        title="Where are you headed?"
-        subtitle="Tell us your route and date — we'll show chauffeur-driven vehicles with all-inclusive fares."
-      >
-        <div className="mx-auto max-w-4xl">
-          <SearchForm />
-        </div>
-      </Section>
-
-      <Section bg="white" eyebrow="How it works" title="Booking in three steps">
-        <Grid cols={{ base: 1, md: 3 }}>
-          {bookingSteps.map((step, i) => (
-            <Card key={step.title} padded hover={false}>
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-800 dark:bg-primary-950 dark:text-primary-300">
-                  <Icon name={step.icon} className="h-5 w-5" />
-                </span>
-                <span className="font-display text-sm font-bold text-faint">
-                  Step {i + 1}
-                </span>
-              </div>
-              <h3 className="mt-4 font-display text-lg font-semibold text-fg">
-                {step.title}
-              </h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">{step.body}</p>
-            </Card>
-          ))}
-        </Grid>
-      </Section>
-
-      <Section
-        bg="gray"
-        eyebrow="Popular Routes"
-        title="Frequently booked journeys"
-        subtitle="A few routes travellers book often. Start a search to see live options."
-      >
-        <Grid cols={{ base: 1, sm: 2, lg: 3 }}>
-          {popularRoutes.map((route) => (
-            <Link key={`${route.from}-${route.to}`} href="/vehicles">
-              <Card padded className="h-full">
-                <div className="flex items-center gap-2 font-display font-semibold text-fg">
-                  {route.from}
-                  <Icon name="arrow-right" className="h-4 w-4 shrink-0 text-accent-500" />
-                  {route.to}
-                </div>
-                <p className="mt-1.5 text-xs text-muted">{route.note}</p>
-              </Card>
-            </Link>
-          ))}
-        </Grid>
-      </Section>
-    </>
-  );
+export default async function BookingPage({ searchParams }: { searchParams: { vehicle?: string; mode?: string } }) {
+  if (searchParams.vehicle && !/^[1-9]\d{0,8}$/.test(searchParams.vehicle)) notFound();
+  const [vehicle, rows, regions] = await Promise.all([
+    searchParams.vehicle ? getPublicVehicle(Number(searchParams.vehicle)) : null,
+    listPublicPackages(), listPublicRegions(),
+  ]);
+  if (searchParams.vehicle && !vehicle) notFound();
+  const packages = rows.filter(pkg => !vehicle || pkg.vehicleTypeSlug === vehicle.typeSlug).map(toCardPackage);
+  return <>
+    <Section bg="white" eyebrow="Your next getaway" title={vehicle ? `Plan a trip with ${vehicle.name}` : "A whole trip, planned around you"} subtitle="Choose a ready-made itinerary or create your own package. Review the included stays, meals, activities and any extra costs before booking.">
+      {vehicle && <div className="mb-6 rounded-2xl border border-line bg-surface p-5 text-fg"><p className="font-semibold">{vehicle.name} · {vehicle.seatingCapacity} seats</p><p className="mt-2 text-sm text-muted">Showing packages for this vehicle type. Your selected vehicle is carried into checkout; availability is checked for your dates.</p><Button href="/booking" variant="outline" size="sm" className="mt-3">Explore without this vehicle</Button></div>}
+      <div className="flex flex-wrap gap-3"><Button href="#build-package" variant="accent">Choose or create a package</Button><Button href="/weekend-trips" variant="outline">Join a weekend group</Button></div>
+      <p className="mt-4 text-sm text-muted">Weekend groups use the vehicle assigned to their departure.</p>
+    </Section>
+    <PackageBuilder key={`${vehicle?.id ?? "any"}-${searchParams.mode ?? "packages"}`} packages={packages} regions={regions.map(toBuilderRegion)} initialMode={searchParams.mode === "custom" ? "custom" : "packages"} selectedVehicle={vehicle ? { id: vehicle.id, name: vehicle.name, typeSlug: vehicle.typeSlug, typeTitle: vehicle.typeTitle } : undefined} />
+    <Section bg="gray" eyebrow="Just need transport?" title="Point-to-point travel is available too" subtitle="For a pickup and drop without a holiday package, use our separate transfer booking. Any applicable empty-return charge is shown before confirmation.">
+      <Button href={vehicle ? `/booking/new?vehicle=${vehicle.id}&type=point_to_point` : "/booking/new?type=point_to_point"} variant="outline">Book a point-to-point transfer</Button>
+    </Section>
+  </>;
 }

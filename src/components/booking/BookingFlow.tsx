@@ -123,7 +123,12 @@ export default function BookingFlow() {
       try {
         if (mode === "curated" && packageSlug) {
           setLoadErr(null);
-          const res = await fetch(`/api/packages/${encodeURIComponent(packageSlug)}`, { cache: "no-store" });
+          const [res, vehicleRes] = await Promise.all([
+            fetch(`/api/packages/${encodeURIComponent(packageSlug)}`, { cache: "no-store" }),
+            vehicleId ? fetch(`/api/vehicles/${encodeURIComponent(vehicleId)}`, { cache: "no-store" }) : null,
+          ]);
+          if (vehicleRes && !vehicleRes.ok) throw new Error("Selected vehicle not found. Choose another vehicle or package.");
+          const selectedVehicle = vehicleRes ? (await vehicleRes.json()).vehicle : null;
           if (!res.ok) throw new Error("Package not found.");
           const { package: pkg } = await res.json();
           if (cancelled) return;
@@ -133,11 +138,11 @@ export default function BookingFlow() {
           setPackagePreview(pkg.tripContent ? { content: pkg.tripContent, selectedRoute } : null);
           setMeta({
             title: pkg.name,
-            subtitle: `${pkg.regionName} · ${selectedRoute?.days ?? pkg.durationDays} days · ${selectedRoute ? selectedRoute.stops.map(stop=>stop.name).join(" → ") : pkg.destinations.join(" → ")}`,
+            subtitle: `${selectedVehicle ? `${selectedVehicle.name} · ` : ""}${pkg.regionName} · ${selectedRoute?.days ?? pkg.durationDays} days · ${selectedRoute ? selectedRoute.stops.map(stop=>stop.name).join(" → ") : pkg.destinations.join(" → ")}`,
             pricePerPerson: selectedRoute?.pricePerPerson ?? pkg.pricePerPerson,
           });
           setDays(selectedRoute?.days ?? pkg.durationDays);
-          setCapacity(pkg.maxPersons);
+          setCapacity(selectedVehicle ? Math.min(pkg.maxPersons, selectedVehicle.seatingCapacity) : pkg.maxPersons);
           setNights(selectedRoute?.nights ?? Math.max(0, pkg.durationDays - 1));
         } else if (mode === "custom" && spotsParam) {
           const ids = spotsParam
@@ -145,10 +150,13 @@ export default function BookingFlow() {
             .map((s) => Number(s))
             .filter(Number.isInteger);
           setStopIds(ids);
-          const [regRes, vtRes] = await Promise.all([
+          const [regRes, vtRes, vehicleRes] = await Promise.all([
             fetch("/api/regions"),
             fetch("/api/vehicle-types"),
+            vehicleId ? fetch(`/api/vehicles/${encodeURIComponent(vehicleId)}`, { cache: "no-store" }) : null,
           ]);
+          if (vehicleRes && !vehicleRes.ok) throw new Error("Selected vehicle not found. Choose another vehicle.");
+          const selectedVehicle = vehicleRes ? (await vehicleRes.json()).vehicle : null;
           const { regions } = await regRes.json();
           const { vehicleTypes } = await vtRes.json();
           if (cancelled) return;
@@ -159,9 +167,10 @@ export default function BookingFlow() {
             (t: { slug: string }) => t.slug === vehicleTypeSlugParam,
           );
           setVehicleTypeId(vt?.id ?? null);
+          if (selectedVehicle) setCapacity(selectedVehicle.seatingCapacity);
           setMeta({
             title: `Custom ${params.get("regionName") ?? "trip"} package`,
-            subtitle: names.length ? names.join(" → ") : `${ids.length} stops`,
+            subtitle: `${selectedVehicle ? `${selectedVehicle.name} · ` : ""}${names.length ? names.join(" → ") : `${ids.length} stops`}`,
           });
           if (!days) setDays(ids.length);
         } else if (mode === "vehicle" && vehicleId) {
