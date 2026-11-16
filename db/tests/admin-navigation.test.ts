@@ -15,7 +15,7 @@ test("admin workflow keeps daily work first, related setup/pricing together and 
 });
 test("limited staff see only their existing grants and no empty headings or admin-only tools", () => {
   const groups = adminNavigation("agent", (_role, section) => ["vehicles", "packages"].includes(section));
-  assert.deepEqual(groups.flatMap(group => group.items.map(item => item.href)), ["/admin", "/admin/packages", "/admin/vehicles"]);
+  assert.deepEqual(groups.flatMap(group => group.items.map(item => item.href)), ["/admin", "/admin/vehicles", "/admin/packages"]);
   assert(groups.every(group => group.items.length));
   assert.deepEqual(adminNavigation("customer", () => false).map(group => group.label), ["Daily operations"]);
 });
