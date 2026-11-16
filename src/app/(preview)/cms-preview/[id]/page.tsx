@@ -18,5 +18,5 @@ export default async function CmsPreview({ params }: { params: { id: string } })
   const chrome = page.slug === "home" ? page.draft.chrome : home?.chrome;
   const path = cmsPath(page.slug), first = page.draft.sections.find(section => section.visible);
   const previewNavigation = [...navigation.filter(item => item.href !== path), { ...page.draft.navigation, href: path, darkHero: first?.type === "hero" && !["light", "muted"].includes(first.appearance.background) }];
-  return <><Navbar cmsNavigation={previewNavigation} header={chrome?.header} previewPath={path} /><div className="relative z-20 bg-amber-100 px-4 pb-3 pt-24 text-center text-sm font-semibold text-amber-950">Draft preview · Only administrators can see this version</div><CmsRenderer document={page.draft} /><Footer cmsNavigation={previewNavigation} chrome={chrome} /></>;
+  return <><Navbar cmsNavigation={previewNavigation} header={chrome?.header} previewPath={path} /><div className="relative z-20 bg-primary-950 px-4 pb-3 pt-24 text-center text-sm font-semibold text-amber-100">Draft preview · Only administrators can see this version</div><CmsRenderer document={page.draft} /><Footer cmsNavigation={previewNavigation} chrome={chrome} /></>;
 }
