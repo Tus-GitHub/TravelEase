@@ -9,7 +9,10 @@ test("current homepage and About defaults survive JSON serialization", () => {
     const input = cmsDefaultDocument(slug, "Our services");
     assert.deepEqual(validateCmsDocument(JSON.parse(JSON.stringify(input))), input);
   }
-  assert.equal(cmsDefaultDocument("home").sections.length, 10);
+  const home = cmsDefaultDocument("home");
+  assert.equal(home.sections.length, 11);
+  assert.deepEqual(home.sections.slice(0, 3).map(section => section.type), ["hero", "featured-vehicles", "destinations"]);
+  assert.equal(home.sections.filter(section => section.type === "destinations").length, 1);
 });
 test("every available section has valid defaults", () => {
   for (const type of CMS_TYPES) {

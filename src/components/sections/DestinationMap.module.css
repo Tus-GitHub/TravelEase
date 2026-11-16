@@ -1,0 +1,36 @@
+.section.section {
+  background: radial-gradient(ellipse at 14% 45%, rgb(24 68 100 / .5), transparent 60%), linear-gradient(130deg, #0d1c31, #080f1d);
+}
+.mapCard {
+  background: radial-gradient(ellipse at 48% 42%, #133a62 0%, #0b203b 43%, #071426 78%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .07), 0 24px 64px rgb(2 8 23 / .18);
+  isolation: isolate;
+}
+.mapCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 15% 0%, rgb(125 211 252 / .09), transparent 55%);
+}
+.map { overflow: hidden; contain: paint; }
+.land { stroke-linejoin: round; stroke-linecap: round; }
+.marker { cursor: pointer; outline: none; }
+.focusRing { opacity: 0; }
+.marker:focus-visible .focusRing { opacity: 1; }
+.marker:hover .pin, .marker:focus-visible .pin { fill: #fcd34d; stroke: #fff7d6; }
+.label {
+  paint-order: stroke;
+  stroke: #0b203b;
+  stroke-linejoin: round;
+  pointer-events: none;
+  user-select: none;
+}
+.regionButton { transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease; }
+@media (hover: hover) and (pointer: fine) { .regionButton:hover { transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) {
+  .regionButton { transition: none; }
+  .regionButton:hover { transform: none; }
+}
