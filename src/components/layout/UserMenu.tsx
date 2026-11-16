@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/common/Avatar";
 import Icon from "@/components/common/Icon";
@@ -19,6 +19,8 @@ export interface UserMenuProps {
 export default function UserMenu({ user, onLogout }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -29,7 +31,7 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
       }
     };
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") { setIsOpen(false); triggerRef.current?.focus(); }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -43,9 +45,11 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
   return (
     <div ref={rootRef} className="relative">
       <button data-ui-action=""
+        ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
+        aria-controls={panelId}
         aria-label="Account"
         className="block rounded-full ring-2 ring-transparent transition-all hover:ring-slate-200"
       >
@@ -53,8 +57,10 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
       </button>
 
       <div
+        id={panelId}
+        aria-hidden={!isOpen}
         className={`absolute right-0 top-full w-64 overflow-hidden bg-surface transition-[max-height] duration-300 ${
-          isOpen ? "max-h-96 border-t-2 border-primary-900" : "max-h-0 border-t-0"
+          isOpen ? "visible max-h-96 border-t-2 border-primary-900" : "invisible max-h-0 border-t-0"
         }`}
       >
         <div className="border-b border-line-subtle px-4 py-3">
@@ -62,6 +68,7 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
           <p className="truncate text-xs text-muted">{user.email}</p>
         </div>
 
+        {user.role === "admin" && <Link href="/admin" onClick={() => setIsOpen(false)} className="flex min-h-11 items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-fg hover:bg-primary-50 hover:text-primary-900"><Icon name="shield-check" className="h-4 w-4" />Admin panel</Link>}
         {user.role === 'driver' && <Link href="/drive" onClick={() => setIsOpen(false)} className="block px-4 py-2.5 text-sm text-fg">Driver trips</Link>}
         <Link
           href="/profile"

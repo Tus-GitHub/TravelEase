@@ -20,8 +20,6 @@ import type { CmsNavItem } from "@/lib/server/cms";
  */
 export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[] } = {}) {
   const links = cmsNavigationLinks(navLinks, cmsNavigation, "header");
-  const desktopLinks = links.length > 6 ? links.slice(0, 5) : links;
-  const moreLinks = links.length > 6 ? links.slice(5) : [];
   const [isScrolled, setIsScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -73,18 +71,18 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
       style={{ paddingTop: "env(safe-area-inset-top)", paddingLeft: "env(safe-area-inset-left)", paddingRight: "env(safe-area-inset-right)" }}
     >
       <nav
-        className={`section-container flex items-center justify-between transition-[height] duration-300 ${
+        className={`section-container flex items-center justify-between gap-4 transition-[height] duration-300 ${
           isScrolled ? "h-14 md:h-16" : "h-16 md:h-20"
         }`}
       >
         <Logo inverted={!solid} />
 
         {/* Desktop links */}
-        <ul className="hidden items-center gap-4 lg:flex xl:gap-8">
-          {desktopLinks.map((link) => {
+        <ul className="hidden min-w-0 items-center gap-5 overflow-x-auto whitespace-nowrap xl:flex 2xl:gap-6">
+          {links.map((link) => {
             const active = isActive(link.href);
             return (
-              <li key={link.href}>
+              <li key={link.href} className="shrink-0">
                 <Link
                   href={link.href}
                   aria-current={active ? "page" : undefined}
@@ -103,10 +101,9 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
               </li>
             );
           })}
-          {moreLinks.length > 0 && <li className="relative"><details className="group" onKeyDown={e => { if (e.key === "Escape") { e.currentTarget.removeAttribute("open"); e.currentTarget.querySelector("summary")?.focus(); } }}><summary className={`cursor-pointer rounded-sm text-sm font-medium ${solid ? "text-fg" : "text-white/90"}`}>More</summary><ul className="absolute right-0 mt-4 max-h-80 w-56 overflow-y-auto rounded-2xl border border-line bg-surface p-2 shadow-xl">{moreLinks.map(link => <li key={link.href}><Link href={link.href} onClick={e => e.currentTarget.closest("details")?.removeAttribute("open")} className="block rounded-xl px-3 py-2.5 text-sm text-fg hover:bg-surface-muted">{link.label}</Link></li>)}</ul></details></li>}
         </ul>
 
-        <div className="hidden items-center gap-2 lg:flex">
+        <div className="hidden shrink-0 items-center gap-2 xl:flex">
           <ThemeToggle tone={solid ? "default" : "light"} />
           {isLoading ? null : user ? (
             <UserMenu user={user} onLogout={() => logout()} />
@@ -118,7 +115,7 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
         </div>
 
         {/* Mobile actions */}
-        <div className="flex items-center gap-1 lg:hidden">
+        <div className="flex shrink-0 items-center gap-1 xl:hidden">
           <ThemeToggle tone={solid ? "default" : "light"} />
           <button data-ui-action=""
             id="site-mobile-menu-trigger"
@@ -138,7 +135,7 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
       <div
         id="site-mobile-menu"
         aria-hidden={!isOpen}
-        className={`overflow-x-hidden border-t border-line-subtle bg-canvas transition-[max-height] duration-300 lg:hidden ${
+        className={`overflow-x-hidden border-t border-line-subtle bg-canvas transition-[max-height] duration-300 xl:hidden ${
           isOpen ? "visible max-h-[75dvh] overflow-y-auto" : "invisible max-h-0 overflow-y-hidden border-transparent"
         }`}
       >
