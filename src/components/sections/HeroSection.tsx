@@ -1,14 +1,9 @@
-"use client";
-
-import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Button from "@/components/common/Button";
-import Magnetic from "@/components/motion/Magnetic";
 import SearchForm from "@/components/forms/SearchForm";
 import HeroBackdrop from "@/components/sections/hero/HeroBackdrop";
 import TripChoices from "@/components/packages/TripChoices";
 import ScrollCue from "@/components/sections/hero/ScrollCue";
-import { gsap, prefersReducedMotion } from "@/lib/motion";
 import { cmsText, cmsItems, type CmsSection } from "@/lib/cms";
 
 const stats = [
@@ -25,57 +20,9 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
   const muted = light ? "text-muted" : "text-white/70";
   const showVehicle = cms?.content.showVehicle !== false;
   const showSearch = cms?.content.showSearch === true;
-  const root = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    if (prefersReducedMotion() || !root.current) return;
-    const el = root.current;
-    const mobile = window.innerWidth < 768;
-    // The SSR text, image and trip search stay visible on phones. No
-    // hydration-time hide/reveal or perpetual float competes with first paint.
-    if (mobile) return;
-
-    const ctx = gsap.context(() => {
-      const q = gsap.utils.selector(el);
-      // A short desktop lift preserves the visual treatment without hiding
-      // already-rendered copy, controls or the priority image after hydration.
-      gsap.from(q('[data-hero="brand"], [data-hero="sub"], [data-hero="cta"]'), {
-        y: 8, duration: 0.25, ease: "power3.out",
-      });
-
-      // ── scroll: parallax layers + hero dissolves into the page ────────
-      // Parallax is a desktop luxury; on phones it just costs frames.
-      if (!mobile) {
-        gsap.to(q('[data-hero-layer="1"]'), {
-          yPercent: 30,
-          ease: "none",
-          scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
-        });
-        gsap.to(q('[data-hero-layer="2"]'), {
-          yPercent: -20,
-          ease: "none",
-          scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
-        });
-      }
-      gsap.to(q('[data-hero="content"]'), {
-        yPercent: mobile ? -4 : -12,
-        opacity: mobile ? 0.4 : 0.15,
-        ease: "none",
-        scrollTrigger: {
-          trigger: el,
-          start: "top top",
-          end: "bottom 40%",
-          scrub: true,
-        },
-      });
-    }, el);
-
-    return () => ctx.revert();
-  }, []);
 
   return (
     <section
-      ref={root}
       id={cms ? `section-${cms.id}` : undefined}
       data-cms-section={cms?.id}
       className={`relative flex min-h-[100svh] items-center overflow-hidden pb-16 pt-28 lg:pt-32 ${light ? "text-fg" : "text-white"}`}
@@ -96,7 +43,7 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
             {cmsText(cms, "brand", "Jagdamba Travellers")}
           </p>
 
-          <h1 className="mt-5 font-display text-display">
+          <h1 className="mt-5 break-words font-display text-[clamp(2.125rem,5vw,4rem)] font-bold leading-[1.05] tracking-[-0.035em]">
             <span className="block overflow-hidden">
               <span data-hero="title-line" className="block">
                 {cmsText(cms, "title", "Less planning.")}
@@ -117,11 +64,9 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
           </p>
 
           <div data-hero="cta" className="mt-8 flex flex-wrap gap-3">
-            <Magnetic>
-              <Button href={cmsText(cms, "primaryHref", "/packages")} variant="accent" size="lg" iconRight="arrow-right">
-                {cmsText(cms, "primaryLabel", "Explore packages")}
-              </Button>
-            </Magnetic>
+            <Button href={cmsText(cms, "primaryHref", "/packages")} variant="accent" size="lg" iconRight="arrow-right">
+              {cmsText(cms, "primaryLabel", "Explore packages")}
+            </Button>
             <Button href={cmsText(cms, "secondaryHref", "/weekend-trips")} variant={light ? "outline" : "glass"} size="lg">
               {cmsText(cms, "secondaryLabel", "Weekend group trips")}
             </Button>
@@ -129,11 +74,11 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
 
           <dl
             data-hero="stats"
-            className="mt-12 grid max-w-lg grid-cols-2 gap-4 sm:grid-cols-3 border-t border-white/10 pt-6"
+            className={`mt-10 grid max-w-lg gap-3 border-t pt-6 ${heroStats.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"} ${light ? "border-line" : "border-white/10"}`}
           >
             {heroStats.map((s, i) => (
-              <div key={i}>
-                <dt className="font-display text-xl font-semibold sm:text-2xl">{s.value}</dt>
+              <div key={i} className="min-w-0 break-words">
+                <dt className="font-display text-base font-semibold sm:text-xl">{s.value}</dt>
                 <dd className={`mt-1 text-xs uppercase tracking-wide ${muted}`}>{s.label}</dd>
               </div>
             ))}

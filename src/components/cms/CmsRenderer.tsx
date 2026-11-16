@@ -1,3 +1,4 @@
+import { cache, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Section from "@/components/common/Section";
@@ -41,33 +42,49 @@ function ContentSection({ section }: { section: CmsSection }) {
   </Section>;
 }
 
-/** The same renderer powers saved draft previews and public publications. */
-export default async function CmsRenderer({ document }: { document: CmsDocument }) {
+// Request-scoped deduplication: repeated sections share reads without caching
+// catalogue availability across visitors or delaying the hero's initial HTML.
+const getPackages = cache(async () => (await listPublicPackages()).map(toCardPackage));
+const getRegions = cache(async () => (await listPublicRegions()).map(toBuilderRegion));
+const getVehicles = cache(() => listPublicVehicles({ availableOnly: true }));
+
+async function DataSection({ section }: { section: CmsSection }) {
+  switch (section.type) {
+    case "catalogue": return <CatalogueBrowser section={section} initialRows={await loadCatalogue(section.content)} />;
+    case "featured-vehicles": return <FeaturedVehicles cms={section} vehicles={await getVehicles()} />;
+    case "packages": return <PackageShowcase cms={section} packages={await getPackages()} />;
+    case "package-builder": {
+      const [packages, regions] = await Promise.all([getPackages(), getRegions()]);
+      return <PackageBuilder cms={section} packages={packages} regions={regions} />;
+    }
+    default: return null;
+  }
+}
+
+function PendingSection({ section }: { section: CmsSection }) {
+  return <Section {...cmsHeading(section)}>
+    <div role="status" aria-busy="true" className="flex min-h-64 items-center justify-center rounded-3xl border border-line bg-surface-muted p-6 text-center text-muted">
+      Loading {cmsText(section, "title", "trip options")}…
+    </div>
+  </Section>;
+}
+
+/** The same streaming renderer powers saved draft previews and publications. */
+export default function CmsRenderer({ document }: { document: CmsDocument }) {
   const sections = document.sections.filter(section => section.visible);
-  const hasPackages = sections.some(section => ["packages", "package-builder"].includes(section.type));
-  const hasBuilder = sections.some(section => section.type === "package-builder");
-  const hasVehicles = sections.some(section => section.type === "featured-vehicles");
-  // Start independent reads together; hero rendering no longer waits for several data waves.
-  const [packageRows, regionRows, vehicleRows, catalogues] = await Promise.all([
-    hasPackages ? listPublicPackages() : [], hasBuilder ? listPublicRegions() : [],
-    hasVehicles ? listPublicVehicles({ availableOnly: true }) : [],
-    Promise.all(sections.filter(s => s.type === 'catalogue').map(async s => [s.id, await loadCatalogue(s.content)] as const)),
-  ]);
-  const packages = packageRows.map(toCardPackage), regions = regionRows.map(toBuilderRegion);
-  const catalogueRows = new Map(catalogues);
   return <main className={sections[0]?.type === "hero" ? "" : "pt-20"} data-cms-page>
     {!sections.some(section => section.type === "hero") && <h1 className="sr-only">{document.seo.title}</h1>}
     {sections.map(section => {
       switch (section.type) {
-        case 'catalogue': return <CatalogueBrowser key={section.id} section={section} initialRows={catalogueRows.get(section.id) ?? []} />;
+        case "catalogue":
+        case "featured-vehicles":
+        case "packages":
+        case "package-builder": return <Suspense key={section.id} fallback={<PendingSection section={section} />}><DataSection section={section} /></Suspense>;
         case "hero": return <HeroSection key={section.id} cms={section} />;
         case "travel-band": { const photo = cmsText(section, "imageUrl") || (section.appearance.background === "image" ? section.appearance.imageUrl : ""); return <div key={section.id} id={`section-${section.id}`} data-cms-section={section.id}>{photo ? <div className="relative h-60"><Image src={photo} alt={cmsText(section, "imageAlt")} fill sizes="100vw" className="object-cover" /></div> : <TravelAnimationBand />}</div>; }
         case "destinations": return <DestinationMap key={section.id} cms={section} />;
         case "vehicle-categories": return <VehicleCategories key={section.id} cms={section} />;
-        case "featured-vehicles": return <FeaturedVehicles key={section.id} cms={section} vehicles={vehicleRows} />;
-        case "packages": return <PackageShowcase key={section.id} cms={section} packages={packages} />;
         case "how-it-works": return <HowItWorks key={section.id} cms={section} />;
-        case "package-builder": return <PackageBuilder key={section.id} cms={section} packages={packages} regions={regions} />;
         case "features": return <WhyChooseUs key={section.id} cms={section} />;
         case "testimonials": return <Testimonials key={section.id} cms={section} />;
         default: return <ContentSection key={section.id} section={section} />;
