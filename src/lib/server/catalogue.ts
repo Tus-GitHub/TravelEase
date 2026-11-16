@@ -206,6 +206,7 @@ export interface PublicPackageStop {
 }
 
 export interface PublicPackage {
+  destinationIds?: number[];
   isGuided: boolean;
   isBookable: boolean;
   durationMaxDays?: number;
@@ -321,6 +322,7 @@ function toPublicPackage(r: PackageRow, stops: PublicPackageStop[], names: Map<n
     rating: r.rating != null ? Number(r.rating) : null,
     reviewCount: r.review_count,
     destinations: stops.map((s) => s.name),
+    destinationIds: Array.from(new Set([...stops.map(stop=>stop.touristSpotId),...(content?.routeTree?.nodes.map(node=>node.spotId)??[])])).filter(id=>names.has(id)),
     stops,
   };
 }
@@ -328,6 +330,8 @@ function toPublicPackage(r: PackageRow, stops: PublicPackageStop[], names: Map<n
 /** Adapt a PublicPackage to the `@/types` TravelPackage shape the cards render. */
 export function toCardPackage(p: PublicPackage): TravelPackage {
   return {
+    regionId: p.regionId,
+    destinationIds: p.destinationIds ?? [],
     isGuided: p.isGuided,
     isBookable: p.isBookable,
     durationMaxDays: p.durationMaxDays,
@@ -388,6 +392,7 @@ export async function getPublicPackage(
 // ─── Regions (with spots, for the Package Builder) ───────────────────────────
 
 export interface PublicRegionSpot {
+  stateName?: string;
   latitude: number | null;
   longitude: number | null;
   id: number;
@@ -424,7 +429,7 @@ export function toBuilderRegion(r: PublicRegion): Region {
       tag: s.tag ?? "",
       description: s.description ?? "",
       imageUrl: s.imageUrl ?? PACKAGE_IMAGE_FALLBACK,
-      cityName: s.cityName, latitude: s.latitude, longitude: s.longitude,
+      cityName: s.cityName, stateName: s.stateName, latitude: s.latitude, longitude: s.longitude,
     })),
   };
 }
@@ -433,15 +438,17 @@ export async function listPublicRegions(): Promise<PublicRegion[]> {
   const pool = getPool();
   const [regions, spots] = await Promise.all([
     pool.query(
-      `SELECT region_id, name, state, image_url FROM regions
-        WHERE is_deleted = false AND is_active = true
-        ORDER BY display_order, region_id`,
+      `SELECT r.region_id,r.name,r.image_url,COALESCE((SELECT string_agg(s.name,' · ' ORDER BY s.name) FROM states s WHERE s.region_id=r.region_id AND NOT s.is_deleted AND s.is_active),'') AS state FROM regions r
+        WHERE r.is_deleted = false AND r.is_active = true
+        ORDER BY r.display_order, r.region_id`,
     ),
     pool.query(
-      `SELECT c.region_id, ts.tourist_spot_id, ts.name, ts.tag, ts.description,
-              ts.image_url, ts.city_id, c.name AS city_name, ts.latitude, ts.longitude
+      `SELECT s.region_id, ts.tourist_spot_id, ts.name, ts.tag, ts.description,
+              ts.image_url, ts.city_id, c.name AS city_name, s.name AS state_name, ts.latitude, ts.longitude
          FROM tourist_spots ts
          JOIN cities c ON c.city_id = ts.city_id AND c.is_deleted = false AND c.is_active = true
+         JOIN states s ON s.state_id=c.state_id AND NOT s.is_deleted AND s.is_active
+         JOIN regions r ON r.region_id=s.region_id AND NOT r.is_deleted AND r.is_active
         WHERE ts.is_deleted = false AND ts.is_active = true
         ORDER BY ts.display_order, ts.tourist_spot_id`,
     ),
@@ -458,6 +465,7 @@ export async function listPublicRegions(): Promise<PublicRegion[]> {
       imageUrl: s.image_url,
       cityId: s.city_id,
       cityName: s.city_name,
+      stateName: s.state_name,
       latitude: s.latitude == null ? null : Number(s.latitude), longitude: s.longitude == null ? null : Number(s.longitude),
     });
     byRegion.set(s.region_id, list);

@@ -111,6 +111,7 @@ export interface SearchFormData {
 }
 
 export interface TouristSpot {
+  stateName?: string;
   cityName?: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -132,6 +133,8 @@ export interface Region {
 export type PackageTag = "Popular" | "Best Value" | "Premium" | "Adventure";
 
 export interface TravelPackage {
+  regionId?: number;
+  destinationIds?: number[];
   isGuided?: boolean;
   isBookable?: boolean;
   durationMaxDays?: number;

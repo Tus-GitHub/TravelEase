@@ -15,7 +15,7 @@ export async function cmsOptions(): Promise<CmsOptions> {
   const [pages, categories, regions, cities, vehicles, packages, trips] = await Promise.all([
     getPool().query("SELECT slug,published_content->'seo'->>'title' AS title FROM cms_pages WHERE status='published' AND is_active AND NOT is_deleted ORDER BY title"),
     listPublicVehicleTypes(), getPool().query("SELECT region_id AS value,name AS label FROM regions WHERE is_active AND NOT is_deleted ORDER BY name"),
-    getPool().query("SELECT city_id AS value,name AS label FROM cities WHERE is_active AND NOT is_deleted ORDER BY name"),
+    getPool().query("SELECT c.city_id AS value,c.name||' · '||s.name AS label FROM cities c JOIN states s USING(state_id) JOIN regions r ON r.region_id=s.region_id WHERE c.is_active AND NOT c.is_deleted AND s.is_active AND NOT s.is_deleted AND r.is_active AND NOT r.is_deleted ORDER BY c.name"),
     listPublicVehicles(), listPublicPackages(), listPublicTrips(),
   ]);
   return { categories: categories.map(c => ({ value: c.slug, label: c.title })), regions: regions.rows, cities: cities.rows,

@@ -11,8 +11,9 @@ import FormField, { fieldBase } from "@/components/forms/FormField";
 import AdminTabs from "@/components/admin/AdminTabs";
 import RowActions from "@/components/admin/RowActions";
 import AdminEditor from "@/components/admin/AdminEditor";
-import LocationSearchInput, { locationName, locationPoint, sameLocationName, type LocationSuggestion } from "@/components/forms/LocationSearchInput";
+import LocationSearchInput, { locationName, locationPoint, type LocationSuggestion } from "@/components/forms/LocationSearchInput";
 import type { LatLng, ResolvedPlace } from "@/components/forms/LocationPicker";
+import { matchingState, matchingCity } from "@/lib/geography";
 import type { ImageKind } from "@/lib/image-upload";
 import Toggle from "@/components/admin/Toggle";
 import { ErrorNote, EmptyRow, LoadingRow } from "@/components/admin/tableBits";
@@ -28,8 +29,11 @@ interface Region {
   state: string;
   isActive: boolean;
 }
+interface State { id: number; regionId: number; regionName: string; name: string; isActive: boolean }
 interface City {
   id: number;
+  stateId: number;
+  stateName: string;
   regionId: number;
   regionName: string;
   name: string;
@@ -44,6 +48,8 @@ interface TouristSpot {
   id: number;
   cityId: number;
   cityName: string;
+  stateName: string;
+  regionName: string;
   name: string;
   tag: string;
   description: string;
@@ -53,86 +59,49 @@ function GeoMap({ value, onChange, onResolve }: { value: LatLng | null; onChange
   const [open, setOpen] = useState(false);
   return <details className="min-w-0 rounded-xl border border-line p-4 sm:col-span-2" onToggle={event => setOpen(event.currentTarget.open)}><summary className="cursor-pointer text-sm font-semibold text-fg">Choose on map (optional)</summary>{open && <div className="mt-4"><LocationPicker value={value} onChange={onChange} onResolve={onResolve} /></div>}</details>;
 }
-function regionForPlace(regions: Region[], place: LocationSuggestion, current: string) {
-  const exact = regions.filter(region => sameLocationName(region.name, place.city || locationName(place)) && (!place.state || sameLocationName(region.state, place.state)));
-  if (exact.length === 1) return String(exact[0].id);
-  const selected = regions.find(region => String(region.id) === current);
-  if (!place.state || (selected && sameLocationName(selected.state, place.state))) return current;
-  const state = regions.filter(region => sameLocationName(region.state, place.state || ""));
-  return state.length === 1 ? String(state[0].id) : "";
-}
 function draftPoint(latitude: string, longitude: string): LatLng | null {
   if (!latitude.trim() || !longitude.trim()) return null;
   return locationPoint({ label: "", lat: Number(latitude), lng: Number(longitude) });
 }
 
-type Tab = "regions" | "cities" | "spots";
+type Tab = "regions" | "states" | "cities" | "spots";
 
 function RegionsTab() {
-  const r = useAdminResource<Region>("/api/admin/regions");
-  const form = useCrudForm({
-    empty: { name: "", state: "" },
-    onCreate: (d) => r.create(d),
-    onUpdate: (id, d) => r.update(id, d),
-  });
+  const r=useAdminResource<Region>("/api/admin/regions");
+  const form=useCrudForm({empty:{name:""},onCreate:d=>r.create(d),onUpdate:(id,d)=>r.update(id,d)});
+  return <div><SectionHead count={r.items.length+" regions"} open={form.open} onToggle={()=>form.open?form.cancel():form.startCreate()} addLabel="Add Region" icon="map-pin"/>
+    <p className="mb-4 text-sm text-muted">Create each region once, such as North. Add its states in the States tab.</p>{r.error&&<ErrorNote message={r.error}/>}
+    {form.open&&<FormCard title={form.editingId==null?"Add region":"Edit region"} image={form.editingId==null?undefined:{kind:"regions",id:form.editingId,name:form.draft.name}} onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId!=null} onCancel={form.cancel}>
+      <FormField label="Region name" icon="map-pin"><input required minLength={2} maxLength={100} value={form.draft.name} onChange={e=>form.patch({name:e.target.value})} className={fieldBase} placeholder="e.g. North"/></FormField>
+      <p className="text-sm text-muted">A region can contain many states. Names cannot be duplicated.</p>
+    </FormCard>}
+    <TableCard headers={["Region","States","Active","Actions"]}>{r.items.map(row=><tr key={row.id}><td className="px-5 py-3.5 font-medium text-fg">{row.name}</td><td className="px-5 py-3.5 text-muted">{row.state||"No states added"}</td><td className="px-5 py-3.5"><Toggle on={row.isActive} onChange={isActive=>r.update(row.id,{isActive})} label="Toggle active"/></td><td className="px-5 py-3.5"><RowActions name={row.name} onEdit={()=>form.startEdit(row.id,{name:row.name})} onDelete={()=>r.remove(row.id)}/></td></tr>)}<EmptyRow show={!r.loading&&!r.items.length} cols={4} label="No regions yet."/><LoadingRow show={r.loading} cols={4}/></TableCard>
+  </div>;
+}
 
-  const [point, setPoint] = useState<LatLng | null>(null);
-  useEffect(() => setPoint(null), [form.open, form.editingId]);
-  const choose = (place: LocationSuggestion) => { const selectedPoint = locationPoint(place); if (selectedPoint) setPoint(selectedPoint); form.patch({ name: locationName(place).slice(0,100), state: (place.state || form.draft.state).slice(0,100) }); };
-  const states = Array.from(new Set(r.items.map(region => region.state))).map(state => ({ label: state, name: state, state }));
-
-  return (
-    <div>
-      <SectionHead
-        count={`${r.items.length} regions`}
-        open={form.open}
-        onToggle={() => (form.open ? form.cancel() : form.startCreate())}
-        addLabel="Add Region"
-        icon="map-pin"
-      />
-      {r.error && <ErrorNote message={r.error} />}
-
-      {form.open && (
-        <FormCard title={form.editingId == null ? "Add region" : `Edit ${form.draft.name}`} image={form.editingId == null ? undefined : { kind: "regions", id: form.editingId, name: form.draft.name }} onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
-          <FormField label="Name" icon="map-pin">
-            <LocationSearchInput required value={form.draft.name} onValueChange={name => form.patch({ name })} onChoose={choose} maxLength={100} placeholder="Type a region or place" className={fieldBase} />
-          </FormField>
-          <FormField label="State" icon="location">
-            <LocationSearchInput required mode="state" localOptions={states} value={form.draft.state} onValueChange={state => form.patch({ state })} onChoose={place => form.patch({ state: (place.state || locationName(place)).slice(0,100) })} maxLength={100} className={fieldBase} placeholder="Type a state or union territory" />
-          </FormField>
-          <GeoMap value={point} onChange={setPoint} onResolve={choose} />
-        </FormCard>
-      )}
-
-      <TableCard headers={["Region", "State", "Active", "Actions"]}>
-        {r.items.map((row) => (
-          <tr key={row.id} className="hover:bg-surface-hover/60">
-              <td className="px-5 py-3.5 font-medium text-fg">{row.name}</td>
-            <td className="px-5 py-3.5 text-muted">{row.state}</td>
-            <td className="px-5 py-3.5">
-              <Toggle on={row.isActive} onChange={(next) => r.update(row.id, { isActive: next })} label="Toggle active" />
-            </td>
-            <td className="px-5 py-3.5 text-right">
-              <RowActions name={row.name}
-                onEdit={() => form.startEdit(row.id, { name: row.name, state: row.state })}
-                onDelete={() => r.remove(row.id)}
-              />
-            </td>
-          </tr>
-        ))}
-        <EmptyRow show={!r.loading && r.items.length === 0} cols={4} label="No regions yet." />
-        <LoadingRow show={r.loading} cols={4} />
-      </TableCard>
-    </div>
-  );
+function StatesTab() {
+  const regions=useAdminResource<Region>("/api/admin/regions"),r=useAdminResource<State>("/api/admin/states");
+  const form=useCrudForm({empty:{regionId:"",name:""},onCreate:d=>r.create({...d,regionId:Number(d.regionId)}),onUpdate:(id,d)=>r.update(id,{...d,regionId:Number(d.regionId)})});
+  const [point,setPoint]=useState<LatLng|null>(null);useEffect(()=>setPoint(null),[form.open,form.editingId]);
+  const choose=(place:LocationSuggestion)=>{form.patch({name:(place.state||locationName(place)).slice(0,100)});const p=locationPoint(place);if(p)setPoint(p);};
+  return <div><SectionHead count={r.items.length+" states"} open={form.open} onToggle={()=>form.open?form.cancel():form.startCreate()} addLabel="Add State" icon="map-pin"/>
+    <p className="mb-4 text-sm text-muted">Choose a region, then add a state or union territory. Cities will belong to this state.</p>{r.error&&<ErrorNote message={r.error}/>}{regions.error&&<ErrorNote message={regions.error}/>}
+    {form.open&&<FormCard title={form.editingId==null?"Add state":"Edit state"} onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId!=null} onCancel={form.cancel}>
+      <FormField label="Region" icon="map-pin"><Select required searchable value={form.draft.regionId} onChange={e=>form.patch({regionId:e.target.value})} className={fieldBase}><option value="" disabled>Select region</option>{regions.items.map(region=><option key={region.id} value={region.id}>{region.name}</option>)}</Select></FormField>
+      <FormField label="State name" icon="location"><LocationSearchInput required mode="state" value={form.draft.name} onValueChange={name=>form.patch({name})} onChoose={choose} localOptions={r.items.map(state=>({label:state.name,name:state.name,state:state.name}))} maxLength={100} className={fieldBase} placeholder="Type a state or union territory"/></FormField>
+      <GeoMap value={point} onChange={setPoint} onResolve={choose}/>
+      <p className="text-xs leading-relaxed text-muted sm:col-span-2">Changing a state&apos;s region also moves its cities into that region. Existing city and booking IDs stay intact.</p>
+    </FormCard>}
+    <TableCard headers={["State","Region","Active","Actions"]}>{r.items.map(row=><tr key={row.id}><td className="px-5 py-3.5 font-medium text-fg">{row.name}</td><td className="px-5 py-3.5 text-muted">{row.regionName}</td><td className="px-5 py-3.5"><Toggle on={row.isActive} onChange={isActive=>r.update(row.id,{isActive})} label="Toggle active"/></td><td className="px-5 py-3.5"><RowActions name={row.name} onEdit={()=>form.startEdit(row.id,{regionId:String(row.regionId),name:row.name})} onDelete={()=>r.remove(row.id)}/></td></tr>)}<EmptyRow show={!r.loading&&!r.items.length} cols={4} label="No states yet. Add a region first, then its states."/><LoadingRow show={r.loading} cols={4}/></TableCard>
+  </div>;
 }
 
 function CitiesTab() {
-  const regions = useAdminResource<Region>("/api/admin/regions");
+  const states = useAdminResource<State>("/api/admin/states");
   const r = useAdminResource<City>("/api/admin/cities");
   const form = useCrudForm({
     empty: {
-      regionId: "",
+      stateId: "",
       name: "",
       latitude: "",
       longitude: "",
@@ -145,12 +114,9 @@ function CitiesTab() {
 
   const choose = (place: LocationSuggestion) => {
     const point = locationPoint(place);
-    form.patch({ name: (place.city || locationName(place)).slice(0,100), regionId: regionForPlace(regions.items, place, form.draft.regionId), ...(point ? { latitude: String(point.lat), longitude: String(point.lng) } : {}) });
+    form.patch({ name: (place.city || locationName(place)).slice(0,100), stateId: matchingState(states.items, place.state, form.draft.stateId), ...(point ? { latitude: String(point.lat), longitude: String(point.lng) } : {}) });
   };
-  const regionName = useMemo(() => {
-    const map = new Map(regions.items.map((x) => [x.id, x.name]));
-    return (id: number) => map.get(id) ?? "—";
-  }, [regions.items]);
+
 
   return (
     <div>
@@ -165,11 +131,11 @@ function CitiesTab() {
 
       {form.open && (
         <FormCard onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
-          <FormField label="Region" icon="map-pin">
-            <Select required value={form.draft.regionId} onChange={(e) => form.patch({ regionId: e.target.value })} className={`${fieldBase} appearance-none`}>
-              <option value="" disabled>Select region</option>
-              {regions.items.map((x) => (
-                <option key={x.id} value={x.id}>{x.name}</option>
+          <FormField label="State" icon="map-pin">
+            <Select required value={form.draft.stateId} onChange={(e) => form.patch({ stateId: e.target.value })} className={`${fieldBase} appearance-none`}>
+              <option value="" disabled>Select state</option>
+              {states.items.map((x) => (
+                <option key={x.id} value={x.id}>{x.name} · {x.regionName}</option>
               ))}
             </Select>
           </FormField>
@@ -183,7 +149,7 @@ function CitiesTab() {
             <input value={form.draft.longitude} onChange={(e) => form.patch({ longitude: e.target.value })} className={fieldBase} inputMode="decimal" placeholder="75.7382" />
           </FormField>
           <GeoMap value={draftPoint(form.draft.latitude, form.draft.longitude)} onChange={point => form.patch({ latitude: point ? String(point.lat) : "", longitude: point ? String(point.lng) : "" })} onResolve={choose} />
-          <p className="text-xs text-muted sm:col-span-2">Choosing a city fills its coordinates and a matching region. If no region matches, select or add the correct region before saving.</p>
+          <p className="text-xs text-muted sm:col-span-2">Choosing a city fills its coordinates and matching state. Its region is derived automatically. If no state matches, add it in States first.</p>
           <label className="flex items-center gap-2 text-sm text-muted">
             <input type="checkbox" checked={form.draft.isPickupPoint} onChange={(e) => form.patch({ isPickupPoint: e.target.checked })} className="h-4 w-4 accent-primary-600" />
             Pickup point
@@ -195,11 +161,11 @@ function CitiesTab() {
         </FormCard>
       )}
 
-      <TableCard headers={["City", "Region", "Coordinates", "Pickup", "Airport", "Actions"]}>
+      <TableCard headers={["City", "State / Region", "Coordinates", "Pickup", "Airport", "Actions"]}>
         {r.items.map((row) => (
           <tr key={row.id} className="hover:bg-surface-hover/60">
             <td className="px-5 py-3.5 font-medium text-fg">{row.name}</td>
-            <td className="px-5 py-3.5 text-muted">{row.regionName || regionName(row.regionId)}</td>
+            <td className="px-5 py-3.5 text-muted">{row.stateName}<span className="mt-1 block text-xs">{row.regionName}</span></td>
             <td className="px-5 py-3.5 text-muted">
               {row.latitude != null && row.longitude != null
                 ? `${row.latitude.toFixed(4)}, ${row.longitude.toFixed(4)}`
@@ -211,7 +177,7 @@ function CitiesTab() {
               <RowActions name={row.name}
                 onEdit={() =>
                   form.startEdit(row.id, {
-                    regionId: String(row.regionId),
+                    stateId: String(row.stateId),
                     name: row.name,
                     latitude: row.latitude != null ? String(row.latitude) : "",
                     longitude: row.longitude != null ? String(row.longitude) : "",
@@ -242,8 +208,8 @@ function SpotsTab() {
 
   const choose = (place: LocationSuggestion) => {
     const point = locationPoint(place);
-    const found = cities.items.filter(city => sameLocationName(city.name, place.city || locationName(place)));
-    form.patch({ name: locationName(place).slice(0,100), ...(place.city ? { cityId: found.length === 1 ? String(found[0].id) : "" } : {}), ...(point ? { latitude: String(point.lat), longitude: String(point.lng) } : {}) });
+    const cityId = matchingCity(cities.items, place.city || locationName(place), place.state, form.draft.cityId);
+    form.patch({ name: locationName(place).slice(0,100), ...(place.city ? { cityId: cityId } : {}), ...(point ? { latitude: String(point.lat), longitude: String(point.lng) } : {}) });
   };
 
   const cityName = useMemo(() => {
@@ -268,7 +234,7 @@ function SpotsTab() {
             <Select required value={form.draft.cityId} onChange={(e) => form.patch({ cityId: e.target.value })} className={`${fieldBase} appearance-none`}>
               <option value="" disabled>Select city</option>
               {cities.items.map((x) => (
-                <option key={x.id} value={x.id}>{x.name}</option>
+                <option key={x.id} value={x.id}>{x.name} · {x.stateName} · {x.regionName}</option>
               ))}
             </Select>
           </FormField>
@@ -292,7 +258,7 @@ function SpotsTab() {
         {r.items.map((row) => (
           <tr key={row.id} className="hover:bg-surface-hover/60">
               <td className="px-5 py-3.5 font-medium text-fg">{row.name}<p className="mt-1 text-xs font-normal text-muted">{row.latitude != null && row.longitude != null ? "Map pin set" : "Map pin needed"}</p></td>
-            <td className="px-5 py-3.5 text-muted">{row.cityName || cityName(row.cityId)}</td>
+            <td className="px-5 py-3.5 text-muted">{row.cityName || cityName(row.cityId)}<span className="mt-1 block text-xs">{row.stateName} · {row.regionName}</span></td>
             <td className="px-5 py-3.5 text-muted">{row.tag || "—"}</td>
             <td className="px-5 py-3.5 text-right">
               <RowActions name={row.name}
@@ -319,7 +285,7 @@ function SpotsTab() {
 }
 
 function toCityBody(d: {
-  regionId: string;
+  stateId: string;
   name: string;
   latitude: string;
   longitude: string;
@@ -327,7 +293,7 @@ function toCityBody(d: {
   isAirport: boolean;
 }) {
   return {
-    regionId: Number(d.regionId),
+    stateId: Number(d.stateId),
     name: d.name,
     latitude: d.latitude.trim() === "" ? null : Number(d.latitude),
     longitude: d.longitude.trim() === "" ? null : Number(d.longitude),
@@ -348,12 +314,13 @@ export default function AdminGeographyPage() {
     <div>
       <AdminPageHeader className="mb-6">
         <h1 className="text-2xl font-bold text-fg">Geography</h1>
-        <p className="text-sm text-muted">Regions, cities and tourist spots.</p>
+        <p className="text-sm text-muted">Region → State → City → Tourist spot. Each place is added once under its parent.</p>
       </AdminPageHeader>
 
       <AdminTabs
         tabs={[
           { id: "regions", label: "Regions" },
+          { id: "states", label: "States" },
           { id: "cities", label: "Cities" },
           { id: "spots", label: "Tourist Spots" },
         ]}
@@ -361,7 +328,7 @@ export default function AdminGeographyPage() {
         onChange={setTab}
       />
 
-      {tab === "regions" ? <RegionsTab /> : tab === "cities" ? <CitiesTab /> : <SpotsTab />}
+      {tab === "regions" ? <RegionsTab /> : tab === "states" ? <StatesTab /> : tab === "cities" ? <CitiesTab /> : <SpotsTab />}
     </div>
   );
 }

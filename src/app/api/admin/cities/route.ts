@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
 import { dbErrorResponse } from "@/lib/server/api-errors";
 import { createCity, listCities } from "@/lib/server/admin/geography";
+import { cleanGeographyName } from "@/lib/geography";
 
 function optCoord(value: unknown): number | null {
   if (value === "" || value === null || value === undefined) return null;
@@ -26,19 +27,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const regionId = Number(body.regionId);
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-  if (!Number.isInteger(regionId) || regionId <= 0) {
-    return NextResponse.json({ error: "A valid region is required." }, { status: 400 });
+  const stateId = Number(body.stateId);
+  const name = typeof body.name === "string" ? cleanGeographyName(body.name) : "";
+  if (!Number.isSafeInteger(stateId) || stateId <= 0) {
+    return NextResponse.json({ error: "Choose a state for this city." }, { status: 400 });
   }
-  if (name.length < 2) {
+  if (name.length < 2 || name.length > 100) {
     return NextResponse.json({ error: "City name is required." }, { status: 400 });
   }
 
   try {
     const item = await createCity(
       {
-        regionId,
+        stateId,
         name,
         latitude: optCoord(body.latitude),
         longitude: optCoord(body.longitude),
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ item }, { status: 201 });
   } catch (err) {
-    const res = dbErrorResponse(err, { fk: "That region doesn't exist." });
+    const res = dbErrorResponse(err, { fk: "That state doesn't exist.", unique: "That city already exists in this state." });
     if (res) return res;
     throw err;
   }

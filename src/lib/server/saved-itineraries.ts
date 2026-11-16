@@ -1,6 +1,7 @@
 import type { Pool, PoolClient } from "pg";
 import { AccountUnavailableError, withActiveAccount } from "./account-write";
 import { getPool } from "./db";
+import {planSpotNames} from "./package-plan";
 
 /**
  * Saved itineraries (Phase 3, plan.md §20/§38). A signed-in customer saves a
@@ -242,12 +243,8 @@ export async function createSavedItinerary(
         if (spotIds.length < MIN_CUSTOM_STOPS) {
           return { ok: false, status: 400, message: `Pick at least ${MIN_CUSTOM_STOPS} stops.` };
         }
-        const found = await pool.query(
-          `SELECT tourist_spot_id FROM tourist_spots
-            WHERE tourist_spot_id = ANY($1) AND is_deleted = false`,
-          [spotIds],
-        );
-        if (found.rowCount !== spotIds.length) {
+        const found = await planSpotNames(pool,spotIds);
+        if (found.size !== spotIds.length) {
           return { ok: false, status: 400, message: "One or more stops are invalid." };
         }
         // region_id is just a label — keep it only if it resolves, never hard-fail.

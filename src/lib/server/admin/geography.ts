@@ -12,7 +12,8 @@ export interface Region {
   isActive: boolean;
 }
 
-const R_SELECT = `SELECT region_id, name, state, is_active FROM regions`;
+const R_SELECT = `SELECT r.region_id, r.name, r.is_active,
+  COALESCE((SELECT string_agg(s.name, ' · ' ORDER BY s.name) FROM states s WHERE s.region_id=r.region_id AND NOT s.is_deleted),'') AS state FROM regions r`;
 
 function toRegion(r: {
   region_id: number;
@@ -40,14 +41,14 @@ async function getRegion(id: number): Promise<Region | null> {
 
 export interface RegionInput {
   name: string;
-  state: string;
+  state?: string;
 }
 
 export async function createRegion(input: RegionInput, actorId: string): Promise<Region> {
   const result = await getPool().query(
     `INSERT INTO regions (name, state, created_by, updated_by)
      VALUES ($1, $2, $3, $3) RETURNING region_id`,
-    [input.name, input.state, actorId],
+    [input.name, input.state ?? "", actorId],
   );
   return (await getRegion(result.rows[0].region_id))!;
 }
@@ -72,10 +73,36 @@ export async function deleteRegion(id: number, actorId: string): Promise<boolean
   return softDelete("regions", "region_id", id, actorId);
 }
 
+// ─── States ──────────────────────────────────────────────────────────────────
+export interface State { id: number; regionId: number; regionName: string; name: string; isActive: boolean }
+export interface StateInput { regionId: number; name: string; isActive?: boolean }
+const S_SELECT = `SELECT s.state_id AS id,s.region_id AS "regionId",r.name AS "regionName",s.name,s.is_active AS "isActive"
+  FROM states s JOIN regions r USING(region_id)`;
+export async function listStates(): Promise<State[]> {
+  return (await getPool().query(`${S_SELECT} WHERE NOT s.is_deleted ORDER BY r.display_order,s.display_order,s.state_id`)).rows;
+}
+async function getState(id: number, db: Pool | PoolClient = getPool()): Promise<State | null> {
+  return (await db.query(`${S_SELECT} WHERE s.state_id=$1 AND NOT s.is_deleted`,[id])).rows[0] ?? null;
+}
+export async function createState(input: StateInput, actorId: string): Promise<State> {
+  return catalogueWrite("states", async db => {
+    await assertCatalogueParents(db,"states",{...input});
+    const row=(await db.query(`INSERT INTO states(region_id,name,created_by,updated_by) VALUES($1,$2,$3,$3) RETURNING state_id`,[input.regionId,input.name,actorId])).rows[0];
+    return (await getState(row.state_id,db))!;
+  });
+}
+export async function updateState(id: number,input: Partial<StateInput>,actorId: string): Promise<State | null> {
+  const changed=await applyPartialUpdate("states","state_id",id,input,{regionId:"region_id",name:"name",isActive:"is_active"},actorId);
+  return changed ? getState(id) : null;
+}
+export async function deleteState(id: number,actorId: string): Promise<boolean> { return softDelete("states","state_id",id,actorId); }
+
 // ─── Cities ────────────────────────────────────────────────────────────────────
 
 export interface City {
   id: number;
+  stateId: number;
+  stateName: string;
   regionId: number;
   regionName: string;
   name: string;
@@ -87,6 +114,8 @@ export interface City {
 
 interface CityRow {
   city_id: number;
+  state_id: number;
+  state_name: string;
   region_id: number;
   region_name: string;
   name: string;
@@ -99,6 +128,8 @@ interface CityRow {
 function toCity(r: CityRow): City {
   return {
     id: r.city_id,
+    stateId: r.state_id,
+    stateName: r.state_name,
     regionId: r.region_id,
     regionName: r.region_name,
     name: r.name,
@@ -110,10 +141,11 @@ function toCity(r: CityRow): City {
 }
 
 const C_SELECT = `
-  SELECT c.city_id, c.region_id, r.name AS region_name, c.name,
+  SELECT c.city_id, c.state_id, s.name AS state_name, s.region_id, r.name AS region_name, c.name,
          c.latitude, c.longitude, c.is_pickup_point, c.is_airport
   FROM cities c
-  JOIN regions r ON r.region_id = c.region_id
+  JOIN states s ON s.state_id=c.state_id
+  JOIN regions r ON r.region_id = s.region_id
 `;
 
 export async function listCities(): Promise<City[]> {
@@ -132,7 +164,9 @@ async function getCity(id: number, client?: Pool | PoolClient): Promise<City | n
 }
 
 export interface CityInput {
-  regionId: number;
+  stateId?: number;
+  /** Compatibility for the prior client, only if its region has one state. */
+  regionId?: number;
   name: string;
   latitude: number | null;
   longitude: number | null;
@@ -145,16 +179,17 @@ export async function createCity(input: CityInput, actorId: string): Promise<Cit
     await assertCatalogueParents(db, "cities", { ...input });
     const result = await db.query(
       `INSERT INTO cities
-         (region_id, name, latitude, longitude, is_pickup_point, is_airport, created_by, updated_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $7) RETURNING city_id`,
+         (region_id, name, latitude, longitude, is_pickup_point, is_airport, created_by, updated_by,state_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $7,$8) RETURNING city_id`,
       [
-        input.regionId,
+        input.regionId ?? null,
         input.name,
         input.latitude,
         input.longitude,
         input.isPickupPoint,
         input.isAirport,
         actorId,
+        input.stateId ?? null,
       ],
     );
     return (await getCity(result.rows[0].city_id, db))!;
@@ -173,6 +208,7 @@ export async function updateCity(
     input,
     {
       regionId: "region_id",
+      stateId: "state_id",
       name: "name",
       latitude: "latitude",
       longitude: "longitude",
@@ -196,6 +232,8 @@ export interface TouristSpot {
   id: number;
   cityId: number;
   cityName: string;
+  stateName: string;
+  regionName: string;
   name: string;
   tag: string;
   description: string;
@@ -203,6 +241,8 @@ export interface TouristSpot {
 }
 
 interface TouristSpotRow {
+  state_name: string;
+  region_name: string;
   latitude: number | null;
   longitude: number | null;
   tourist_spot_id: number;
@@ -221,6 +261,8 @@ function toTouristSpot(r: TouristSpotRow): TouristSpot {
     id: r.tourist_spot_id,
     cityId: r.city_id,
     cityName: r.city_name,
+    stateName: r.state_name,
+    regionName: r.region_name,
     name: r.name,
     tag: r.tag ?? "",
     description: r.description ?? "",
@@ -229,10 +271,12 @@ function toTouristSpot(r: TouristSpotRow): TouristSpot {
 }
 
 const TS_SELECT = `
-  SELECT ts.tourist_spot_id, ts.city_id, c.name AS city_name, ts.name, ts.tag,
+  SELECT ts.tourist_spot_id, ts.city_id, c.name AS city_name, s.name AS state_name, r.name AS region_name, ts.name, ts.tag,
          ts.description, ts.display_order, ts.latitude, ts.longitude
   FROM tourist_spots ts
   JOIN cities c ON c.city_id = ts.city_id
+  JOIN states s ON s.state_id=c.state_id
+  JOIN regions r ON r.region_id=s.region_id
 `;
 
 export async function listTouristSpots(): Promise<TouristSpot[]> {

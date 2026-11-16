@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import { bookingContact } from "../booking-contact";
 import { tripDuration } from "../booking-duration";
 import { emptyReturnRoute } from "./empty-return";
-import { resolvePrivatePackage } from "./package-plan";
+import { resolvePrivatePackage, planSpotNames } from "./package-plan";
 import type { PoolClient } from "pg";
 import { TripError } from "@/lib/weekend-trips";
 import { lockDeparture, tripTransaction } from "./weekend-trips";
@@ -610,12 +610,8 @@ export async function createBooking(
     .map((s) => s.touristSpotId)
     .filter((n): n is number => typeof n === "number" && Number.isInteger(n));
   if (spotIds.length) {
-    const found = await pool.query(
-      `SELECT tourist_spot_id FROM tourist_spots
-        WHERE tourist_spot_id = ANY($1) AND is_deleted = false`,
-      [spotIds],
-    );
-    if (found.rowCount !== spotIds.length) {
+    const found = await planSpotNames(pool,spotIds);
+    if (found.size !== spotIds.length) {
       return { ok: false, status: 400, message: "One or more stops are invalid." };
     }
   }

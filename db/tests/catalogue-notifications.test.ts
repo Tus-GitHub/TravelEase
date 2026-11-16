@@ -42,11 +42,11 @@ nodemailer.createTransport=(()=>{
 process.env.SMTP_HOST="in-memory.invalid";process.env.SMTP_USER="synthetic";process.env.SMTP_PASS="synthetic";process.env.EMAIL_FROM="test@example.invalid";
 const pass=(s:string)=>{checks++;console.log(`PASS ${s}`);};
 async function user(role="customer"):Promise<PublicUser>{const id=randomUUID();userIds.push(id);await pool.query("INSERT INTO users(user_id,name,email,phone,password_hash,role_id,email_verified_at) VALUES($1,'Catalogue event test',$2,'9999999999','disabled',(SELECT role_id FROM roles WHERE name=$3),now())",[id,`${id}@example.invalid`,role]);return{id,name:"Catalogue event test",email:`${id}@example.invalid`,phone:"9999999999",role,emailVerified:true,createdAt:new Date().toISOString()};}
-const cityInput=(regionId:number)=>({regionId,name:`Synthetic city ${++sequence}`,latitude:null,longitude:null,isPickupPoint:true,isAirport:false});
+const cityInput=async(regionId:number)=>({stateId:(await geo.createState({regionId,name:`Synthetic state ${++sequence}`},admin.id)).id,name:`Synthetic city ${++sequence}`,latitude:null,longitude:null,isPickupPoint:true,isAirport:false});
 const spotInput=(cityId:number)=>({cityId,name:`Synthetic spot ${++sequence}`,tag:"nature",description:""});
 const vehicleInput=(vehicleTypeId:number)=>({vehicleTypeId,name:`Synthetic vehicle ${++sequence}`,registrationNumber:"",seatingCapacity:6,features:[],basePricePerDay:1000,perKmRate:18});
 const packageInput=(regionId=rootRegion,vehicleTypeId=rootType)=>({regionId,vehicleTypeId,name:`Synthetic package ${randomUUID()}`,durationDays:1,maxPersons:6,pricePerPerson:1000,tag:"nature",rating:null});
-async function region(){return(await geo.createRegion({name:`Synthetic region ${++sequence}`,state:"Synthetic"},admin.id)).id;}
+async function region(){return(await geo.createRegion({name:`Synthetic region ${++sequence}`},admin.id)).id;}
 async function type(){return(await fleet.createVehicleType({slug:`synthetic-${randomUUID()}`,title:"Synthetic type",description:""},admin.id)).id;}
 async function waiting(count:number){for(let i=0;i<120;i++){if((await pool.query("SELECT count(*)::int AS n FROM pg_stat_activity WHERE application_name=$1 AND wait_event_type='Lock'",[tag])).rows[0].n>=count)return;await new Promise(r=>setTimeout(r,25));}assert.fail(`Expected ${count} real PostgreSQL lock waiters`);}
 async function ordered(lock:string,params:unknown[],calls:(()=>Promise<unknown>)[]){const guard=await pool.connect(),tasks:Promise<unknown>[]=[];try{await guard.query("BEGIN");await guard.query(lock,params);for(const call of calls){const task=call();tasks.push(task);void task.catch(()=>{});await waiting(tasks.length);}await guard.query("COMMIT");return await Promise.allSettled(tasks);}finally{await guard.query("ROLLBACK");guard.release();await Promise.allSettled(tasks);}}
@@ -66,13 +66,14 @@ const require=createRequire(import.meta.url);
 function route(file:string,aliases:Record<string,unknown>){const source=ts.transpileModule(readFileSync(file,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,mod={exports:{} as Record<string,(...args:any[])=>Promise<Response>>};new Function("require","module","exports",source)((id:string)=>aliases[id]??require(id),mod,mod.exports);return mod.exports;}
 try{
   await pool.query("INSERT INTO map_service_cache(cache_key,provider,response,expires_at) VALUES($1,'fossgis',$2::jsonb,now()+interval '2 hours')",[routeId,JSON.stringify({id:routeId,pickup:pickupPoint,drop:dropPoint,roundTrip:false,distanceKm:10,durationHours:1,geometry:[[77.2295,28.6129],[77.241,28.6562]],provider:"fossgis"})]);
-  admin=await user("admin");customer=await user();rootRegion=await region();rootType=await type();rootCity=(await geo.createCity(cityInput(rootRegion),admin.id)).id;
+  admin=await user("admin");customer=await user();rootRegion=await region();rootType=await type();rootCity=(await geo.createCity(await cityInput(rootRegion),admin.id)).id;
   bookingType=(await pool.query("SELECT booking_type_id FROM booking_types WHERE code='point_to_point'")).rows[0].booking_type_id;
   for(const name of ["Original driver","Replacement driver"]){const id=(await pool.query("INSERT INTO drivers(name,phone,created_by,updated_by) VALUES($1,'9999999999',$2,$2) RETURNING driver_id",[name,admin.id])).rows[0].driver_id;if(!driverA)driverA=id;else driverB=id;}
   const families=[
-    {name:"region/city",setup:async()=>{const p=await region();return{remove:()=>geo.deleteRegion(p,admin.id),add:()=>geo.createCity(cityInput(p),admin.id),table:"regions",column:"region_id",id:p};}},
+    {name:"region/state",setup:async()=>{const p=await region();return{remove:()=>geo.deleteRegion(p,admin.id),add:()=>geo.createState({regionId:p,name:`Synthetic state ${++sequence}`},admin.id),table:"regions",column:"region_id",id:p};}},
+    {name:"state/city",setup:async()=>{const p=await geo.createState({regionId:rootRegion,name:`Synthetic state ${++sequence}`},admin.id);return{remove:()=>geo.deleteState(p.id,admin.id),add:()=>geo.createCity({stateId:p.id,name:`Synthetic city ${++sequence}`,latitude:null,longitude:null,isPickupPoint:true,isAirport:false},admin.id),table:"states",column:"state_id",id:p.id};}},
     {name:"region/package",setup:async()=>{const p=await region();return{remove:()=>geo.deleteRegion(p,admin.id),add:()=>catalogue.createPackage(packageInput(p),admin.id),table:"regions",column:"region_id",id:p};}},
-    {name:"city/spot",setup:async()=>{const p=(await geo.createCity(cityInput(rootRegion),admin.id)).id;return{remove:()=>geo.deleteCity(p,admin.id),add:()=>geo.createTouristSpot(spotInput(p),admin.id),table:"cities",column:"city_id",id:p};}},
+    {name:"city/spot",setup:async()=>{const p=(await geo.createCity(await cityInput(rootRegion),admin.id)).id;return{remove:()=>geo.deleteCity(p,admin.id),add:()=>geo.createTouristSpot(spotInput(p),admin.id),table:"cities",column:"city_id",id:p};}},
     {name:"spot/package-stop",setup:async()=>{const p=(await geo.createTouristSpot(spotInput(rootCity),admin.id)).id,k=await catalogue.createPackage(packageInput(),admin.id);return{remove:()=>geo.deleteTouristSpot(p,admin.id),add:()=>catalogue.addPackageStop(k.id,{touristSpotId:p,stopOrder:1,nightsHere:0},admin.id),table:"tourist_spots",column:"tourist_spot_id",id:p};}},
     {name:"vehicle-type/vehicle",setup:async()=>{const p=await type();return{remove:()=>fleet.deleteVehicleType(p,admin.id),add:()=>fleet.createVehicle(vehicleInput(p),admin.id),table:"vehicle_types",column:"vehicle_type_id",id:p};}},
     {name:"vehicle-type/package",setup:async()=>{const p=await type();return{remove:()=>fleet.deleteVehicleType(p,admin.id),add:()=>catalogue.createPackage(packageInput(rootRegion,p),admin.id),table:"vehicle_types",column:"vehicle_type_id",id:p};}},
@@ -93,9 +94,9 @@ try{
     pass(`package deletion / stop insertion ${deletionFirst?"delete-first":"insert-first"}: no live orphan stops`);
   }
   {
-    const r=await region(),c=await geo.createCity(cityInput(rootRegion),admin.id);await geo.deleteRegion(r,admin.id);
+    const r=await region(),c=await geo.createCity(await cityInput(rootRegion),admin.id);await geo.deleteRegion(r,admin.id);
     await assert.rejects(geo.updateCity(c.id,{regionId:r},admin.id),(e:any)=>e.code==="23503");
-    const deadCity=await geo.createCity(cityInput(rootRegion),admin.id),s=await geo.createTouristSpot(spotInput(rootCity),admin.id);await geo.deleteCity(deadCity.id,admin.id);
+    const deadCity=await geo.createCity(await cityInput(rootRegion),admin.id),s=await geo.createTouristSpot(spotInput(rootCity),admin.id);await geo.deleteCity(deadCity.id,admin.id);
     await assert.rejects(geo.updateTouristSpot(s.id,{cityId:deadCity.id},admin.id),(e:any)=>e.code==="23503");
     const t=await type(),v=await fleet.createVehicle(vehicleInput(rootType),admin.id);await fleet.deleteVehicleType(t,admin.id);
     await assert.rejects(fleet.updateVehicle(v.id,{vehicleTypeId:t,perKmRate:19},admin.id),(e:any)=>e.code==="23503");

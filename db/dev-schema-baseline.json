@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "recordedAt": "2026-11-15T18:21:15.214Z",
-  "note": "Observed development baseline; historical applied SQL bytes cannot be proven retroactively. Approved migration028 added on development; prior baseline archived; old definitions/checksums unchanged. Approved development migration029; prior28 baseline archived. Four tables/six columns verified. Approved development030 reviewed: two map tables, nine map columns, one pricing vehicle FK column, four indexes; original29 definitions/checksums retained. Reviewed031: only two existing provider CHECK constraints additionally accept photon; all30 previous hashes and other definitions retained. Reviewed032: exactly three user-approved pricing/package columns and four validation/NOT NULL constraints; all31 previous hashes and all other definitions/grants retained.",
+  "recordedAt": "2026-11-16T16:02:51.763Z",
+  "note": "Observed development baseline; historical applied SQL bytes cannot be proven retroactively. Approved migration028 added on development; prior baseline archived; old definitions/checksums unchanged. Approved development migration029; prior28 baseline archived. Four tables/six columns verified. Approved development030 reviewed: two map tables, nine map columns, one pricing vehicle FK column, four indexes; original29 definitions/checksums retained. Reviewed031: only two existing provider CHECK constraints additionally accept photon; all30 previous hashes and other definitions retained. Reviewed032: exactly three user-approved pricing/package columns and four validation/NOT NULL constraints; all31 previous hashes and all other definitions/grants retained. Approved033: State master and city State FK, normalized name indexes, city/state compatibility derivation and active hierarchy. Full isolated production-clone replay matches development; old32 hashes/definitions validated first.",
   "hashes": {
     "001_create_auth_tables.sql": "49af6321b9ca6fd6d8671b1276a178e29eff488812dfbb90b3b97bbf0adf89d1",
     "002_create_vehicle_tables.sql": "93af44cafc8f775574671563122c99abe27f6d8c7347d70da589cf15aedbd92a",
@@ -34,7 +34,8 @@
     "029_weekend_trip_departures.sql": "5a1c104e6342f3117c62f963d0f2e5153640dd36570c102d4a02066e8f4eba5f",
     "030_car_pricing_and_map_services.sql": "c18d8ba1a68738c6c0c586f1b7db72bf7c0d98bff2b0923ce87bbc47ecc63f01",
     "031_photon_autocomplete.sql": "5d863c12dabb6c0e86634cdbd9158d116ababe27b2e8df901b3b393a6f74bf86",
-    "032_trip_pricing_and_package_content.sql": "457eb272eeddf5ce8f96ba84aadd44b90cde1f825b17a0c621ecf488ac314f3d"
+    "032_trip_pricing_and_package_content.sql": "457eb272eeddf5ce8f96ba84aadd44b90cde1f825b17a0c621ecf488ac314f3d",
+    "033_normalise_geography_states.sql": "6e7eead0492f39ee9c56e3cc658b18a622066f96e928bb5639d02bae0eb97913"
   },
   "snapshot": {
     "migrations": [
@@ -69,7 +70,8 @@
       "029_weekend_trip_departures.sql",
       "030_car_pricing_and_map_services.sql",
       "031_photon_autocomplete.sql",
-      "032_trip_pricing_and_package_content.sql"
+      "032_trip_pricing_and_package_content.sql",
+      "033_normalise_geography_states.sql"
     ],
     "tables": [
       {
@@ -362,6 +364,15 @@
       },
       {
         "key": "site_settings",
+        "definition": {
+          "kind": "r",
+          "rls": false,
+          "forceRls": false,
+          "replicaIdentity": "d"
+        }
+      },
+      {
+        "key": "states",
         "definition": {
           "kind": "r",
           "rls": false,
@@ -1423,6 +1434,17 @@
       },
       {
         "key": "cities.region_id",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "cities.state_id",
         "definition": {
           "type": "integer",
           "notNull": true,
@@ -3791,7 +3813,7 @@
         "definition": {
           "type": "character varying(100)",
           "notNull": true,
-          "default": null,
+          "default": "''::character varying",
           "identity": "",
           "generated": "",
           "collation": "\"default\""
@@ -4426,6 +4448,116 @@
       },
       {
         "key": "site_settings.updated_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "states.created_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "states.created_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "states.display_order",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "0",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "states.is_active",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "true",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "states.is_deleted",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "false",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "states.name",
+        "definition": {
+          "type": "character varying(100)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "states.region_id",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "states.state_id",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "nextval('public.states_state_id_seq'::regclass)",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "states.updated_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "states.updated_by",
         "definition": {
           "type": "uuid",
           "notNull": false,
@@ -7264,6 +7396,20 @@
         }
       },
       {
+        "key": "cities.cities_state_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (state_id) REFERENCES public.states(state_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "cities.cities_state_id_not_null",
+        "definition": {
+          "definition": "NOT NULL state_id",
+          "validated": true
+        }
+      },
+      {
         "key": "cities.cities_updated_at_not_null",
         "definition": {
           "definition": "NOT NULL updated_at",
@@ -9476,6 +9622,97 @@
         }
       },
       {
+        "key": "states.states_created_at_not_null",
+        "definition": {
+          "definition": "NOT NULL created_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_created_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (created_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_display_order_not_null",
+        "definition": {
+          "definition": "NOT NULL display_order",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_is_active_not_null",
+        "definition": {
+          "definition": "NOT NULL is_active",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_is_deleted_not_null",
+        "definition": {
+          "definition": "NOT NULL is_deleted",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_name_check",
+        "definition": {
+          "definition": "CHECK (length(public.geography_name_key(name::text)) >= 2)",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_name_not_null",
+        "definition": {
+          "definition": "NOT NULL name",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_pkey",
+        "definition": {
+          "definition": "PRIMARY KEY (state_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_region_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (region_id) REFERENCES public.regions(region_id) ON DELETE CASCADE",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_region_id_not_null",
+        "definition": {
+          "definition": "NOT NULL region_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_state_id_not_null",
+        "definition": {
+          "definition": "NOT NULL state_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_updated_at_not_null",
+        "definition": {
+          "definition": "NOT NULL updated_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "states.states_updated_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (updated_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
         "key": "support_ticket_messages.support_ticket_messages_author_role_check",
         "definition": {
           "definition": "CHECK (author_role::text = ANY (ARRAY['customer'::character varying, 'agent'::character varying, 'admin'::character varying]::text[]))",
@@ -11415,6 +11652,14 @@
         }
       },
       {
+        "key": "idx_cities_state",
+        "definition": {
+          "definition": "CREATE INDEX idx_cities_state ON public.cities USING btree (state_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
         "key": "idx_cms_pages_public",
         "definition": {
           "definition": "CREATE INDEX idx_cms_pages_public ON public.cms_pages USING btree (slug) WHERE (((status)::text = 'published'::text) AND is_active AND (NOT is_deleted))",
@@ -11562,6 +11807,14 @@
         "key": "idx_sessions_user_id",
         "definition": {
           "definition": "CREATE INDEX idx_sessions_user_id ON public.sessions USING btree (user_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "idx_states_region",
+        "definition": {
+          "definition": "CREATE INDEX idx_states_region ON public.states USING btree (region_id)",
           "valid": true,
           "ready": true
         }
@@ -11855,6 +12108,14 @@
         }
       },
       {
+        "key": "states_pkey",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX states_pkey ON public.states USING btree (state_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
         "key": "support_ticket_messages_pkey",
         "definition": {
           "definition": "CREATE UNIQUE INDEX support_ticket_messages_pkey ON public.support_ticket_messages USING btree (support_ticket_message_id)",
@@ -11922,6 +12183,38 @@
         "key": "trip_stays_pkey",
         "definition": {
           "definition": "CREATE UNIQUE INDEX trip_stays_pkey ON public.trip_stays USING btree (stay_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "uq_cities_parent_name",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX uq_cities_parent_name ON public.cities USING btree (state_id, public.geography_name_key((name)::text)) WHERE (NOT is_deleted)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "uq_regions_name",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX uq_regions_name ON public.regions USING btree (public.geography_name_key((name)::text)) WHERE (NOT is_deleted)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "uq_spots_parent_name",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX uq_spots_parent_name ON public.tourist_spots USING btree (city_id, public.geography_name_key((name)::text)) WHERE (NOT is_deleted)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "uq_states_parent_name",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX uq_states_parent_name ON public.states USING btree (region_id, public.geography_name_key((name)::text)) WHERE (NOT is_deleted)",
           "valid": true,
           "ready": true
         }
@@ -12016,16 +12309,23 @@
         }
       },
       {
+        "key": "cities.trg_cities_derive_region",
+        "definition": {
+          "definition": "CREATE TRIGGER trg_cities_derive_region BEFORE INSERT OR UPDATE OF state_id, region_id ON public.cities FOR EACH ROW EXECUTE FUNCTION public.derive_city_region()",
+          "enabled": "O"
+        }
+      },
+      {
         "key": "cities.trg_cities_order_ins",
         "definition": {
-          "definition": "CREATE TRIGGER trg_cities_order_ins BEFORE INSERT ON public.cities FOR EACH ROW EXECUTE FUNCTION public.maintain_display_order('display_order', 'region_id')",
+          "definition": "CREATE TRIGGER trg_cities_order_ins BEFORE INSERT ON public.cities FOR EACH ROW EXECUTE FUNCTION public.maintain_display_order('display_order', 'state_id')",
           "enabled": "O"
         }
       },
       {
         "key": "cities.trg_cities_order_upd_del",
         "definition": {
-          "definition": "CREATE TRIGGER trg_cities_order_upd_del AFTER DELETE OR UPDATE ON public.cities FOR EACH ROW EXECUTE FUNCTION public.maintain_display_order('display_order', 'region_id')",
+          "definition": "CREATE TRIGGER trg_cities_order_upd_del AFTER DELETE OR UPDATE ON public.cities FOR EACH ROW EXECUTE FUNCTION public.maintain_display_order('display_order', 'state_id')",
           "enabled": "O"
         }
       },
@@ -12142,6 +12442,13 @@
         }
       },
       {
+        "key": "regions.trg_regions_legacy_state",
+        "definition": {
+          "definition": "CREATE TRIGGER trg_regions_legacy_state AFTER INSERT ON public.regions FOR EACH ROW EXECUTE FUNCTION public.legacy_region_state_insert()",
+          "enabled": "O"
+        }
+      },
+      {
         "key": "regions.trg_regions_order_ins",
         "definition": {
           "definition": "CREATE TRIGGER trg_regions_order_ins BEFORE INSERT ON public.regions FOR EACH ROW EXECUTE FUNCTION public.maintain_display_order('display_order', '')",
@@ -12194,6 +12501,34 @@
         "key": "site_settings.trg_site_settings_updated_at",
         "definition": {
           "definition": "CREATE TRIGGER trg_site_settings_updated_at BEFORE UPDATE ON public.site_settings FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()",
+          "enabled": "O"
+        }
+      },
+      {
+        "key": "states.trg_states_order_ins",
+        "definition": {
+          "definition": "CREATE TRIGGER trg_states_order_ins BEFORE INSERT ON public.states FOR EACH ROW EXECUTE FUNCTION public.maintain_display_order('display_order', 'region_id')",
+          "enabled": "O"
+        }
+      },
+      {
+        "key": "states.trg_states_order_upd_del",
+        "definition": {
+          "definition": "CREATE TRIGGER trg_states_order_upd_del AFTER DELETE OR UPDATE ON public.states FOR EACH ROW EXECUTE FUNCTION public.maintain_display_order('display_order', 'region_id')",
+          "enabled": "O"
+        }
+      },
+      {
+        "key": "states.trg_states_region",
+        "definition": {
+          "definition": "CREATE TRIGGER trg_states_region AFTER UPDATE OF region_id ON public.states FOR EACH ROW EXECUTE FUNCTION public.propagate_state_region()",
+          "enabled": "O"
+        }
+      },
+      {
+        "key": "states.trg_states_updated_at",
+        "definition": {
+          "definition": "CREATE TRIGGER trg_states_updated_at BEFORE UPDATE ON public.states FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()",
           "enabled": "O"
         }
       },
@@ -12378,6 +12713,10 @@
         "definition": "CREATE OR REPLACE FUNCTION public.decrypt_iv(bytea, bytea, bytea, text)\n RETURNS bytea\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pgcrypto', $function$pg_decrypt_iv$function$\n"
       },
       {
+        "key": "derive_city_region()",
+        "definition": "CREATE OR REPLACE FUNCTION public.derive_city_region()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE parent_region integer; candidates integer; legacy_move boolean := false;\nBEGIN\n  IF NEW.state_id IS NOT NULL THEN SELECT region_id INTO parent_region FROM states WHERE state_id=NEW.state_id; END IF;\n  IF TG_OP='UPDATE' THEN\n    legacy_move := NEW.state_id IS NOT DISTINCT FROM OLD.state_id AND NEW.region_id IS DISTINCT FROM OLD.region_id AND NEW.region_id IS DISTINCT FROM parent_region;\n  END IF;\n  IF NEW.state_id IS NULL OR legacy_move THEN\n    SELECT count(*),min(state_id) INTO candidates,NEW.state_id FROM states WHERE region_id=NEW.region_id AND NOT is_deleted;\n    IF candidates<>1 THEN RAISE EXCEPTION USING ERRCODE='23503',MESSAGE='Choose a state for this city; its region does not identify one state.'; END IF;\n    SELECT region_id INTO parent_region FROM states WHERE state_id=NEW.state_id;\n  END IF;\n  IF parent_region IS NULL THEN RAISE EXCEPTION USING ERRCODE='23503',MESSAGE='Choose an existing state.'; END IF;\n  NEW.region_id := parent_region;\n  RETURN NEW;\nEND $function$\n"
+      },
+      {
         "key": "digest(bytea, text)",
         "definition": "CREATE OR REPLACE FUNCTION public.digest(bytea, text)\n RETURNS bytea\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pgcrypto', $function$pg_digest$function$\n"
       },
@@ -12414,12 +12753,20 @@
         "definition": "CREATE OR REPLACE FUNCTION public.gen_salt(text, integer)\n RETURNS text\n LANGUAGE c\n PARALLEL SAFE STRICT\nAS '$libdir/pgcrypto', $function$pg_gen_salt_rounds$function$\n"
       },
       {
+        "key": "geography_name_key(value text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.geography_name_key(value text)\n RETURNS text\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$ SELECT lower(btrim(regexp_replace(value, '[[:space:]]+', ' ', 'g'))) $function$\n"
+      },
+      {
         "key": "hmac(bytea, bytea, text)",
         "definition": "CREATE OR REPLACE FUNCTION public.hmac(bytea, bytea, text)\n RETURNS bytea\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pgcrypto', $function$pg_hmac$function$\n"
       },
       {
         "key": "hmac(text, text, text)",
         "definition": "CREATE OR REPLACE FUNCTION public.hmac(text, text, text)\n RETURNS bytea\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pgcrypto', $function$pg_hmac$function$\n"
+      },
+      {
+        "key": "legacy_region_state_insert()",
+        "definition": "CREATE OR REPLACE FUNCTION public.legacy_region_state_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  IF length(geography_name_key(NEW.state)) >= 2 THEN\n    INSERT INTO states(region_id,name,is_active,is_deleted,created_by,updated_by)\n    VALUES(NEW.region_id,btrim(NEW.state),NEW.is_active,NEW.is_deleted,NEW.created_by,NEW.updated_by);\n  END IF;\n  RETURN NEW;\nEND $function$\n"
       },
       {
         "key": "maintain_display_order()",
@@ -12504,6 +12851,10 @@
       {
         "key": "pgp_sym_encrypt_bytea(bytea, text, text)",
         "definition": "CREATE OR REPLACE FUNCTION public.pgp_sym_encrypt_bytea(bytea, text, text)\n RETURNS bytea\n LANGUAGE c\n PARALLEL SAFE STRICT\nAS '$libdir/pgcrypto', $function$pgp_sym_encrypt_bytea$function$\n"
+      },
+      {
+        "key": "propagate_state_region()",
+        "definition": "CREATE OR REPLACE FUNCTION public.propagate_state_region()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  IF NEW.region_id IS DISTINCT FROM OLD.region_id THEN\n    UPDATE cities SET region_id=NEW.region_id WHERE state_id=NEW.state_id;\n  END IF;\n  RETURN NEW;\nEND $function$\n"
       },
       {
         "key": "set_updated_at()",
@@ -12719,6 +13070,18 @@
       },
       {
         "key": "seasonal_pricing_seasonal_pricing_id_seq",
+        "definition": {
+          "type": "integer",
+          "start": 1,
+          "min": 1,
+          "max": 2147483647,
+          "increment": 1,
+          "cycle": false,
+          "cache": 1
+        }
+      },
+      {
+        "key": "states_state_id_seq",
         "definition": {
           "type": "integer",
           "start": 1,
@@ -13179,6 +13542,20 @@
         "definition": [
           "neondb_owner=arwdDxtm/neondb_owner",
           "travel_app_dev=arwd/neondb_owner"
+        ]
+      },
+      {
+        "key": "states:neondb_owner",
+        "definition": [
+          "neondb_owner=arwdDxtm/neondb_owner",
+          "travel_app_dev=arwd/neondb_owner"
+        ]
+      },
+      {
+        "key": "states_state_id_seq:neondb_owner",
+        "definition": [
+          "neondb_owner=rwU/neondb_owner",
+          "travel_app_dev=rU/neondb_owner"
         ]
       },
       {

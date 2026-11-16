@@ -17,6 +17,8 @@ export function departurePrice(row: { price_per_person: string | number; tax_per
   return price;
 }
 export async function assertOpenDeparture(client: PoolClient | ReturnType<typeof getPool>, row: QueryResultRow, quantity: number) {
+  if(!(await client.query(`SELECT 1 FROM cities c JOIN states s USING(state_id) JOIN regions r ON r.region_id=s.region_id WHERE c.city_id=$1
+    AND c.is_active AND NOT c.is_deleted AND s.is_active AND NOT s.is_deleted AND r.is_active AND NOT r.is_deleted`,[row.pickup_city_id])).rowCount)throw new TripError("This departure's pickup city is temporarily unavailable.",409);
   const { rows: [clock] } = await client.query("SELECT clock_timestamp() AS time");
   const now = clock.time as Date;
   if (!row.is_active || !["open","guaranteed"].includes(row.status) || now < new Date(row.booking_opens_at) || now >= new Date(row.booking_closes_at)) throw new TripError("Bookings are not open for this departure.",409);

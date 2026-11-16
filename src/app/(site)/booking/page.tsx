@@ -7,7 +7,7 @@ import { getPublicVehicle, listPublicPackages, listPublicRegions, toCardPackage,
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Plan your trip — Jagdamba Travellers", description: "Choose a ready-made travel package, join a weekend group or create your own itinerary." };
 
-export default async function BookingPage({ searchParams }: { searchParams: { vehicle?: string; mode?: string } }) {
+export default async function BookingPage({ searchParams }: { searchParams: { vehicle?: string; mode?: string; region?: string; spot?: string } }) {
   if (searchParams.vehicle && !/^[1-9]\d{0,8}$/.test(searchParams.vehicle)) notFound();
   const [vehicle, rows, regions] = await Promise.all([
     searchParams.vehicle ? getPublicVehicle(Number(searchParams.vehicle)) : null,
@@ -22,6 +22,6 @@ export default async function BookingPage({ searchParams }: { searchParams: { ve
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted">Choose a package, create your own route or book a point-to-point journey. Review your quote before confirming.</p>
       {vehicle && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-surface-muted px-4 py-3"><p className="text-sm font-semibold">{vehicle.name} · {vehicle.seatingCapacity} seats</p><Button href="/booking" variant="ghost" size="sm">Change vehicle</Button></div>}
     </div>
-    <PackageBuilder key={`${vehicle?.id ?? "any"}-${searchParams.mode ?? "packages"}`} compact packages={packages} regions={regions.map(toBuilderRegion)} showTransfer initialMode={searchParams.mode === "transfer" ? "transfer" : searchParams.mode === "custom" ? "custom" : "packages"} selectedVehicle={vehicle ? { id: vehicle.id, name: vehicle.name, typeSlug: vehicle.typeSlug, typeTitle: vehicle.typeTitle, pricePerDay: vehicle.pricePerDay } : undefined} />
+    <PackageBuilder key={`${vehicle?.id ?? "any"}-${searchParams.mode ?? "packages"}-${searchParams.region??""}-${searchParams.spot??""}`} compact packages={packages} regions={regions.map(toBuilderRegion)} showTransfer initialRegionId={searchParams.region} initialSpotId={searchParams.spot} initialMode={searchParams.mode === "transfer" ? "transfer" : searchParams.mode === "custom" ? "custom" : "packages"} selectedVehicle={vehicle ? { id: vehicle.id, name: vehicle.name, typeSlug: vehicle.typeSlug, typeTitle: vehicle.typeTitle, pricePerDay: vehicle.pricePerDay } : undefined} />
   </main>;
 }

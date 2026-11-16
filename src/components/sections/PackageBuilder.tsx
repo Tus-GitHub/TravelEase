@@ -28,6 +28,8 @@ interface PackageBuilderProps {
   regions: Region[];
   packages: TravelPackage[];
   initialMode?: Mode;
+  initialRegionId?: string;
+  initialSpotId?: string;
   showTransfer?: boolean;
   compact?: boolean;
   selectedVehicle?: { id: number; name: string; typeSlug: string; typeTitle: string; pricePerDay?: number };
@@ -530,7 +532,7 @@ const stepVariants = {
 
 // ─── Main PackageBuilder section ──────────────────────────────────────────────
 
-export default function PackageBuilder({ regions, packages, cms, initialMode = "packages", selectedVehicle, showTransfer = false, compact = false }: PackageBuilderProps) {
+export default function PackageBuilder({ regions, packages, cms, initialMode = "packages", initialRegionId, initialSpotId, selectedVehicle, showTransfer = false, compact = false }: PackageBuilderProps) {
   const router = useRouter();
   const tabId = useId();
   const [interactive, setInteractive] = useState(false);
@@ -538,9 +540,10 @@ export default function PackageBuilder({ regions, packages, cms, initialMode = "
   const { user } = useAuth();
   const [transferVisited, setTransferVisited] = useState(initialMode === "transfer");
   const [mode, setMode]               = useState<Mode>(initialMode);
-  const [step, setStep]               = useState(1);
-  const [region, setRegion]           = useState<Region | null>(null);
-  const [selectedSpots, setSelectedSpots] = useState<TouristSpot[]>([]);
+  const initialRegion = regions.find(item=>item.id===initialRegionId);
+  const [step, setStep]               = useState(initialRegion ? 2 : 1);
+  const [region, setRegion]           = useState<Region | null>(initialRegion ?? null);
+  const [selectedSpots, setSelectedSpots] = useState<TouristSpot[]>(()=>initialRegion?.spots.filter(spot=>spot.id===initialSpotId) ?? []);
   const [orderedSpots, setOrderedSpots]   = useState<TouristSpot[]>([]);
   const [saveState, setSaveState]     = useState<SaveState>("idle");
 

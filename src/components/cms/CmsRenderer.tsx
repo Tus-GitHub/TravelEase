@@ -53,8 +53,10 @@ async function DataSection({ section }: { section: CmsSection }) {
     case "catalogue": return <CatalogueBrowser section={section} initialRows={await loadCatalogue(section.content)} />;
     case "featured-vehicles": return <FeaturedVehicles cms={section} vehicles={await getVehicles()} />;
     case "packages": return <PackageShowcase cms={section} packages={await getPackages()} />;
+    case "destinations":
     case "package-builder": {
       const [packages, regions] = await Promise.all([getPackages(), getRegions()]);
+      if(section.type==="destinations")return <DestinationMap cms={section} packages={packages} regions={regions}/>;
       return <PackageBuilder cms={section} packages={packages} regions={regions} />;
     }
     default: return null;
@@ -79,10 +81,10 @@ export default function CmsRenderer({ document }: { document: CmsDocument }) {
         case "catalogue":
         case "featured-vehicles":
         case "packages":
+        case "destinations":
         case "package-builder": return <Suspense key={section.id} fallback={<PendingSection section={section} />}><DataSection section={section} /></Suspense>;
         case "hero": return <HeroSection key={section.id} cms={section} />;
         case "travel-band": { const photo = cmsText(section, "imageUrl") || (section.appearance.background === "image" ? section.appearance.imageUrl : ""); return <div key={section.id} id={`section-${section.id}`} data-cms-section={section.id}>{photo ? <div className="relative h-60"><Image src={photo} alt={cmsText(section, "imageAlt")} fill sizes="100vw" className="object-cover" /></div> : <TravelAnimationBand />}</div>; }
-        case "destinations": return <DestinationMap key={section.id} cms={section} />;
         case "vehicle-categories": return <VehicleCategories key={section.id} cms={section} />;
         case "how-it-works": return <HowItWorks key={section.id} cms={section} />;
         case "features": return <WhyChooseUs key={section.id} cms={section} />;

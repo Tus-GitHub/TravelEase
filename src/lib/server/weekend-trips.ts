@@ -52,13 +52,16 @@ export async function tripOptions(): Promise<TripOptions> {
   const db = getPool();
   const [packages, cities, vehicles, drivers, guides] = await Promise.all([
     db.query("SELECT package_id AS id,name,booking_mode AS mode,duration_days AS days,price_per_person::float8 AS price,max_persons AS capacity,trip_content AS \"tripContent\",image_url AS \"imageUrl\" FROM packages WHERE NOT is_deleted AND is_active ORDER BY name"),
-    db.query("SELECT city_id AS id,name FROM cities WHERE NOT is_deleted AND is_active ORDER BY name"),
+    db.query("SELECT c.city_id AS id,c.name||' · '||s.name AS name FROM cities c JOIN states s USING(state_id) JOIN regions r ON r.region_id=s.region_id WHERE NOT c.is_deleted AND c.is_active AND NOT s.is_deleted AND s.is_active AND NOT r.is_deleted AND r.is_active ORDER BY c.name"),
     db.query("SELECT vehicle_id AS id,name,seating_capacity AS capacity FROM vehicles WHERE NOT is_deleted AND is_active ORDER BY name"),
     db.query("SELECT driver_id AS id,name FROM drivers WHERE NOT is_deleted AND is_active ORDER BY name"),
     db.query("SELECT guide_id AS id,name FROM tour_guides WHERE NOT is_deleted AND is_active ORDER BY name")]);
   return { packages: packages.rows, cities: cities.rows, vehicles: vehicles.rows, drivers: drivers.rows, guides: guides.rows };
 }
 export async function checkReferences(client: PoolClient, data: DepartureInput) {
+  const cityIds=Array.from(new Set([data.pickupCityId,...data.stays.map(stay=>stay.cityId)].filter((id):id is number=>typeof id==="number")));
+  if(cityIds.length&&(await client.query(`SELECT c.city_id FROM cities c JOIN states s USING(state_id) JOIN regions r ON r.region_id=s.region_id
+    WHERE c.city_id=ANY($1::int[]) AND c.is_active AND NOT c.is_deleted AND s.is_active AND NOT s.is_deleted AND r.is_active AND NOT r.is_deleted ORDER BY c.city_id FOR SHARE OF c,s,r`,[cityIds])).rowCount!==cityIds.length)throw new TripError("Choose active pickup/hotel cities with active states and regions.");
   for (const [table, column, id, label] of [["packages", "package_id", data.packageId, "template"], ["cities", "city_id", data.pickupCityId, "pickup city"], ["vehicles", "vehicle_id", data.vehicleId, "vehicle"], ["drivers", "driver_id", data.driverId, "driver"], ["tour_guides", "guide_id", data.guideId, "guide"]] as const) {
     if (id == null) continue;
     if (!(await client.query(`SELECT 1 FROM ${table} WHERE ${column}=$1 AND NOT is_deleted AND is_active FOR SHARE`, [id])).rowCount) throw new TripError(`Choose an active ${label}.`);

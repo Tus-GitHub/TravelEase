@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/server/auth-guard";
 import { dbErrorResponse } from "@/lib/server/api-errors";
 import { deleteRegion, updateRegion } from "@/lib/server/admin/geography";
+import { cleanGeographyName } from "@/lib/geography";
 
 export async function PATCH(
   request: Request,
@@ -23,13 +24,18 @@ export async function PATCH(
   }
 
   const input: { name?: string; state?: string; isActive?: boolean } = {};
-  if (typeof body.name === "string") input.name = body.name.trim();
-  if (typeof body.state === "string") input.state = body.state.trim();
+  if (body.name !== undefined) {
+    if(typeof body.name !== "string") return NextResponse.json({error:"Invalid region name."},{status:400});
+    input.name=cleanGeographyName(body.name);
+    if(input.name.length<2||input.name.length>100)return NextResponse.json({error:"Enter a region name (2–100 characters)."},{status:400});
+  }
   if (typeof body.isActive === "boolean") input.isActive = body.isActive;
 
-  const item = await updateRegion(id, input, auth.user.id);
-  if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  return NextResponse.json({ item });
+  try {
+    const item = await updateRegion(id, input, auth.user.id);
+    if (!item) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ item });
+  } catch(error) { const response=dbErrorResponse(error,{unique:"That region already exists. Add its states in the States tab."});if(response)return response;throw error; }
 }
 
 export async function DELETE(

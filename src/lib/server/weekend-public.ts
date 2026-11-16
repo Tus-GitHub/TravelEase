@@ -24,6 +24,8 @@ const publicSelect=`SELECT d.departure_id,d.slug,d.title,d.starts_at,d.ends_at,d
   COALESCE(s.confirmed,0)::int AS confirmed,GREATEST(0,d.capacity-COALESCE(s.reserved,0))::int AS available,
   (d.status IN ('open','guaranteed') AND clock_timestamp()>=d.booking_opens_at AND clock_timestamp()<d.booking_closes_at AND (d.status='guaranteed' OR clock_timestamp()<d.decision_deadline)) AS bookable
   FROM trip_departures d JOIN packages p USING(package_id) JOIN regions r USING(region_id) JOIN cities c ON c.city_id=d.pickup_city_id
+  JOIN states pickup_state ON pickup_state.state_id=c.state_id AND pickup_state.is_active AND NOT pickup_state.is_deleted
+  JOIN regions pickup_region ON pickup_region.region_id=pickup_state.region_id AND pickup_region.is_active AND NOT pickup_region.is_deleted
   LEFT JOIN tour_guides g USING(guide_id) LEFT JOIN vehicles v USING(vehicle_id) LEFT JOIN drivers dr USING(driver_id)
   LEFT JOIN LATERAL(SELECT sum(passenger_count) FILTER(WHERE status IN ('Confirmed','Ongoing','Completed')) AS confirmed,
     sum(passenger_count) FILTER(WHERE status IN ('Confirmed','Ongoing','Completed') OR (status='PendingPayment' AND seat_hold_expires_at>clock_timestamp())) AS reserved FROM bookings WHERE departure_id=d.departure_id AND NOT is_deleted) s ON true

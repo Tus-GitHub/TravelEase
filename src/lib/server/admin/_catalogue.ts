@@ -3,7 +3,7 @@ import { getPool } from "../db";
 import { DependentRowsError } from "../db-errors";
 
 type Db = Pool | PoolClient;
-const tables = new Set(["regions", "cities", "tourist_spots", "packages", "package_stops", "vehicle_types", "vehicles", "vendor_profiles"]);
+const tables = new Set(["regions", "states", "cities", "tourist_spots", "packages", "package_stops", "vehicle_types", "vehicles", "vendor_profiles"]);
 export const isCatalogueTable = (table: string) => tables.has(table);
 
 /** Short admin catalogue writes share one lock, before any resource/row lock.
@@ -23,7 +23,8 @@ export async function catalogueWrite<T>(table: string, work: (db: Db) => Promise
 }
 
 const references: Record<string, readonly (readonly [string, string, string, boolean?])[]> = {
-  cities: [["regionId", "regions", "region_id"]],
+  states: [["regionId", "regions", "region_id"]],
+  cities: [["stateId", "states", "state_id"], ["regionId", "regions", "region_id"]],
   tourist_spots: [["cityId", "cities", "city_id"]],
   packages: [["regionId", "regions", "region_id"], ["vehicleTypeId", "vehicle_types", "vehicle_type_id"]],
   package_stops: [["packageId", "packages", "package_id"], ["touristSpotId", "tourist_spots", "tourist_spot_id"]],
@@ -40,7 +41,8 @@ export async function assertCatalogueParents(db: Db, table: string, input: Recor
 }
 
 const children: Record<string, readonly (readonly [string, string, string])[]> = {
-  regions: [["cities", "region_id", "cities"], ["packages", "region_id", "packages"]],
+  regions: [["states", "region_id", "states"], ["cities", "region_id", "cities"], ["packages", "region_id", "packages"]],
+  states: [["cities", "state_id", "cities"]],
   cities: [["tourist_spots", "city_id", "tourist spots"]],
   tourist_spots: [["package_stops", "tourist_spot_id", "package stops"]],
   vehicle_types: [["vehicles", "vehicle_type_id", "vehicles"], ["packages", "vehicle_type_id", "packages"]],

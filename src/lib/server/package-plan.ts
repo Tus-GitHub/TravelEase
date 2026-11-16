@@ -8,15 +8,15 @@ type Db = Pool | PoolClient;
 export async function planSpotNames(db: Db, ids: number[], lock = false): Promise<Map<number, string>> {
   if (!ids.length) return new Map();
   const rows = await db.query(`SELECT ts.tourist_spot_id,ts.name FROM tourist_spots ts
-    JOIN cities c ON c.city_id=ts.city_id JOIN regions r ON r.region_id=c.region_id
+    JOIN cities c ON c.city_id=ts.city_id JOIN states s ON s.state_id=c.state_id JOIN regions r ON r.region_id=s.region_id
     WHERE ts.tourist_spot_id=ANY($1::int[]) AND NOT ts.is_deleted AND ts.is_active
-      AND NOT c.is_deleted AND c.is_active AND NOT r.is_deleted AND r.is_active
-    ORDER BY ts.tourist_spot_id ${lock ? "FOR SHARE OF ts,c,r" : ""}`, [ids]);
+      AND NOT c.is_deleted AND c.is_active AND NOT s.is_deleted AND s.is_active AND NOT r.is_deleted AND r.is_active
+    ORDER BY ts.tourist_spot_id ${lock ? "FOR SHARE OF ts,c,s,r" : ""}`, [ids]);
   return new Map(rows.rows.map(row => [row.tourist_spot_id, row.name]));
 }
 export async function assertPlanDestinations(db: Db, content: PackageContent | null | undefined) {
   const ids = content?.routeTree?.nodes.map(node => node.spotId) ?? [];
-  if ((await planSpotNames(db, ids, true)).size !== ids.length) throw new TripError("Choose active destinations with active cities and regions for every route branch.");
+  if ((await planSpotNames(db, ids, true)).size !== ids.length) throw new TripError("Choose active destinations with active cities, states and regions for every route branch.");
 }
 export async function resolvePrivatePackage(input: { packageId?: unknown; packageSlug?: unknown; guidedPath?: unknown }, db: Db = getPool(), lock = false) {
   const id = typeof input.packageId === "number" && Number.isSafeInteger(input.packageId) && input.packageId > 0 && input.packageId <= 2147483647 ? input.packageId : null;

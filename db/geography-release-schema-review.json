@@ -1,0 +1,181 @@
+{
+  "approvedAt": "2026-11-16",
+  "migration": "033_normalise_geography_states.sql",
+  "columns": [
+    {
+      "key": "cities.state_id",
+      "definition": {
+        "type": "integer",
+        "notNull": true,
+        "default": null,
+        "identity": "",
+        "generated": "",
+        "collation": null
+      }
+    },
+    {
+      "key": "states.created_at",
+      "definition": {
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "default": "now()",
+        "identity": "",
+        "generated": "",
+        "collation": null
+      }
+    },
+    {
+      "key": "states.created_by",
+      "definition": {
+        "type": "uuid",
+        "notNull": false,
+        "default": null,
+        "identity": "",
+        "generated": "",
+        "collation": null
+      }
+    },
+    {
+      "key": "states.display_order",
+      "definition": {
+        "type": "integer",
+        "notNull": true,
+        "default": "0",
+        "identity": "",
+        "generated": "",
+        "collation": null
+      }
+    },
+    {
+      "key": "states.is_active",
+      "definition": {
+        "type": "boolean",
+        "notNull": true,
+        "default": "true",
+        "identity": "",
+        "generated": "",
+        "collation": null
+      }
+    },
+    {
+      "key": "states.is_deleted",
+      "definition": {
+        "type": "boolean",
+        "notNull": true,
+        "default": "false",
+        "identity": "",
+        "generated": "",
+        "collation": null
+      }
+    },
+    {
+      "key": "states.name",
+      "definition": {
+        "type": "character varying(100)",
+        "notNull": true,
+        "default": null,
+        "identity": "",
+        "generated": "",
+        "collation": "\"default\""
+      }
+    },
+    {
+      "key": "states.region_id",
+      "definition": {
+        "type": "integer",
+        "notNull": true,
+        "default": null,
+        "identity": "",
+        "generated": "",
+        "collation": null
+      }
+    },
+    {
+      "key": "states.state_id",
+      "definition": {
+        "type": "integer",
+        "notNull": true,
+        "default": "nextval('public.states_state_id_seq'::regclass)",
+        "identity": "",
+        "generated": "",
+        "collation": null
+      }
+    },
+    {
+      "key": "states.updated_at",
+      "definition": {
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "default": "now()",
+        "identity": "",
+        "generated": "",
+        "collation": null
+      }
+    },
+    {
+      "key": "states.updated_by",
+      "definition": {
+        "type": "uuid",
+        "notNull": false,
+        "default": null,
+        "identity": "",
+        "generated": "",
+        "collation": null
+      }
+    }
+  ],
+  "differences": [
+    "tables: unexpected states",
+    "columns: changed regions.state",
+    "columns: unexpected cities.state_id",
+    "columns: unexpected states.created_at",
+    "columns: unexpected states.created_by",
+    "columns: unexpected states.display_order",
+    "columns: unexpected states.is_active",
+    "columns: unexpected states.is_deleted",
+    "columns: unexpected states.name",
+    "columns: unexpected states.region_id",
+    "columns: unexpected states.state_id",
+    "columns: unexpected states.updated_at",
+    "columns: unexpected states.updated_by",
+    "constraints: unexpected cities.cities_state_id_fkey",
+    "constraints: unexpected cities.cities_state_id_not_null",
+    "constraints: unexpected states.states_created_at_not_null",
+    "constraints: unexpected states.states_created_by_fkey",
+    "constraints: unexpected states.states_display_order_not_null",
+    "constraints: unexpected states.states_is_active_not_null",
+    "constraints: unexpected states.states_is_deleted_not_null",
+    "constraints: unexpected states.states_name_check",
+    "constraints: unexpected states.states_name_not_null",
+    "constraints: unexpected states.states_pkey",
+    "constraints: unexpected states.states_region_id_fkey",
+    "constraints: unexpected states.states_region_id_not_null",
+    "constraints: unexpected states.states_state_id_not_null",
+    "constraints: unexpected states.states_updated_at_not_null",
+    "constraints: unexpected states.states_updated_by_fkey",
+    "indexes: unexpected idx_cities_state",
+    "indexes: unexpected idx_states_region",
+    "indexes: unexpected states_pkey",
+    "indexes: unexpected uq_cities_parent_name",
+    "indexes: unexpected uq_regions_name",
+    "indexes: unexpected uq_spots_parent_name",
+    "indexes: unexpected uq_states_parent_name",
+    "triggers: changed cities.trg_cities_order_ins",
+    "triggers: changed cities.trg_cities_order_upd_del",
+    "triggers: unexpected cities.trg_cities_derive_region",
+    "triggers: unexpected regions.trg_regions_legacy_state",
+    "triggers: unexpected states.trg_states_order_ins",
+    "triggers: unexpected states.trg_states_order_upd_del",
+    "triggers: unexpected states.trg_states_region",
+    "triggers: unexpected states.trg_states_updated_at",
+    "functions: unexpected derive_city_region()",
+    "functions: unexpected geography_name_key(value text)",
+    "functions: unexpected legacy_region_state_insert()",
+    "functions: unexpected propagate_state_region()",
+    "sequences: unexpected states_state_id_seq",
+    "grants: unexpected states:neondb_owner",
+    "grants: unexpected states_state_id_seq:neondb_owner"
+  ],
+  "source": "User explicitly approved exact State table/city FK names and types in chat",
+  "existingIdsPreserved": true
+}
