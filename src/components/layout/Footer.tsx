@@ -90,7 +90,8 @@ export default function Footer({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
           <p>
             © {new Date().getFullYear()} {site.name}. All rights reserved.
           </p>
-          <div className="flex gap-5">
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+            <Link href="/image-credits" className="hover:text-accent-400">Photo credits</Link>
             <Link href="/privacy" className="hover:text-accent-400">
               Privacy Policy
             </Link>

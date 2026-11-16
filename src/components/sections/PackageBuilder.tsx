@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useId, useState } from "react";
 import Image from "next/image";
+import { isDestinationPhoto } from "@/lib/destination-photo";
 import Select from "@/components/controls/Select";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -238,6 +239,7 @@ function RouteBuilder({
                 <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg">
                   <Image
                     src={spot.imageUrl}
+                    unoptimized={isDestinationPhoto(spot.imageUrl)}
                     alt={spot.name}
                     fill
                     sizes="64px"

@@ -69,7 +69,7 @@ test("backgrounds, lengths and nested item types are bounded", () => {
   ]) { const doc = cmsDefaultDocument("services"); mutate(doc); assert.throws(() => validateCmsDocument(doc)); }
 });
 test("application paths cannot be claimed by custom pages", () => {
-  for (const slug of ["admin", "api", "vehicles", "booking", "profile", "cms-preview", "login", "../about", "test/page", "Home", "__proto__"]) assert.throws(() => validateCmsSlug(slug));
+  for (const slug of ["admin", "api", "vehicles", "booking", "profile", "cms-preview", "login", "image-credits", "../about", "test/page", "Home", "__proto__"]) assert.throws(() => validateCmsSlug(slug));
   assert.equal(validateCmsSlug("our-services"), "our-services");
 });
 test("unsafe links and untrusted image origins are refused", () => {

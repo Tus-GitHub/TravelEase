@@ -105,7 +105,7 @@ export class CmsError extends Error {
   status: number;
   constructor(message: string, status = 400) { super(message); this.name = "CmsError"; this.status = status; }
 }
-const reserved = new Set(["api", "admin", "auth", "login", "signup", "forgot-password", "reset-password", "verify-email", "logout", "profile", "drive", "vehicles", "packages", "weekend-trips", "booking", "hotels", "contact", "help", "terms", "privacy", "policy", "cms-preview", "favicon", "robots", "sitemap", "_next", "images"]);
+const reserved = new Set(["api", "admin", "auth", "login", "signup", "forgot-password", "reset-password", "verify-email", "logout", "profile", "drive", "vehicles", "packages", "weekend-trips", "booking", "hotels", "contact", "help", "terms", "privacy", "policy", "cms-preview", "favicon", "robots", "sitemap", "_next", "images", "image-credits"]);
 export const cmsPath = (slug: string) => slug === "home" ? "/" : `/${slug}`;
 export function validateCmsSlug(value: unknown): string {
   if (typeof value !== "string" || value.length > 160 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) || reserved.has(value)) throw new CmsError("Choose a page address using lowercase letters, numbers and hyphens. This address may be reserved.");

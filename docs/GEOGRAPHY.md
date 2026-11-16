@@ -108,3 +108,36 @@ active flags and deleted entries are preserved, with no automatic merge, rename
 or reparent. Inactive parents are not silently reactivated. A repeated import
 adds nothing and produces no extra audit entry. New cities are geography entries,
 not advertised pickup coverage. No package, price, hotel or departure is created.
+
+## Expanded places and real photographs
+
+The optional `--expanded` catalogue contains60 cities and180 tourist places,
+including all identities from the24-city starter catalogue. It adds36 cities
+and132 places to an unchanged starter import. Source-backed geographic anchors
+and aliases remain versioned; city names use the current Sri Vijaya Puram and
+Chhatrapati Sambhajinagar names, retaining Port Blair/Aurangabad matching aliases.
+
+```powershell
+node --experimental-strip-types --env-file=.env.local db/seed-india-tourist-places.mjs --expanded --production
+```
+
+Use the existing dry-run, `--verify-rollback` and `--apply` modes. Existing place
+names, parents, coordinates, visibility and IDs are preserved. Photos are filled
+only when the current image is empty or the exact starter illustration; an admin's
+custom image is never overwritten. A conditional update plus the existing catalogue
+lock protects simultaneous photo edits. Successful changes produce one audit entry;
+repeating the same import changes nothing.
+
+The180 photos are individually credited at `/image-credits`, linked in the footer,
+builder and selected-place preview. The page lists each author, original source,
+license and resizing/format changes. The original sources are Wikimedia Commons
+files with reviewed CC BY, CC BY-SA, CC0 or public-domain metadata. The adapted
+photographs retain their stated license. No image-service subscription is needed.
+
+Compressed, content-addressed WebP files live under `public/images/destinations/`.
+They are static deployment assets rather than database blobs or function files.
+The collection is bounded below16MB; ordinary lazily loaded images and these
+already compressed files bypass further Vercel image transformations. The homepage
+shows a representative set of map pins; typing and Show more expose every published
+city/place. The selected-place preview uses contain-fit to show the whole picture.
+Admins can replace a place's photo through Geography's existing image uploader.
