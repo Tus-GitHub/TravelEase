@@ -133,7 +133,7 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
           >
             {heroStats.map((s, i) => (
               <div key={i}>
-                <dt className="font-display text-stat">{s.value}</dt>
+                <dt className="font-display text-xl font-semibold sm:text-2xl">{s.value}</dt>
                 <dd className={`mt-1 text-xs uppercase tracking-wide ${muted}`}>{s.label}</dd>
               </div>
             ))}
