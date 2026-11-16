@@ -29,23 +29,25 @@ export function validateRouteTree(value: unknown): RouteTree {
   });
   const byId = new Map(nodes.map(node => [node.spotId, node]));
   if (byId.size !== nodes.length) throw new TripError("Use each destination once in a route tree.");
-  const parents = new Map<number, number>();
+  const parents = new Set<number>();
   for (const node of nodes) for (const next of node.next) {
     if (!byId.has(next) || next === node.spotId) throw new TripError("Every next choice must be another destination in this tree.");
-    parents.set(next, (parents.get(next) ?? 0) + 1);
-    if (parents.get(next)! > 1) throw new TripError("A destination can have one parent. Use separate package trees for different routes.");
+    parents.add(next);
   }
   if (roots.some(id => !byId.has(id) || parents.has(id))) throw new TripError("Starting points must exist and cannot follow another destination.");
-  const visited = new Set<number>(), visiting = new Set<number>();
-  function visit(id: number, nights: number) {
+  const longest = new Map<number, number>(), visiting = new Set<number>();
+  function visit(id: number): number {
     if (visiting.has(id)) throw new TripError("Remove the loop from the route tree.");
-    const node = byId.get(id)!; nights += node.nights;
-    if (nights > 13) throw new TripError("A route may include at most thirteen nights.");
+    if (longest.has(id)) return longest.get(id)!;
+    const node = byId.get(id)!;
     if (!node.next.length && !node.canFinish) throw new TripError("A final destination must allow the customer to finish their route.");
-    visiting.add(id); visited.add(id); for (const next of node.next) visit(next, nights); visiting.delete(id);
+    visiting.add(id);
+    const nights = node.nights + Math.max(0, ...node.next.map(visit));
+    if (nights > 13) throw new TripError("A route may include at most thirteen nights.");
+    visiting.delete(id); longest.set(id, nights); return nights;
   }
-  roots.forEach(id => visit(id, 0));
-  if (visited.size !== nodes.length) throw new TripError("Connect every destination to a starting point; remove disconnected branches or loops.");
+  roots.forEach(id => visit(id));
+  if (longest.size !== nodes.length) throw new TripError("Connect every destination to a starting point; remove disconnected branches or loops.");
   return { roots, nodes };
 }
 export function validatePackageContent(value: unknown): PackageContent | null {
@@ -56,14 +58,22 @@ export function validatePackageContent(value: unknown): PackageContent | null {
   return { ...base, version: 1, guideIncluded: base.guideIncluded ?? false, ...(data.routeTree ? { routeTree: validateRouteTree(data.routeTree) } : {}) };
 }
 export function routeRange(tree: RouteTree, basePrice: number) {
-  const byId = new Map(tree.nodes.map(node => [node.spotId, node])), days: number[] = [], prices: number[] = [];
-  function visit(id: number, nights: number, price: number) {
-    const node = byId.get(id)!; nights += node.nights; price += node.extraPricePerPerson;
-    if (node.canFinish) { days.push(nights + 1); prices.push(Math.round(price * 100) / 100); }
-    node.next.forEach(next => visit(next, nights, price));
+  const byId = new Map(tree.nodes.map(node => [node.spotId, node]));
+  const memo = new Map<number, { minNights: number; maxNights: number; minExtra: number }>();
+  function visit(id: number) {
+    if (memo.has(id)) return memo.get(id)!;
+    const node = byId.get(id)!;
+    const range = { minNights: node.canFinish ? node.nights : Infinity, maxNights: node.canFinish ? node.nights : -Infinity, minExtra: node.canFinish ? node.extraPricePerPerson : Infinity };
+    for (const next of node.next) {
+      const child = visit(next);
+      range.minNights = Math.min(range.minNights, node.nights + child.minNights);
+      range.maxNights = Math.max(range.maxNights, node.nights + child.maxNights);
+      range.minExtra = Math.min(range.minExtra, node.extraPricePerPerson + child.minExtra);
+    }
+    memo.set(id, range); return range;
   }
-  tree.roots.forEach(id => visit(id, 0, basePrice));
-  return { minDays: days.length ? Math.min(...days) : 0, maxDays: days.length ? Math.max(...days) : 0, minPrice: prices.length ? Math.min(...prices) : 0 };
+  const ranges = tree.roots.map(visit), minNights = Math.min(...ranges.map(range => range.minNights));
+  return Number.isFinite(minNights) ? { minDays: minNights + 1, maxDays: Math.max(...ranges.map(range => range.maxNights)) + 1, minPrice: Math.round((basePrice + Math.min(...ranges.map(range => range.minExtra))) * 100) / 100 } : { minDays: 0, maxDays: 0, minPrice: 0 };
 }
 export function packagePlanDays(content: PackageContent | null | undefined, mode: string, price: number, duration: number) {
   if (!content) return duration;
@@ -89,10 +99,10 @@ export function selectPackageRoute(tree: RouteTree, value: unknown, basePrice: n
 }
 /** Hide branches without active destinations and a reachable admin-approved finish. */
 export function availableRouteTree(tree: RouteTree, active: Set<number>): RouteTree {
-  const byId = new Map(tree.nodes.map(node => [node.spotId, node])), viable = new Set<number>();
-  function keep(id: number): boolean { const node = byId.get(id)!; const descendants = node.next.map(keep); if (active.has(id) && (node.canFinish || descendants.some(Boolean))) { viable.add(id); return true; } return false; }
+  const byId = new Map(tree.nodes.map(node => [node.spotId, node])), viable = new Map<number, boolean>();
+  function keep(id: number): boolean { if (viable.has(id)) return viable.get(id)!; const node = byId.get(id)!; const descendants = node.next.map(keep); const allowed = active.has(id) && (node.canFinish || descendants.some(Boolean)); viable.set(id, allowed); return allowed; }
   const roots = tree.roots.filter(keep), reachable = new Set<number>();
-  function walk(id: number) { if (!viable.has(id)) return; reachable.add(id); byId.get(id)!.next.forEach(walk); }
+  function walk(id: number) { if (!viable.get(id) || reachable.has(id)) return; reachable.add(id); byId.get(id)!.next.forEach(walk); }
   roots.forEach(walk);
   return { roots, nodes: tree.nodes.filter(node => reachable.has(node.spotId)).map(node => ({ ...node, next: node.next.filter(id => reachable.has(id)) })) };
 }

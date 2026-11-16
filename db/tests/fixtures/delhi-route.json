@@ -1,0 +1,614 @@
+{
+  "testOnly": true,
+  "description": "Owned Delhi branching/joining regression fixture; rates are fictional and are never published as live offers.",
+  "basePrice": 2000,
+  "places": [
+    {
+      "id": 1,
+      "name": "Delhi"
+    },
+    {
+      "id": 2,
+      "name": "Chandigarh"
+    },
+    {
+      "id": 3,
+      "name": "Shimla"
+    },
+    {
+      "id": 4,
+      "name": "Dehradun"
+    },
+    {
+      "id": 5,
+      "name": "Jaipur"
+    },
+    {
+      "id": 6,
+      "name": "Agra"
+    },
+    {
+      "id": 7,
+      "name": "Amritsar"
+    },
+    {
+      "id": 8,
+      "name": "Nainital"
+    },
+    {
+      "id": 9,
+      "name": "Dharamshala"
+    },
+    {
+      "id": 10,
+      "name": "Manali"
+    },
+    {
+      "id": 11,
+      "name": "Kufri"
+    },
+    {
+      "id": 12,
+      "name": "Mussoorie"
+    },
+    {
+      "id": 13,
+      "name": "Rishikesh"
+    },
+    {
+      "id": 14,
+      "name": "Pushkar"
+    },
+    {
+      "id": 15,
+      "name": "Udaipur"
+    },
+    {
+      "id": 16,
+      "name": "Jodhpur"
+    },
+    {
+      "id": 17,
+      "name": "Mathura"
+    },
+    {
+      "id": 18,
+      "name": "Varanasi"
+    },
+    {
+      "id": 19,
+      "name": "Ranikhet"
+    },
+    {
+      "id": 20,
+      "name": "Jim Corbett"
+    },
+    {
+      "id": 21,
+      "name": "Dalhousie"
+    },
+    {
+      "id": 22,
+      "name": "Kasol"
+    },
+    {
+      "id": 23,
+      "name": "Solang Valley"
+    },
+    {
+      "id": 24,
+      "name": "Narkanda"
+    },
+    {
+      "id": 25,
+      "name": "Chakrata"
+    },
+    {
+      "id": 26,
+      "name": "Haridwar"
+    },
+    {
+      "id": 27,
+      "name": "Devprayag"
+    },
+    {
+      "id": 28,
+      "name": "Mount Abu"
+    },
+    {
+      "id": 29,
+      "name": "Jaisalmer"
+    },
+    {
+      "id": 30,
+      "name": "Vrindavan"
+    },
+    {
+      "id": 31,
+      "name": "Sarnath"
+    },
+    {
+      "id": 32,
+      "name": "Manikaran"
+    }
+  ],
+  "tree": {
+    "roots": [
+      1
+    ],
+    "nodes": [
+      {
+        "spotId": 1,
+        "next": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 0,
+        "description": "Owned test visit to Delhi",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 2,
+        "next": [
+          3,
+          10,
+          9
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 200,
+        "description": "Owned test visit to Chandigarh",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 3,
+        "next": [
+          10,
+          11
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 300,
+        "description": "Owned test visit to Shimla",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 4,
+        "next": [
+          12,
+          13
+        ],
+        "nights": 1,
+        "extraPricePerPerson": 400,
+        "description": "Owned test visit to Dehradun",
+        "meals": {
+          "breakfast": 1,
+          "lunch": 0,
+          "dinner": 1
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 5,
+        "next": [
+          14,
+          15,
+          16
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 500,
+        "description": "Owned test visit to Jaipur",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 6,
+        "next": [
+          17,
+          18
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 600,
+        "description": "Owned test visit to Agra",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 7,
+        "next": [
+          9
+        ],
+        "nights": 1,
+        "extraPricePerPerson": 0,
+        "description": "Owned test visit to Amritsar",
+        "meals": {
+          "breakfast": 1,
+          "lunch": 0,
+          "dinner": 1
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 8,
+        "next": [
+          19,
+          20
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 100,
+        "description": "Owned test visit to Nainital",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 9,
+        "next": [
+          21,
+          10
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 200,
+        "description": "Owned test visit to Dharamshala",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 10,
+        "next": [
+          22,
+          23
+        ],
+        "nights": 1,
+        "extraPricePerPerson": 300,
+        "description": "Owned test visit to Manali",
+        "meals": {
+          "breakfast": 1,
+          "lunch": 0,
+          "dinner": 1
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 11,
+        "next": [
+          24
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 400,
+        "description": "Owned test visit to Kufri",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 12,
+        "next": [
+          25
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 500,
+        "description": "Owned test visit to Mussoorie",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 13,
+        "next": [
+          26,
+          27
+        ],
+        "nights": 1,
+        "extraPricePerPerson": 600,
+        "description": "Owned test visit to Rishikesh",
+        "meals": {
+          "breakfast": 1,
+          "lunch": 0,
+          "dinner": 1
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 14,
+        "next": [
+          15
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 0,
+        "description": "Owned test visit to Pushkar",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 15,
+        "next": [
+          28
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 100,
+        "description": "Owned test visit to Udaipur",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 16,
+        "next": [
+          29
+        ],
+        "nights": 1,
+        "extraPricePerPerson": 200,
+        "description": "Owned test visit to Jodhpur",
+        "meals": {
+          "breakfast": 1,
+          "lunch": 0,
+          "dinner": 1
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 17,
+        "next": [
+          30
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 300,
+        "description": "Owned test visit to Mathura",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 18,
+        "next": [
+          31
+        ],
+        "nights": 0,
+        "extraPricePerPerson": 400,
+        "description": "Owned test visit to Varanasi",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 19,
+        "next": [],
+        "nights": 1,
+        "extraPricePerPerson": 500,
+        "description": "Owned test visit to Ranikhet",
+        "meals": {
+          "breakfast": 1,
+          "lunch": 0,
+          "dinner": 1
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 20,
+        "next": [],
+        "nights": 0,
+        "extraPricePerPerson": 600,
+        "description": "Owned test visit to Jim Corbett",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 21,
+        "next": [],
+        "nights": 0,
+        "extraPricePerPerson": 0,
+        "description": "Owned test visit to Dalhousie",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 22,
+        "next": [
+          32
+        ],
+        "nights": 1,
+        "extraPricePerPerson": 100,
+        "description": "Owned test visit to Kasol",
+        "meals": {
+          "breakfast": 1,
+          "lunch": 0,
+          "dinner": 1
+        },
+        "canFinish": false
+      },
+      {
+        "spotId": 23,
+        "next": [],
+        "nights": 0,
+        "extraPricePerPerson": 200,
+        "description": "Owned test visit to Solang Valley",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 24,
+        "next": [],
+        "nights": 0,
+        "extraPricePerPerson": 300,
+        "description": "Owned test visit to Narkanda",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 25,
+        "next": [],
+        "nights": 1,
+        "extraPricePerPerson": 400,
+        "description": "Owned test visit to Chakrata",
+        "meals": {
+          "breakfast": 1,
+          "lunch": 0,
+          "dinner": 1
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 26,
+        "next": [],
+        "nights": 0,
+        "extraPricePerPerson": 500,
+        "description": "Owned test visit to Haridwar",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 27,
+        "next": [],
+        "nights": 0,
+        "extraPricePerPerson": 600,
+        "description": "Owned test visit to Devprayag",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 28,
+        "next": [],
+        "nights": 1,
+        "extraPricePerPerson": 0,
+        "description": "Owned test visit to Mount Abu",
+        "meals": {
+          "breakfast": 1,
+          "lunch": 0,
+          "dinner": 1
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 29,
+        "next": [],
+        "nights": 0,
+        "extraPricePerPerson": 100,
+        "description": "Owned test visit to Jaisalmer",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 30,
+        "next": [],
+        "nights": 0,
+        "extraPricePerPerson": 200,
+        "description": "Owned test visit to Vrindavan",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 31,
+        "next": [],
+        "nights": 1,
+        "extraPricePerPerson": 300,
+        "description": "Owned test visit to Sarnath",
+        "meals": {
+          "breakfast": 1,
+          "lunch": 0,
+          "dinner": 1
+        },
+        "canFinish": true
+      },
+      {
+        "spotId": 32,
+        "next": [],
+        "nights": 0,
+        "extraPricePerPerson": 400,
+        "description": "Owned test visit to Manikaran",
+        "meals": {
+          "breakfast": 0,
+          "lunch": 0,
+          "dinner": 0
+        },
+        "canFinish": true
+      }
+    ]
+  }
+}

@@ -1,5 +1,39 @@
 # Deploying TravelEase (free)
 
+## Delhi-style routes with shared destinations — 17 November 2026
+
+The existing destination tree now allows joining branches. For example, both
+Delhi → Chandigarh → Manali and Delhi → Shimla → Manali can be configured in
+one package. Add Manali once, then enable it as an allowed next stop for both
+Chandigarh and Shimla. Its onward choices, nights, meals, stay and extra price
+are shared; the selected trip visits/charges that stop once. Different stop
+plans or prices require separate packages. Customers still see only their
+current stop's permitted next choices and can rewind without stale selections.
+
+Cycles, repeated stops in a selected route, disconnected destinations, duplicate
+IDs/connections and invalid starting points remain blocked. The existing bounds
+remain 32 destinations, 8 starting points, 8 next choices per stop and 13 nights
+per route. Independent starts may join a common destination; a starting point
+cannot also follow another stop. Validation, public duration/price ranges and
+inactive-destination pruning process each destination/connection without
+enumerating every possible route. Shared stops remain available through other
+active parents when one incoming branch becomes unavailable.
+
+Admin's preview draws each destination once, including joining arrows and an
+incoming-route count. Inspect a stop to highlight its connections; use zoom,
+Fit route preview, Reset preview and bounded scrolling for larger plans. Large
+graphs initially fit the preview; incomplete/cyclic drafts stay drawable while
+validation blocks saving them. Guest inclusions and the existing trusted quote,
+availability, changed-plan review and frozen booking snapshot remain authoritative.
+
+Run `npm run test:package-plans` and `npm run test:shared-route-db`. The latter
+requires explicitly separate development/production URLs, creates an owned
+32-stop Delhi example inside one development transaction, exercises real public
+catalogue and checkout-resolution SQL, then rolls back every fixture. It sends
+no mail and creates no booking or live offer. Optional local test output uses
+`SHARED_ROUTE_TEST_OUTPUT`; never publish those fictional rates as inventory.
+No schema migration, new map/image service, dependency or billing is required.
+
 ## Guided custom trips and grouped admin navigation — 17 November 2026
 
 **Create Package** now follows the package's existing admin-configured destination

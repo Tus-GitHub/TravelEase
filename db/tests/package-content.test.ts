@@ -24,13 +24,12 @@ test("missing/inactive destinations and forged or repeated path nodes cannot be 
   assert.throws(() => selectPackageRoute(tree(), [1, 2, 4], 1000, new Map([[1, "Start"], [2, "Next"]])));
   for (const value of [[1, 2, 2, 4], [1, "2", 4], [], [1, 99]]) assert.throws(() => selectPackageRoute(tree(), value, 1000, names));
 });
-test("route validation rejects loops, disconnected branches, duplicate nodes, multiple parents and unreachable finishes", () => {
+test("route validation rejects loops, disconnected branches, duplicate nodes and unreachable finishes", () => {
   const bad = [
     { roots: [1], nodes: [node(1, [2]), node(2, [1])] },
     { roots: [1], nodes: [node(1), node(2)] },
     { roots: [1], nodes: [node(1, [1])] },
     { roots: [1], nodes: [node(1), node(1)] },
-    { roots: [1], nodes: [node(1, [2, 3]), node(2, [4]), node(3, [4]), node(4)] },
     { roots: [1], nodes: [{ ...node(1), canFinish: false }] },
     { roots: [1], nodes: [{ ...node(1, [2]), nights: 13 }, { ...node(2), nights: 1 }] },
   ];
