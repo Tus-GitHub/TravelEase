@@ -187,7 +187,7 @@ function VehiclesTab() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-muted">{r.items.length} vehicles in the fleet</p>
+        <p className="text-sm text-muted">{r.items.length} vehicles</p>
         <Button
           variant="accent"
           size="sm"
@@ -423,8 +423,8 @@ export default function AdminVehiclesPage() {
   return (
     <div>
       <AdminPageHeader className="mb-6">
-        <h1 className="text-2xl font-bold text-fg">Fleet</h1>
-        <p className="text-sm text-muted">Manage your fleet. Choose Edit to update vehicle details, photos and the main image.</p>
+        <h1 className="text-2xl font-bold text-fg">Vehicle</h1>
+        <p className="text-sm text-muted">Manage your vehicles. Choose Edit to update vehicle details, photos and the main image.</p>
       </AdminPageHeader>
 
       <AdminTabs

@@ -1,5 +1,6 @@
 "use client";
 import Select from "@/components/controls/Select";
+import RouteTreePreview from "./RouteTreePreview";
 
 import { useMemo, useState } from "react";
 import Button from "@/components/common/Button";
@@ -34,7 +35,6 @@ export default function PackagePlanEditor({value,onChange,spots}:{value:PackageC
   const setTree=(next:RouteTree)=>patch({routeTree:next});
   const editNode=(id:number,changes:Partial<RouteNode>)=>{if(tree)setTree({...tree,nodes:tree.nodes.map(node=>node.spotId===id?{...node,...changes}:node)});};
   let treeError="";if(tree){try{validateRouteTree(tree);}catch(error){treeError=(error as Error).message;}}
-  function preview(id:number,path:number[]=[]):React.ReactNode { const node=tree?.nodes.find(node=>node.spotId===id);if(!node||path.includes(id)||path.length>32)return <li key={id} className="text-red-600">Check this branch for a missing destination or loop.</li>;return <li key={id} className="space-y-1"><span className="font-medium">{names.get(id)??"Unavailable destination"}</span><span className="text-muted"> · {node.nights} nights · +₹{node.extraPricePerPerson}/person{node.canFinish?" · may finish here":""}</span>{node.next.length>0&&<ul className="space-y-2 border-l border-line pl-4">{node.next.map(next=>preview(next,[...path,id]))}</ul>}</li>;}
   return <section className="space-y-5 rounded-2xl border border-line p-4 sm:p-5"><h3 className="text-lg font-semibold">Reusable package plan</h3>
     <label className="block text-sm">Short introduction<textarea aria-label="Short introduction" rows={2} maxLength={500} value={value.summary} onChange={e=>patch({summary:e.target.value})} className={`mt-1 ${field}`}/></label>
     <label className="block text-sm">Trip description<textarea aria-label="Trip description" rows={3} maxLength={6000} value={value.description} onChange={e=>patch({description:e.target.value})} className={`mt-1 ${field}`}/></label>
@@ -55,7 +55,7 @@ export default function PackagePlanEditor({value,onChange,spots}:{value:PackageC
         <Button type="button" variant="ghost" size="sm" onClick={()=>setTree({roots:tree.roots.filter(id=>id!==node.spotId),nodes:tree.nodes.filter(other=>other.spotId!==node.spotId).map(other=>({...other,next:other.next.filter(id=>id!==node.spotId)}))})}>Remove {names.get(node.spotId)}</Button>
       </div></details>)}
       {treeError&&<p role="status" className="text-sm text-amber-700 dark:text-amber-300">Finish setting up the tree: {treeError}</p>}
-      <div className="rounded-xl bg-surface-muted p-4"><h4 className="font-semibold">Route tree preview</h4><ul aria-label="Route tree preview" className="mt-3 space-y-3 text-sm">{tree.roots.map(id=>preview(id))}</ul></div>
+      <RouteTreePreview tree={tree} names={names}/>
     </div>:<div className="space-y-4"><h4 className="font-semibold">Day-by-day itinerary</h4>{value.itinerary.map((day,i)=><fieldset key={i} className="space-y-3 rounded-xl border border-line p-4"><legend className="px-1 font-semibold">Day {i+1}</legend><label className="block text-sm">Day title<input aria-label={`Day ${i+1} title`} maxLength={200} required value={day.title} onChange={e=>patch({itinerary:value.itinerary.map((d,j)=>j===i?{...d,title:e.target.value}:d)})} className={`mt-1 ${field}`}/></label><label className="block text-sm">Day plan<textarea aria-label={`Day ${i+1} plan`} maxLength={4000} rows={3} value={day.description} onChange={e=>patch({itinerary:value.itinerary.map((d,j)=>j===i?{...d,description:e.target.value}:d)})} className={`mt-1 ${field}`}/></label><DayPlanExtras label={`Day ${i+1}`} value={day} onChange={extras=>patch({itinerary:value.itinerary.map((d,j)=>j===i?{...d,...extras}:d)})}/>{value.itinerary.length>1&&<Button type="button" variant="ghost" size="sm" onClick={()=>patch({itinerary:value.itinerary.filter((_,j)=>j!==i).map((d,j)=>({...d,day:j+1}))})}>Remove day {i+1}</Button>}</fieldset>)}<Button type="button" variant="outline" disabled={value.itinerary.length>=14} onClick={()=>patch({itinerary:[...value.itinerary,{day:value.itinerary.length+1,title:`Day ${value.itinerary.length+1}`,description:"",meals:[]}]})}>Add itinerary day</Button><p className="text-xs text-muted">Include a checkout / return day after the final hotel night. Shared departures copy this plan; hotel dates, rooms and confirmations are reviewed for each departure.</p></div>}
   </section>;
 }

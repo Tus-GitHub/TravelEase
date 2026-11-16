@@ -2,6 +2,7 @@ import { getPool } from "./db";
 import { validatePackageContent, availableRouteTree, routeRange, type PackageContent } from "../package-content";
 import { planSpotNames } from "./package-plan";
 import { unavailableVehicleIds } from "./availability";
+import { regionPhoto } from "../region-photo";
 import type { Vehicle, TravelPackage, PackageTag, Region } from "@/types";
 
 /**
@@ -206,6 +207,7 @@ export interface PublicPackageStop {
 }
 
 export interface PublicPackage {
+  guidedPlan?: TravelPackage["guidedPlan"];
   destinationIds?: number[];
   isGuided: boolean;
   isBookable: boolean;
@@ -301,6 +303,7 @@ function toPublicPackage(r: PackageRow, stops: PublicPackageStop[], names: Map<n
   if (content?.routeTree) content = { ...content, routeTree: availableRouteTree(content.routeTree, new Set(names.keys())) };
   const range = content?.routeTree ? routeRange(content.routeTree, Number(r.price_per_person)) : null;
   return {
+    ...(content?.routeTree ? { guidedPlan: { content, basePricePerPerson: Number(r.price_per_person), destinations: content.routeTree.nodes.map(node => ({ id: node.spotId, name: names.get(node.spotId)! })) } } : {}),
     isGuided, isBookable: !invalid && (isGuided ? Boolean(range?.minDays) : stops.every(stop=>names.has(stop.touristSpotId))),
     ...(range ? { durationMaxDays: range.maxDays } : {}),
     tripContent: includePlan ? content : null,
@@ -330,6 +333,7 @@ function toPublicPackage(r: PackageRow, stops: PublicPackageStop[], names: Map<n
 /** Adapt a PublicPackage to the `@/types` TravelPackage shape the cards render. */
 export function toCardPackage(p: PublicPackage): TravelPackage {
   return {
+    guidedPlan: p.guidedPlan,
     regionId: p.regionId,
     destinationIds: p.destinationIds ?? [],
     isGuided: p.isGuided,
@@ -422,7 +426,7 @@ export function toBuilderRegion(r: PublicRegion): Region {
     id: String(r.id),
     name: r.name,
     state: r.state,
-    imageUrl: r.imageUrl ?? PACKAGE_IMAGE_FALLBACK,
+    imageUrl: regionPhoto(r),
     spots: r.spots.map((s) => ({
       id: String(s.id),
       name: s.name,

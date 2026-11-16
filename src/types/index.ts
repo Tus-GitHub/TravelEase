@@ -133,6 +133,11 @@ export interface Region {
 export type PackageTag = "Popular" | "Best Value" | "Premium" | "Adventure";
 
 export interface TravelPackage {
+  guidedPlan?: {
+    content: import("@/lib/package-content").PackageContent;
+    basePricePerPerson: number;
+    destinations: { id: number; name: string }[];
+  };
   regionId?: number;
   destinationIds?: number[];
   isGuided?: boolean;

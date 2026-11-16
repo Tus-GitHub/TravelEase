@@ -9,38 +9,24 @@ import Icon from "@/components/common/Icon";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
 import type { AuthUser } from "@/context/AuthContext";
-import { useAdminPermissions, type AdminSection } from "@/context/AdminPermissionsContext";
-import type { IconName } from "@/types";
+import { useAdminPermissions } from "@/context/AdminPermissionsContext";
+import { adminNavigation, adminNavActive, type AdminNavGroup } from "@/lib/admin-navigation";
 
-const sectionNavItems: {
-  href: string;
-  label: string;
-  icon: IconName;
-  section: AdminSection | null;
-}[] = [
-  { href: "/admin", label: "Dashboard", icon: "grid", section: null },
-  { href: "/admin/analytics", label: "Analytics", icon: "chart", section: "analytics" },
-  { href: "/admin/bookings", label: "Bookings", icon: "calendar", section: "bookings" },
-  { href: "/admin/support", label: "Support", icon: "chat", section: "support" },
-  { href: "/admin/drivers", label: "Drivers", icon: "user", section: "drivers" },
-  { href: "/admin/coupons", label: "Coupons", icon: "tag", section: "coupons" },
-  { href: "/admin/reviews", label: "Reviews", icon: "star", section: "reviews" },
-  { href: "/admin/seasonal-pricing", label: "Seasonal", icon: "calendar", section: "seasonal" },
-  { href: "/admin/users", label: "Users", icon: "users", section: "users" },
-  { href: "/admin/vehicles", label: "Fleet", icon: "car", section: "vehicles" },
-  { href: "/admin/vendors", label: "Vendors", icon: "briefcase", section: "vendors" },
-  { href: "/admin/geography", label: "Geography", icon: "map-pin", section: "geography" },
-  { href: "/admin/packages", label: "Packages", icon: "tag", section: "packages" },
-  { href: "/admin/settings", label: "Site settings", icon: "headset", section: "settings" },
-  { href: "/admin/activity", label: "Activity log", icon: "clock", section: "activity" },
-];
+function AdminNavList({ groups, pathname, onNavigate }: { groups: AdminNavGroup[]; pathname: string; onNavigate?: () => void }) {
+  return <div className="space-y-5">{groups.map(group => <section key={group.label} aria-label={group.label}>
+    <h2 className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">{group.label}</h2>
+    <ul className="flex flex-col gap-1">{group.items.map(item => <li key={item.href}><Link href={item.href} onClick={onNavigate} aria-current={adminNavActive(pathname, item) ? "page" : undefined} className={"flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 " + (adminNavActive(pathname, item) ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white")}><Icon name={item.icon} className="h-5 w-5 shrink-0" /><span>{item.label}</span></Link></li>)}</ul>
+  </section>)}</div>;
+}
 
 export default function AdminSidebar({ user }: { user: AuthUser }) {
   const pathname = usePathname();
   const { logout } = useAuth();
   const { canAccess } = useAdminPermissions();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [interactive, setInteractive] = useState(false);
 
+  useEffect(() => { setInteractive(true); }, []);
   useEffect(() => { setIsMobileOpen(false); }, [pathname]);
   useEffect(() => {
     if (!isMobileOpen) return;
@@ -54,53 +40,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [isMobileOpen]);
 
-  const isActive = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
-
-  const visibleItems = sectionNavItems.filter(
-    (item) => item.section === null || canAccess(user.role, item.section),
-  );
-
-  if (user.role === "admin") visibleItems.push({ href: "/admin/pricing", label: "Car pricing", icon: "tag", section: "vehicles" });
-
-  const NavList = ({ onNavigate }: { onNavigate?: () => void }) => (
-    <ul className="flex flex-col gap-1">
-      {visibleItems.map((item) => (
-        <li key={item.href}>
-          <Link
-            href={item.href}
-            onClick={onNavigate}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-              isActive(item.href)
-                ? "bg-white/10 text-white"
-                : "text-white/70 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            <Icon name={item.icon} className="h-5 w-5" />
-            {item.label}
-          </Link>
-        </li>
-      ))}
-      {user.role === "admin" && <li><Link href="/admin/weekend-trips" onClick={onNavigate} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive("/admin/weekend-trips") || isActive("/admin/tour-guides") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"}`}><Icon name="calendar" className="h-5 w-5" />Weekend Trips</Link></li>}
-      {user.role === "admin" && <li><Link href="/admin/pages" onClick={onNavigate} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${isActive("/admin/pages") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"}`}><Icon name="bookmark" className="h-5 w-5" />Pages / CMS</Link></li>}
-      {user.role === "admin" && (
-        <li>
-          <Link
-            href="/admin/permissions"
-            onClick={onNavigate}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-              isActive("/admin/permissions")
-                ? "bg-white/10 text-white"
-                : "text-white/70 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            <Icon name="shield-check" className="h-5 w-5" />
-            Roles &amp; Permissions
-          </Link>
-        </li>
-      )}
-    </ul>
-  );
+  const groups = adminNavigation(user.role, canAccess);
 
   return (
     <>
@@ -112,6 +52,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
           <button data-ui-action=""
             id="admin-mobile-menu-trigger"
             type="button"
+            disabled={!interactive}
             onClick={() => setIsMobileOpen((v) => !v)}
             aria-label={isMobileOpen ? "Close menu" : "Open admin account and navigation"}
             aria-expanded={isMobileOpen}
@@ -131,7 +72,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
       >
         <div className="px-4 py-4">
           <div className="mb-4 border-b border-white/10 px-3 pb-4"><p className="truncate text-sm font-semibold text-white">{user.name}</p><p className="mt-1 truncate text-xs text-white/70">{user.email}</p><Link href="/profile" className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-white">My account</Link></div>
-          <NavList onNavigate={() => setIsMobileOpen(false)} />
+          <nav aria-label="Mobile admin navigation"><AdminNavList groups={groups} pathname={pathname} onNavigate={() => setIsMobileOpen(false)} /></nav>
           <div className="mt-4 border-t border-white/10 pt-4">
             <Link
               href="/"
@@ -161,8 +102,8 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
           </p>
         </div>
 
-        <nav className="admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
-          <NavList />
+        <nav aria-label="Admin navigation" className="admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
+          <AdminNavList groups={groups} pathname={pathname} />
         </nav>
 
         <div className="shrink-0 border-t border-white/10 pt-4">

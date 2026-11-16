@@ -1,5 +1,38 @@
 # Deploying TravelEase (free)
 
+## Guided custom trips and grouped admin navigation — 17 November 2026
+
+**Create Package** now follows the package's existing admin-configured destination
+tree directly, instead of offering arbitrary spots and a route optimiser. Choose
+a Region and a published guided package; a single starting point is preselected.
+Only the current stop's allowed next destinations are offered. Changing an earlier
+stop removes the later branch. Nights, included meals and per-person price update
+from the existing plan; checkout revalidates the real package, allowed path,
+vehicle, availability and final price. Existing saved itinerary endpoints remain
+compatible, but freeform routing is no longer the default custom-package UI.
+
+Set this up under **Admin → Trips & Packages → Packages & Routes**. Add/edit a
+private package, enable its reusable itinerary and “approved next destinations”,
+add the destinations, mark its starting point(s), connect each allowed next stop,
+and choose where customers may finish. Set actual nights, prices, meals, stays,
+guide/inclusion/exclusion details and activate the package. The visual tree
+preview shows all admin branches; customers see one decision at a time. A Region
+with no active, valid guided package shows an honest unpublished state, never
+fabricated connections, hotels or prices. A selected explorer place filters to
+plans that offer it. Vehicle-specific entry retains its chosen vehicle.
+
+Region covers use an uploaded Region photo first, otherwise a real active local
+destination photograph from that Region. The compressed licensed files are static
+app assets; no paid provider, map call, image transform or new storage is needed.
+Replace covers in **Admin → Destinations → Geography → Regions**.
+
+Desktop and mobile admin navigation share seven ordered groups: Overview,
+Trips & Packages, Bookings & Customers, Vehicles & Partners, Destinations,
+Pricing & Offers, Website & Settings. The same19 existing links, role grants and
+admin-only tools remain; empty groups are hidden for limited staff. Dashboard
+stays first, Car pricing sits beside Vehicle, and Pages / CMS sits with settings.
+No schema, migration, authentication or billing setting changes in this release.
+
 ## Empty returns and round-trip dates — 15 November 2026
 
 In **Admin → Car pricing**, edit an individual car's **Point to point** or

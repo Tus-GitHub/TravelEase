@@ -1,0 +1,9 @@
+.forest, .children { display: flex; flex-direction: column; gap: 1rem; margin: 0; padding: 0; list-style: none; }
+.forest { width: max-content; min-width: 100%; }
+.branch { position: relative; display: flex; align-items: center; min-width: 0; }
+.node { width: 10rem; flex-shrink: 0; border-width: 1px; border-radius: 1rem; padding: 1rem; overflow-wrap: anywhere; }
+.children { position: relative; padding-left: 2rem; margin-left: 2rem; }
+.children::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; border-left: 2px solid #0d9488; }
+.branch:has(> .children)::after { content: ""; width: 2rem; border-top: 2px solid #0d9488; position: absolute; left: 10rem; top: 50%; }
+.children > .branch::before { content: ""; width: 2rem; border-top: 2px solid #0d9488; position: absolute; right: 100%; top: 50%; }
+.children > .branch > .node::before { content: "→"; position: absolute; left: -.6rem; top: calc(50% - .75rem); color: #0d9488; font-size: 1.1rem; }
