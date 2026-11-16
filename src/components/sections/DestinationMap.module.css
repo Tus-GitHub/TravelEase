@@ -29,6 +29,11 @@
   user-select: none;
 }
 .regionButton { transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease; }
+.landmarkIcon { filter: drop-shadow(0 3px 7px rgb(0 0 0 / .3)); }
+.marker:hover .landmarkIcon, .marker:focus-visible .landmarkIcon { color: #fde68a !important; }
+.cityPanel { padding: 20px; border: 1px solid rgb(125 211 252 / .22); border-radius: 24px; background: radial-gradient(ellipse at 100% 0%, #204f65, transparent 80%), #0c2238; }
+.cityButton { transition: border-color 160ms ease, background-color 160ms ease; }
+.cityButton:hover { border-color: #fbbf24; background-color: rgb(251 191 36 / .06); }
 @media (hover: hover) and (pointer: fine) { .regionButton:hover { transform: translateY(-2px); } }
 @media (prefers-reduced-motion: reduce) {
   .regionButton { transition: none; }

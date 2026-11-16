@@ -1,0 +1,745 @@
+{
+  "verifiedOn": "2026-11-17",
+  "scope": "Curated geography master data, not packages, service coverage, ticket availability or a paid itinerary. Coordinates are approximate geographic anchors; the admin may refine them on the map.",
+  "cities": [
+    {
+      "name": "Delhi",
+      "state": "Delhi",
+      "aliases": [
+        "New Delhi"
+      ],
+      "latitude": 28.61,
+      "longitude": 77.23,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Delhi",
+      "source": "https://www.incredibleindia.gov.in/en/delhi/delhi",
+      "spots": [
+        {
+          "name": "India Gate",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Delhi.",
+          "latitude": 28.612864,
+          "longitude": 77.229306,
+          "coordinateSource": "https://en.wikipedia.org/wiki/India_Gate"
+        },
+        {
+          "name": "Red Fort",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Delhi.",
+          "latitude": 28.655833,
+          "longitude": 77.240833,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Red_Fort"
+        }
+      ]
+    },
+    {
+      "name": "Agra",
+      "state": "Uttar Pradesh",
+      "aliases": [],
+      "latitude": 27.18,
+      "longitude": 78.02,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Agra",
+      "source": "https://www.incredibleindia.gov.in/en/uttar-pradesh/agra",
+      "spots": [
+        {
+          "name": "Taj Mahal",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Agra.",
+          "latitude": 27.175,
+          "longitude": 78.0419,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Taj_Mahal"
+        },
+        {
+          "name": "Agra Fort",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Agra.",
+          "latitude": 27.179542,
+          "longitude": 78.021101,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Agra_Fort"
+        }
+      ]
+    },
+    {
+      "name": "Varanasi",
+      "state": "Uttar Pradesh",
+      "aliases": [
+        "Banaras",
+        "Benares"
+      ],
+      "latitude": 25.318889,
+      "longitude": 83.012778,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Varanasi",
+      "source": "https://www.incredibleindia.gov.in/en/uttar-pradesh/varanasi",
+      "spots": [
+        {
+          "name": "Dashashwamedh Ghat",
+          "aliases": [],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Varanasi.",
+          "latitude": 25.307169,
+          "longitude": 83.010336,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Dashashwamedh_Ghat"
+        },
+        {
+          "name": "Assi Ghat",
+          "aliases": [],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Varanasi.",
+          "latitude": 25.288648,
+          "longitude": 83.006762,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Assi_Ghat"
+        }
+      ]
+    },
+    {
+      "name": "Jaipur",
+      "state": "Rajasthan",
+      "aliases": [],
+      "latitude": 26.915,
+      "longitude": 75.82,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Jaipur",
+      "source": "https://www.incredibleindia.gov.in/en/rajasthan/jaipur",
+      "spots": [
+        {
+          "name": "Hawa Mahal",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Jaipur.",
+          "latitude": 26.9239,
+          "longitude": 75.8267,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Hawa_Mahal"
+        },
+        {
+          "name": "Amber Fort",
+          "aliases": [
+            "Amer Fort",
+            "Amer Palace"
+          ],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Jaipur.",
+          "latitude": 26.9859,
+          "longitude": 75.8507,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Amber_Fort"
+        }
+      ]
+    },
+    {
+      "name": "Udaipur",
+      "state": "Rajasthan",
+      "aliases": [],
+      "latitude": 24.58,
+      "longitude": 73.68,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Udaipur",
+      "source": "https://www.incredibleindia.gov.in/en/rajasthan/udaipur",
+      "spots": [
+        {
+          "name": "City Palace",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Udaipur.",
+          "latitude": 24.576,
+          "longitude": 73.683,
+          "coordinateSource": "https://en.wikipedia.org/wiki/City_Palace,_Udaipur"
+        },
+        {
+          "name": "Lake Pichola",
+          "aliases": [],
+          "tag": "Lake",
+          "description": "Explore the lakeside setting in or around Udaipur.",
+          "latitude": 24.572,
+          "longitude": 73.679,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Lake_Pichola"
+        }
+      ]
+    },
+    {
+      "name": "Manali",
+      "state": "Himachal Pradesh",
+      "aliases": [],
+      "latitude": 32.243177,
+      "longitude": 77.189246,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Manali%2C_Himachal_Pradesh",
+      "source": "https://www.incredibleindia.gov.in/en/himachal-pradesh/manali",
+      "spots": [
+        {
+          "name": "Hadimba Devi Temple",
+          "aliases": [
+            "Hidimba Devi Temple"
+          ],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Manali.",
+          "latitude": 32.24228,
+          "longitude": 77.187366,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Hidimba_Devi_Temple"
+        },
+        {
+          "name": "Solang Valley",
+          "aliases": [],
+          "tag": "Mountains",
+          "description": "Take in the hill and mountain scenery in or around Manali.",
+          "latitude": 32.316,
+          "longitude": 77.157,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Solang_Valley"
+        }
+      ]
+    },
+    {
+      "name": "Shimla",
+      "state": "Himachal Pradesh",
+      "aliases": [],
+      "latitude": 31.103333,
+      "longitude": 77.172222,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Shimla",
+      "source": "https://www.incredibleindia.gov.in/en/himachal-pradesh/shimla",
+      "spots": [
+        {
+          "name": "The Ridge",
+          "aliases": [
+            "Ridge"
+          ],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Shimla.",
+          "latitude": 31.1048,
+          "longitude": 77.1751,
+          "coordinateSource": "https://en.wikipedia.org/wiki/The_Ridge%2C_Shimla"
+        },
+        {
+          "name": "Jakhu Temple",
+          "aliases": [
+            "Jakhoo Temple"
+          ],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Shimla.",
+          "latitude": 31.101171,
+          "longitude": 77.181832,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Jakhu_Temple"
+        }
+      ]
+    },
+    {
+      "name": "Leh",
+      "state": "Ladakh",
+      "aliases": [],
+      "latitude": 34.152867,
+      "longitude": 77.577262,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Leh",
+      "source": "https://www.incredibleindia.gov.in/en/ladakh/leh",
+      "spots": [
+        {
+          "name": "Shanti Stupa",
+          "aliases": [],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Leh.",
+          "latitude": 34.173611,
+          "longitude": 77.574722,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Shanti_Stupa%2C_Ladakh"
+        },
+        {
+          "name": "Leh Palace",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Leh.",
+          "latitude": 34.16628,
+          "longitude": 77.58639,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Leh_Palace"
+        }
+      ]
+    },
+    {
+      "name": "Dehradun",
+      "state": "Uttarakhand",
+      "aliases": [],
+      "latitude": 30.345,
+      "longitude": 78.029,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Dehradun",
+      "source": "https://www.incredibleindia.gov.in/en/uttarakhand/dehradun",
+      "spots": [
+        {
+          "name": "Robber's Cave",
+          "aliases": [
+            "Robbers Cave",
+            "Guchhupani"
+          ],
+          "tag": "Nature",
+          "description": "Enjoy a stop surrounded by nature in or around Dehradun.",
+          "latitude": 30.375415,
+          "longitude": 78.059761,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Robber's_Cave%2C_India"
+        },
+        {
+          "name": "Sahastradhara",
+          "aliases": [],
+          "tag": "Nature",
+          "description": "Enjoy a stop surrounded by nature in or around Dehradun.",
+          "latitude": 30.345,
+          "longitude": 78.029,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Dehradun"
+        }
+      ]
+    },
+    {
+      "name": "Mussoorie",
+      "state": "Uttarakhand",
+      "aliases": [],
+      "latitude": 30.45,
+      "longitude": 78.08,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Mussoorie",
+      "source": "https://www.incredibleindia.gov.in/en/uttarakhand/mussoorie",
+      "spots": [
+        {
+          "name": "Kempty Falls",
+          "aliases": [],
+          "tag": "Waterfall",
+          "description": "Visit this scenic waterfall in or around Mussoorie.",
+          "latitude": 30.487317,
+          "longitude": 78.036206,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Kempty_Falls"
+        },
+        {
+          "name": "Lal Tibba",
+          "aliases": [],
+          "tag": "Mountains",
+          "description": "Take in the hill and mountain scenery in or around Mussoorie.",
+          "latitude": 30.466944,
+          "longitude": 78.095,
+          "coordinateSource": "https://www.peakbagger.com/peak.aspx?pid=-40027"
+        }
+      ]
+    },
+    {
+      "name": "Chakrata",
+      "state": "Uttarakhand",
+      "aliases": [],
+      "latitude": 30.7016,
+      "longitude": 77.8696,
+      "coordinateSource": "https://chakrata.cantt.gov.in/city-map/",
+      "source": "https://www.incredibleindia.gov.in/en/uttarakhand/chakrata",
+      "spots": [
+        {
+          "name": "Tiger Falls",
+          "aliases": [
+            "Tiger Fall"
+          ],
+          "tag": "Waterfall",
+          "description": "Visit this scenic waterfall in or around Chakrata.",
+          "latitude": 30.70494,
+          "longitude": 77.89387,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Tiger_Falls"
+        },
+        {
+          "name": "Deoban",
+          "aliases": [
+            "Devban"
+          ],
+          "tag": "Nature",
+          "description": "Enjoy a stop surrounded by nature in or around Chakrata.",
+          "latitude": 30.74718,
+          "longitude": 77.84886,
+          "coordinateSource": "https://mapcarta.com/14892212"
+        }
+      ]
+    },
+    {
+      "name": "Rishikesh",
+      "state": "Uttarakhand",
+      "aliases": [],
+      "latitude": 30.108333,
+      "longitude": 78.297222,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Rishikesh",
+      "source": "https://www.incredibleindia.gov.in/en/uttarakhand/rishikesh",
+      "spots": [
+        {
+          "name": "Triveni Ghat",
+          "aliases": [],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Rishikesh.",
+          "latitude": 29.984676,
+          "longitude": 78.915481,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Triveni_Ghat"
+        },
+        {
+          "name": "Parmarth Niketan",
+          "aliases": [],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Rishikesh.",
+          "latitude": 30.119225,
+          "longitude": 78.31221,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Parmarth_Niketan"
+        }
+      ]
+    },
+    {
+      "name": "Haridwar",
+      "state": "Uttarakhand",
+      "aliases": [],
+      "latitude": 29.945,
+      "longitude": 78.163,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Haridwar",
+      "source": "https://www.incredibleindia.gov.in/en/uttarakhand/haridwar",
+      "spots": [
+        {
+          "name": "Har Ki Pauri",
+          "aliases": [
+            "Har ki Paudi"
+          ],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Haridwar.",
+          "latitude": 29.956667,
+          "longitude": 78.170833,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Har_Ki_Pauri"
+        },
+        {
+          "name": "Mansa Devi Temple",
+          "aliases": [],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Haridwar.",
+          "latitude": 29.958056,
+          "longitude": 78.164722,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Mansa_Devi_Temple%2C_Haridwar"
+        }
+      ]
+    },
+    {
+      "name": "Mumbai",
+      "state": "Maharashtra",
+      "aliases": [
+        "Bombay"
+      ],
+      "latitude": 19.076111,
+      "longitude": 72.8775,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Mumbai",
+      "source": "https://www.incredibleindia.gov.in/en/maharashtra/mumbai",
+      "spots": [
+        {
+          "name": "Gateway of India",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Mumbai.",
+          "latitude": 18.921983,
+          "longitude": 72.834658,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Gateway_of_India"
+        },
+        {
+          "name": "Marine Drive",
+          "aliases": [],
+          "tag": "Coast",
+          "description": "Spend time along the coastal waterfront in or around Mumbai.",
+          "latitude": 18.944,
+          "longitude": 72.823,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Marine_Drive%2C_Mumbai"
+        }
+      ]
+    },
+    {
+      "name": "Panaji",
+      "state": "Goa",
+      "aliases": [
+        "Panjim"
+      ],
+      "latitude": 15.498889,
+      "longitude": 73.827778,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Panaji",
+      "source": "https://www.incredibleindia.gov.in/en/goa/panaji",
+      "spots": [
+        {
+          "name": "Our Lady of the Immaculate Conception Church",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Panaji.",
+          "latitude": 15.498333,
+          "longitude": 73.829444,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Our_Lady_of_the_Immaculate_Conception_Church%2C_Goa"
+        },
+        {
+          "name": "Miramar Beach",
+          "aliases": [],
+          "tag": "Beach",
+          "description": "Enjoy the beach and shoreline in or around Panaji.",
+          "latitude": 15.483056,
+          "longitude": 73.807222,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Miramar%2C_Goa"
+        }
+      ]
+    },
+    {
+      "name": "Kochi",
+      "state": "Kerala",
+      "aliases": [
+        "Cochin"
+      ],
+      "latitude": 9.931194,
+      "longitude": 76.267306,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Kochi",
+      "source": "https://www.incredibleindia.gov.in/en/kerala/kochi",
+      "spots": [
+        {
+          "name": "Fort Kochi",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Kochi.",
+          "latitude": 9.9658,
+          "longitude": 76.2421,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Fort_Kochi"
+        },
+        {
+          "name": "Mattancherry Palace",
+          "aliases": [
+            "Dutch Palace"
+          ],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Kochi.",
+          "latitude": 9.958,
+          "longitude": 76.259,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Mattancherry_Palace"
+        }
+      ]
+    },
+    {
+      "name": "Mysuru",
+      "state": "Karnataka",
+      "aliases": [
+        "Mysore"
+      ],
+      "latitude": 12.308611,
+      "longitude": 76.653056,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Mysore",
+      "source": "https://www.incredibleindia.gov.in/en/karnataka/mysuru",
+      "spots": [
+        {
+          "name": "Mysore Palace",
+          "aliases": [
+            "Mysuru Palace"
+          ],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Mysuru.",
+          "latitude": 12.303889,
+          "longitude": 76.654444,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Mysore_Palace"
+        },
+        {
+          "name": "Chamundeshwari Temple",
+          "aliases": [],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Mysuru.",
+          "latitude": 12.272474,
+          "longitude": 76.670611,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Chamundeshwari_Temple"
+        }
+      ]
+    },
+    {
+      "name": "Khajuraho",
+      "state": "Madhya Pradesh",
+      "aliases": [],
+      "latitude": 24.85,
+      "longitude": 79.925,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Khajuraho",
+      "source": "https://www.incredibleindia.gov.in/en/madhya-pradesh/khajuraho",
+      "spots": [
+        {
+          "name": "Kandariya Mahadeva Temple",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Khajuraho.",
+          "latitude": 24.853,
+          "longitude": 79.9197,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Kandariya_Mahadeva_Temple"
+        },
+        {
+          "name": "Lakshmana Temple",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Khajuraho.",
+          "latitude": 24.852139,
+          "longitude": 79.921694,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Lakshmana_Temple%2C_Khajuraho"
+        }
+      ]
+    },
+    {
+      "name": "Bhopal",
+      "state": "Madhya Pradesh",
+      "aliases": [],
+      "latitude": 23.2589,
+      "longitude": 77.4125,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Bhopal",
+      "source": "https://www.incredibleindia.gov.in/en/madhya-pradesh/bhopal",
+      "spots": [
+        {
+          "name": "Bhojtal",
+          "aliases": [
+            "Upper Lake"
+          ],
+          "tag": "Lake",
+          "description": "Explore the lakeside setting in or around Bhopal.",
+          "latitude": 23.25,
+          "longitude": 77.34,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Bhojtal"
+        },
+        {
+          "name": "Taj-ul-Masajid",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Bhopal.",
+          "latitude": 23.263,
+          "longitude": 77.393,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Taj-ul-Masajid"
+        }
+      ]
+    },
+    {
+      "name": "Darjeeling",
+      "state": "West Bengal",
+      "aliases": [],
+      "latitude": 27.0375,
+      "longitude": 88.263056,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Darjeeling",
+      "source": "https://www.incredibleindia.gov.in/en/west-bengal/darjeeling",
+      "spots": [
+        {
+          "name": "Tiger Hill",
+          "aliases": [],
+          "tag": "Mountains",
+          "description": "Take in the hill and mountain scenery in or around Darjeeling.",
+          "latitude": 26.99484,
+          "longitude": 88.28542,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Tiger_Hill%2C_Darjeeling"
+        },
+        {
+          "name": "Batasia Loop",
+          "aliases": [],
+          "tag": "Heritage",
+          "description": "Explore this architectural landmark in or around Darjeeling.",
+          "latitude": 27.0167,
+          "longitude": 88.2471,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Batasia_Loop"
+        }
+      ]
+    },
+    {
+      "name": "Puri",
+      "state": "Odisha",
+      "aliases": [],
+      "latitude": 19.810556,
+      "longitude": 85.831389,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Puri_(city)",
+      "source": "https://www.incredibleindia.gov.in/en/odisha/puri",
+      "spots": [
+        {
+          "name": "Jagannath Temple",
+          "aliases": [],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Puri.",
+          "latitude": 19.804722,
+          "longitude": 85.818333,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Jagannath_Temple%2C_Puri"
+        },
+        {
+          "name": "Puri Beach",
+          "aliases": [
+            "Golden Beach"
+          ],
+          "tag": "Beach",
+          "description": "Enjoy the beach and shoreline in or around Puri.",
+          "latitude": 19.81,
+          "longitude": 85.83,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Puri_Beach"
+        }
+      ]
+    },
+    {
+      "name": "Shillong",
+      "state": "Meghalaya",
+      "aliases": [],
+      "latitude": 25.582222,
+      "longitude": 91.894444,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Shillong",
+      "source": "https://www.incredibleindia.gov.in/en/meghalaya/shillong",
+      "spots": [
+        {
+          "name": "Ward's Lake",
+          "aliases": [
+            "Wards Lake"
+          ],
+          "tag": "Lake",
+          "description": "Explore the lakeside setting in or around Shillong.",
+          "latitude": 25.575,
+          "longitude": 91.887,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Ward's_Lake_(Shillong)"
+        },
+        {
+          "name": "Elephant Falls",
+          "aliases": [],
+          "tag": "Waterfall",
+          "description": "Visit this scenic waterfall in or around Shillong.",
+          "latitude": 25.53786,
+          "longitude": 91.82205,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Elephant_Falls"
+        }
+      ]
+    },
+    {
+      "name": "Gangtok",
+      "state": "Sikkim",
+      "aliases": [],
+      "latitude": 27.33,
+      "longitude": 88.62,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Gangtok",
+      "source": "https://www.incredibleindia.gov.in/en/sikkim/gangtok",
+      "spots": [
+        {
+          "name": "Enchey Monastery",
+          "aliases": [],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Gangtok.",
+          "latitude": 27.335833,
+          "longitude": 88.619167,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Enchey_Monastery"
+        },
+        {
+          "name": "Do Drul Chorten",
+          "aliases": [
+            "Do-drul Chorten"
+          ],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Gangtok.",
+          "latitude": 27.326,
+          "longitude": 88.6108,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Do-drul_Chorten"
+        }
+      ]
+    },
+    {
+      "name": "Guwahati",
+      "state": "Assam",
+      "aliases": [],
+      "latitude": 26.172222,
+      "longitude": 91.745833,
+      "coordinateSource": "https://en.wikipedia.org/wiki/Guwahati",
+      "source": "https://www.incredibleindia.gov.in/en/assam/guwahati",
+      "spots": [
+        {
+          "name": "Kamakhya Temple",
+          "aliases": [],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Guwahati.",
+          "latitude": 26.166426,
+          "longitude": 91.705509,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Kamakhya_Temple"
+        },
+        {
+          "name": "Umananda Temple",
+          "aliases": [],
+          "tag": "Spiritual",
+          "description": "Discover this place of spiritual interest in or around Guwahati.",
+          "latitude": 26.196389,
+          "longitude": 91.745278,
+          "coordinateSource": "https://en.wikipedia.org/wiki/Umananda_Temple"
+        }
+      ]
+    }
+  ]
+}

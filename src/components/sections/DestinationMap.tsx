@@ -6,10 +6,12 @@ import Section from "@/components/common/Section";
 import Button from "@/components/common/Button";
 import Select from "@/components/controls/Select";
 import PackageCard from "@/components/cards/PackageCard";
+import MapLandmark from "./MapLandmark";
 import { cmsHeading, type CmsSection } from "@/lib/cms";
 import { mapNodes } from "@/data/destinations";
 import { INDIA_MAINLAND, INDIA_ISLANDS, projectIndia as project, type MapPoint as Point } from "@/data/india-map";
 import { geographyKey } from "@/lib/geography";
+import { destinationCities, featuredCities, cityPackages, landmarkKind, type DestinationCity, type LandmarkKind } from "@/lib/destination-explorer";
 import type { Region, TouristSpot, TravelPackage } from "@/types";
 import styles from "./DestinationMap.module.css";
 
@@ -33,11 +35,17 @@ function regionPoint(region: Region): Point | null {
   const known = mapNodes.find(node => geographyKey(node.name) === geographyKey(region.name) || geographyKey(node.state) === geographyKey(region.state));
   return known ? project(known.lng, known.lat) : null;
 }
+function cityPoint(city: DestinationCity): Point | null {
+  const points = city.spots.map(spotPoint).filter((point): point is Point => point !== null);
+  return points.length ? { x: points.reduce((sum, point) => sum + point.x, 0) / points.length, y: points.reduce((sum, point) => sum + point.y, 0) / points.length } : null;
+}
+type ExplorerPin = { key: string; name: string; anchor: Point; point: Point; city?: DestinationCity; spot?: TouristSpot; kind: LandmarkKind };
 
 export default function DestinationMap({ cms, regions = [], packages = [] }: { cms?: CmsSection; regions?: Region[]; packages?: TravelPackage[] } = {}) {
   const id = useId(), root = useRef<HTMLDivElement>(null), reduced = useReducedMotion();
   const [ready, setReady] = useState(false), [visible, setVisible] = useState(false);
   const [regionId, setRegionId] = useState(""), [spotId, setSpotId] = useState(""), [previewId, setPreviewId] = useState(""), [query, setQuery] = useState("");
+  const [cityKey, setCityKey] = useState(""), [mapMode, setMapMode] = useState<"places" | "regions">("places");
   useEffect(() => {
     setReady(true);
     const node = root.current;
@@ -48,8 +56,11 @@ export default function DestinationMap({ cms, regions = [], packages = [] }: { c
   }, []);
   const region = regions.find(item => item.id === regionId);
   const spot = region?.spots.find(item => item.id === spotId);
+  const cities = useMemo(() => destinationCities(regions), [regions]);
+  const city = cities.find(item => item.key === cityKey && item.region.id === regionId);
+  const regionCities = region ? cities.filter(item => item.region.id === region.id) : featuredCities(cities);
   const animated = ready && visible && !reduced;
-  const points = region?.spots.map(spotPoint).filter((point): point is Point => point !== null) ?? [];
+  const points = mapMode === "places" && region ? (city ? city.spots.map(spotPoint) : regionCities.map(cityPoint)).filter((point): point is Point => point !== null) : [];
   const box = points.length ? (() => {
     const xs = points.map(p => p.x), ys = points.map(p => p.y);
     const width = Math.max(180, (Math.max(...xs) - Math.min(...xs)) * 1.8, (Math.max(...ys) - Math.min(...ys)) * 1.8 * 440 / 520);
@@ -60,10 +71,17 @@ export default function DestinationMap({ cms, regions = [], packages = [] }: { c
   // Spread close pins on this illustrated map; faint leaders retain their real
   // anchors. This never changes catalogue coordinates or booking route distances.
   const destinations = useMemo(() => {
-    const nodes = (region?.spots.slice(0, 30) ?? []).flatMap(item => {
-      const anchor = spotPoint(item);
-      return anchor ? [{ item, anchor, point: { ...anchor } }] : [];
-    });
+    const nodes: ExplorerPin[] = [];
+    if (mapMode === "places") {
+      if (city) for (const item of city.spots.slice(0, 30)) {
+        const anchor = spotPoint(item);
+        if (anchor) nodes.push({ key: item.id, name: item.name, spot: item, anchor, point: { ...anchor }, kind: landmarkKind(item.name, item.tag) });
+      }
+      else for (const item of (region ? cities.filter(item => item.region.id === region.id) : featuredCities(cities)).slice(0, 30)) {
+        const anchor = cityPoint(item);
+        if (anchor) nodes.push({ key: item.key, name: item.name, city: item, anchor, point: { ...anchor }, kind: landmarkKind(item.name) });
+      }
+    }
     for (let pass = 0; pass < 24; pass++) {
       for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
         const a = nodes[i].point, b = nodes[j].point;
@@ -80,10 +98,12 @@ export default function DestinationMap({ cms, regions = [], packages = [] }: { c
       }
     }
     return nodes;
-  }, [region, scale, box.x, box.y, box.width, box.height]);
+  }, [region, city, cities, mapMode, scale, box.x, box.y, box.width, box.height]);
   const shownRegions = regions.filter(item => `${item.name} ${item.state} ${item.spots.map(s => `${s.name} ${s.cityName ?? ""}`).join(" ")}`.toLowerCase().includes(query.trim().toLowerCase()));
-  const matching = packages.filter(pkg => (!region || (pkg.regionId !== undefined ? String(pkg.regionId) === region.id : pkg.region === region.name)) && (!spot || pkg.destinationIds?.includes(Number(spot.id))));
-  const start = region ? regionPoint(region) : null, end = spot ? destinations.find(node => node.item.id === spot.id)?.point ?? spotPoint(spot) : null;
+  const search = query.trim().toLowerCase();
+  const searchCities = cities.filter(item => `${item.name} ${item.state} ${item.spots.map(s => s.name).join(" ")}`.toLowerCase().includes(search));
+  const matching = cityPackages(packages, region, city, spot);
+  const start = city ? cityPoint(city) : region ? regionPoint(region) : null, end = spot ? destinations.find(node => node.spot?.id === spot.id)?.point ?? spotPoint(spot) : null;
   const path = start && end && Math.hypot(start.x - end.x, start.y - end.y) > .01
     ? `M${start.x} ${start.y} Q${(start.x + end.x) / 2 + 24 * scale} ${(start.y + end.y) / 2 - 30 * scale} ${end.x} ${end.y}` : "";
   const previewRegion = regions.find(item => item.id === previewId);
@@ -91,8 +111,10 @@ export default function DestinationMap({ cms, regions = [], packages = [] }: { c
   const lightSurface = ["light", "muted"].includes(cms?.appearance.background ?? "default");
   const customBackground = lightSurface || cms?.appearance.background === "image" ? "" : styles.section;
 
-  function chooseRegion(value: string) { setRegionId(value); setSpotId(""); setPreviewId(""); }
-  function marker(point: Point, label: string, name: string, selected: boolean, onPick: () => void, index: number, preview = "") {
+  function chooseRegion(value: string) { setRegionId(value); setSpotId(""); setCityKey(""); setPreviewId(""); }
+  function chooseCity(item: DestinationCity) { setRegionId(item.region.id); setCityKey(item.key); setSpotId(""); setPreviewId(""); setMapMode("places"); }
+  function chooseSpot(value: string) { setSpotId(value); setCityKey(cities.find(item => item.region.id === regionId && item.spots.some(spot => spot.id === value))?.key ?? ""); setMapMode("places"); }
+  function marker(point: Point, label: string, name: string, selected: boolean, onPick: () => void, index: number, preview = "", kind?: LandmarkKind) {
     const active = selected || (preview !== "" && preview === previewId);
     return <g role="button" tabIndex={ready ? 0 : -1} aria-disabled={!ready} aria-label={label} aria-pressed={selected}
       onClick={() => { if (ready) onPick(); }}
@@ -109,8 +131,8 @@ export default function DestinationMap({ cms, regions = [], packages = [] }: { c
           <animate attributeName="r" from={12 * scale} to={29 * scale} dur="1.4s" repeatCount="2" fill="freeze" />
           <animate attributeName="opacity" from=".75" to="0" dur="1.4s" repeatCount="2" fill="freeze" />
         </circle>}
-        <circle className={styles.pin} r={(active ? 7 : 5) * scale} fill={active ? "#fbbf24" : "#bae6fd"} stroke={active ? "#fff1b6" : "#123353"} strokeWidth={2 * scale} />
-        <text y={-23 * scale} textAnchor="middle" fill={active ? "#fde68a" : "#e0f2fe"} fontSize={12 * scale} strokeWidth={4 * scale} fontWeight="600" className={styles.label}>{name.length > 22 ? name.slice(0, 20) + "…" : name}</text>
+        {kind ? <g transform={`scale(${scale})`} className={styles.landmarkIcon} style={{ color: active ? "#fde68a" : "#bce8f8" }}><circle r="23" fill="#0c2238" stroke={active ? "#fbbf24" : "#43758b"} strokeWidth="1" /><g transform="scale(.72)"><MapLandmark kind={kind} /></g></g> : <circle className={styles.pin} r={(active ? 7 : 5) * scale} fill={active ? "#fbbf24" : "#bae6fd"} stroke={active ? "#fff1b6" : "#123353"} strokeWidth={2 * scale} />}
+        <text y={(kind ? 39 : -23) * scale} textAnchor="middle" fill={active ? "#fde68a" : "#e0f2fe"} fontSize={(kind ? 12.5 : 12) * scale} strokeWidth={4 * scale} fontWeight="600" className={styles.label}>{name.length > 22 ? name.slice(0, 20) + "…" : name}</text>
       </motion.g>
     </g>;
   }
@@ -119,9 +141,10 @@ export default function DestinationMap({ cms, regions = [], packages = [] }: { c
     <div ref={root} className={`${lightSurface ? "" : "cms-dark"} grid items-start gap-7 lg:grid-cols-[1fr_1.05fr] lg:gap-12`} data-destination-explorer data-ready={ready}>
       <div className={`${styles.mapCard} relative mx-auto w-full max-w-[520px] overflow-hidden rounded-[2rem] border border-sky-200/15 p-4 sm:p-5`}>
         <div className="flex min-h-11 items-center justify-between gap-3 px-1 text-white">
-          <div><p className="text-[10px] font-semibold uppercase tracking-[.25em] text-sky-200/60">Your journey starts here</p><p className="mt-1 text-sm font-semibold">{region ? region.name + " India" : "A whole country to explore"}</p></div>
-          <button data-ui-action="" type="button" disabled={!ready || !region} onClick={() => chooseRegion("")} className="min-h-11 shrink-0 rounded-full border border-white/15 px-3 text-xs font-semibold text-sky-100 transition-colors hover:border-sky-200/40 disabled:cursor-default disabled:text-sky-200/40">{region ? "← All India" : "India"}</button>
+          <div><p className="text-[10px] font-semibold uppercase tracking-[.25em] text-sky-200/60">Your journey starts here</p><p className="mt-1 text-sm font-semibold">{city ? city.name : region ? region.name + " India" : "A whole country to explore"}</p></div>
+          <button data-ui-action="" type="button" disabled={!ready || !region} onClick={() => city ? chooseRegion(regionId) : chooseRegion("")} className="min-h-11 shrink-0 rounded-full border border-white/15 px-3 text-xs font-semibold text-sky-100 transition-colors hover:border-sky-200/40 disabled:cursor-default disabled:text-sky-200/40">{city ? "← Cities" : region ? "← All India" : "India"}</button>
         </div>
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/10 pt-3"><div className="inline-flex rounded-full bg-black/20 p-1" role="group" aria-label="Map view">{(["places", "regions"] as const).map(mode => <button data-ui-action="" type="button" key={mode} disabled={!ready} aria-pressed={mapMode === mode} onClick={() => setMapMode(mode)} className={`min-h-10 rounded-full px-4 text-xs font-semibold transition-colors ${mapMode === mode ? "bg-amber-300 text-slate-950" : "text-sky-100/75 hover:bg-white/10"}`}>{mode === "places" ? "Cities & places" : "Regions"}</button>)}</div><span className="text-right text-[10px] leading-relaxed text-sky-100/55">Tap a landmark.<br />Find your next trip.</span></div>
         <motion.svg initial={false} animate={{ viewBox: `${box.x} ${box.y} ${box.width} ${box.height}` }} transition={{ duration: animated ? .55 : 0, ease: [.22, 1, .36, 1] }} role="group" aria-label="Interactive India destination map" className={`${styles.map} aspect-[440/520] w-full`}>
           <defs>
             <radialGradient id={`${id}-land`} cx=".35" cy=".3" r=".85"><stop stopColor="#276a91" stopOpacity=".65" /><stop offset="1" stopColor="#123353" stopOpacity=".4" /></radialGradient>
@@ -149,24 +172,26 @@ export default function DestinationMap({ cms, regions = [], packages = [] }: { c
             <path d={path} fill="none" stroke="#fcd34d" strokeWidth={2 * scale} strokeLinecap="round" pathLength="1" strokeDasharray="1" strokeDashoffset="0">{animated && <animate attributeName="stroke-dashoffset" from="1" to="0" dur=".8s" fill="freeze" />}</path>
             {animated && <circle r={3.5 * scale} fill="#fff7d6"><animateMotion path={path} dur="1.5s" repeatCount="2" fill="freeze" /></circle>}
           </g>}
-          {!points.length && regions.map((item, index) => { const point = regionPoint(item); return point ? <g key={item.id}>{marker(point, `Explore region ${item.name}`, item.name, item.id === regionId, () => chooseRegion(item.id), index, item.id)}</g> : null; })}
-          <g aria-hidden="true" pointerEvents="none">{destinations.filter(node => Math.hypot(node.point.x - node.anchor.x, node.point.y - node.anchor.y) > 4 * scale).map(node => <g key={node.item.id}><path d={`M${node.anchor.x} ${node.anchor.y} L${node.point.x} ${node.point.y}`} stroke="#bae6fd" strokeOpacity=".25" strokeWidth={scale} strokeDasharray={`${3 * scale} ${4 * scale}`} /><circle cx={node.anchor.x} cy={node.anchor.y} r={2 * scale} fill="#bae6fd" fillOpacity=".6" /></g>)}</g>
-          {destinations.map(({ item, point }, index) => <g key={item.id}>{marker(point, `Explore destination ${item.name}`, item.name, item.id === spotId, () => setSpotId(item.id), index)}</g>)}
+          {!destinations.length && regions.map((item, index) => { const point = regionPoint(item); return point ? <g key={item.id}>{marker(point, `Explore region ${item.name}`, item.name, item.id === regionId, () => chooseRegion(item.id), index, item.id)}</g> : null; })}
+          <g aria-hidden="true" pointerEvents="none">{destinations.filter(node => Math.hypot(node.point.x - node.anchor.x, node.point.y - node.anchor.y) > 4 * scale).map(node => <g key={node.key}><path d={`M${node.anchor.x} ${node.anchor.y} L${node.point.x} ${node.point.y}`} stroke="#bae6fd" strokeOpacity=".25" strokeWidth={scale} strokeDasharray={`${3 * scale} ${4 * scale}`} /><circle cx={node.anchor.x} cy={node.anchor.y} r={2 * scale} fill="#bae6fd" fillOpacity=".6" /></g>)}</g>
+          {destinations.map((node, index) => <g key={node.key}>{marker(node.point, `Explore ${node.city ? "city" : "destination"} ${node.name}`, node.name, node.spot ? node.spot.id === spotId : node.city?.key === cityKey, () => node.city ? chooseCity(node.city) : chooseSpot(node.spot!.id), index, node.city?.region.id, node.kind)}</g>)}
         </motion.svg>
-        <div className="flex items-center justify-center gap-2 border-t border-white/10 pt-4 text-xs text-sky-100/70"><span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-300" />{region ? "Pick a destination to discover its packages" : "Tap a region to start exploring"}</div>
+        <div className="flex items-center justify-center gap-2 border-t border-white/10 pt-4 text-center text-xs text-sky-100/70"><span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />{city ? "Pick a tourist place to discover its packages" : destinations.length ? "Choose a city, then explore its famous places" : "Tap a region to start exploring"}</div>
         <p className="mt-3 text-center text-[10px] leading-relaxed text-sky-100/45">Stylised travel map · Markers are approximate. All destinations are available in the lists.</p>
       </div>
 
       <div className="min-w-0 space-y-5 lg:py-2">
-        <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-accent-400">Make it your kind of trip</p><h3 className="mt-2 font-display text-2xl font-bold text-fg sm:text-3xl">{region ? `Explore ${region.name}` : "Where do you want to go?"}</h3><p className="mt-2 text-sm leading-relaxed text-muted">{region ? region.state : "Mountains, coastlines and everything in between. Choose your part of India."}</p></div>
+        <div><p className="text-xs font-semibold uppercase tracking-[.2em] text-accent-400">Make it your kind of trip</p><h3 className="mt-2 font-display text-2xl font-bold text-fg sm:text-3xl">{city ? `Discover ${city.name}` : region ? `Explore ${region.name}` : "Where do you want to go?"}</h3><p className="mt-2 text-sm leading-relaxed text-muted">{city ? `${city.state} · ${city.spots.length} tourist ${city.spots.length === 1 ? "place" : "places"} to explore` : region ? region.state : "Famous cities, mountain escapes and places worth the journey. Tap a landmark to look around."}</p></div>
         <label className="block text-sm font-semibold text-fg">Find a region or place<input disabled={!ready} type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Start typing a region or destination…" className="mt-2 min-h-12 w-full rounded-2xl border border-line bg-surface px-4 py-3 text-base font-normal text-fg focus:border-accent-500" /></label>
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3" aria-label="Explore regions">{shownRegions.map(item => <button data-ui-action="" key={item.id} type="button" disabled={!ready} aria-pressed={regionId === item.id} onClick={() => chooseRegion(item.id)} onMouseEnter={() => setPreviewId(item.id)} onMouseLeave={() => setPreviewId("")} onFocus={() => setPreviewId(item.id)} onBlur={() => setPreviewId("")} className={`${styles.regionButton} flex min-h-14 items-center justify-between gap-2 rounded-2xl border px-4 py-3 text-left text-sm font-semibold ${regionId === item.id ? "border-accent-400 bg-accent-500 text-primary-950" : "border-line bg-surface text-fg hover:border-accent-400/60"}`}><span className="min-w-0 break-words">{item.name}</span><span aria-hidden="true" className={regionId === item.id ? "text-primary-950" : "text-accent-400"}>{regionId === item.id ? "✓" : "↗"}</span></button>)}</div>
-        {!shownRegions.length && <p role="status" className="text-sm text-muted">No published regions match yet.</p>}
-        {region && <label className="block text-sm font-semibold text-fg">Destination in {region.name}<Select aria-label={`Destination in ${region.name}`} searchable value={spotId} onChange={event => setSpotId(event.target.value)} className="mt-2 w-full rounded-xl border border-line bg-surface px-3 py-3 text-base font-normal text-fg"><option value="">All destinations</option>{region.spots.map(item => <option key={item.id} value={item.id}>{item.name}{item.stateName ? ` · ${item.stateName}` : ""}</option>)}</Select></label>}
-        <div className="border-t border-line pt-5" aria-live="polite"><h3 className="text-xl font-semibold text-fg">{spot ? `Packages for ${spot.name}` : region ? `Packages in ${region.name}` : "Explore published packages"}</h3><p className="mt-1 text-sm text-muted">{matching.length} published {matching.length === 1 ? "package" : "packages"}</p></div>
+        {!shownRegions.length && !searchCities.length && <p role="status" className="text-sm text-muted">No published places match yet.</p>}
+        {search && <div className="space-y-2" aria-label="Matching cities and places">{searchCities.slice(0, 8).map(item => <div key={item.key} className="rounded-2xl border border-line bg-surface p-3"><button data-ui-action="" type="button" disabled={!ready} onClick={() => { chooseCity(item); setQuery(""); }} className="min-h-11 w-full text-left text-sm font-semibold text-fg">{item.name}<span className="ml-2 text-xs font-normal text-muted">{item.state}</span></button>{item.spots.filter(spot => spot.name.toLowerCase().includes(search)).map(spot => <button data-ui-action="" type="button" disabled={!ready} key={spot.id} onClick={() => { chooseCity(item); setSpotId(spot.id); setQuery(""); }} className="block min-h-11 w-full rounded-xl px-3 text-left text-sm text-muted hover:bg-accent-500/10">↳ {spot.name}</button>)}</div>)}</div>}
+        {city ? <div className={styles.cityPanel}><div className="flex items-center gap-3"><svg viewBox="-28 -28 56 56" className="h-14 w-14 shrink-0 text-amber-300" aria-hidden="true"><MapLandmark kind={landmarkKind(city.name)} /></svg><div><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-sky-100/60">Places in and around</p><h4 className="mt-1 text-xl font-bold text-white">{city.name}</h4></div></div><div className="mt-4 grid gap-2 sm:grid-cols-2" aria-label={`Tourist places in ${city.name}`}>{city.spots.map(item => <button data-ui-action="" disabled={!ready} type="button" key={item.id} aria-pressed={spotId === item.id} onClick={() => chooseSpot(item.id)} className={`min-h-14 rounded-xl border px-3 py-3 text-left ${spotId === item.id ? "border-amber-300 bg-amber-300 text-slate-950" : "border-sky-100/15 bg-white/5 text-sky-50 hover:border-amber-300/60"}`}><span className="block text-sm font-semibold">{item.name}</span><span className={`mt-1 block text-xs ${spotId === item.id ? "text-slate-800" : "text-sky-100/60"}`}>{item.tag || "Explore this place"}</span></button>)}</div>{spot && <p className="mt-4 text-sm leading-relaxed text-sky-100/75">{spot.description}</p>}</div> : !!cities.length && !search && <div><p className="mb-3 text-xs font-semibold uppercase tracking-[.16em] text-muted">{region ? `Cities in ${region.name}` : "Cities to fall in love with"}</p><div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3" aria-label="Explore cities">{(region ? regionCities : featuredCities(cities, 6)).map(item => <button data-ui-action="" type="button" disabled={!ready} key={item.key} onClick={() => chooseCity(item)} className={`${styles.cityButton} min-h-24 rounded-2xl border border-line bg-surface p-3 text-left text-fg`}><svg viewBox="-28 -28 56 56" className="mb-2 h-9 w-9 text-accent-400" aria-hidden="true"><MapLandmark kind={landmarkKind(item.name)} /></svg><span className="block text-sm font-semibold">{item.name}</span><span className="mt-1 block text-xs text-muted">{item.spots.length} places</span></button>)}</div></div>}
+        {region && <label className="block text-sm font-semibold text-fg">Destination in {region.name}<Select aria-label={`Destination in ${region.name}`} searchable value={spotId} onChange={event => chooseSpot(event.target.value)} className="mt-2 w-full rounded-xl border border-line bg-surface px-3 py-3 text-base font-normal text-fg"><option value="">All destinations</option>{region.spots.map(item => <option key={item.id} value={item.id}>{item.name}{item.cityName ? ` · ${item.cityName}` : ""}</option>)}</Select></label>}
+        <div className="border-t border-line pt-5" aria-live="polite"><h3 className="text-xl font-semibold text-fg">{spot ? `Packages for ${spot.name}` : city ? `Packages visiting ${city.name}` : region ? `Packages in ${region.name}` : "Explore published packages"}</h3><p className="mt-1 text-sm text-muted">{matching.length} published {matching.length === 1 ? "package" : "packages"}</p></div>
         {!!matching.length && <div className="grid gap-4 sm:grid-cols-2">{matching.slice(0, 4).map(pkg => <PackageCard key={pkg.id} pkg={pkg} />)}</div>}
         {!matching.length && <p className="rounded-2xl border border-line bg-surface p-4 text-sm leading-relaxed text-muted">No ready-made package is published for this selection yet. You can shape your own route from available destinations.</p>}
-        <div className="flex flex-wrap gap-3"><Button href={`/booking?mode=custom${region ? `&region=${encodeURIComponent(region.id)}` : ""}${spot ? `&spot=${encodeURIComponent(spot.id)}` : ""}`} variant="accent" iconRight="arrow-right">Create your package</Button><Button href="/packages" variant={lightSurface ? "outline" : "glass"}>All packages</Button></div>
+        <div className="flex flex-wrap gap-3"><Button href={`/booking?mode=custom${region ? `&region=${encodeURIComponent(region.id)}` : ""}${spot ? `&spot=${encodeURIComponent(spot.id)}` : ""}`} disabled={Boolean(city && !spot)} variant="accent" iconRight="arrow-right">{city && !spot ? "Choose a tourist place above" : "Create your package"}</Button><Button href="/packages" variant={lightSurface ? "outline" : "glass"}>All packages</Button></div>
       </div>
     </div>
   </Section>;

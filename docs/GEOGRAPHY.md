@@ -71,3 +71,40 @@ requests, paid map keys, WebGL or continuous animation loop is needed.
 The CMS Destinations section controls the explorer's visibility, text and order.
 The explicit restoration places it after Vehicles and preserves the package-first
 hero and other saved CMS content. Later CMS edits remain authoritative.
+
+## Famous cities and tourist places
+
+The country map opens with illustrated city landmarks. Select a city to zoom to
+its real published tourist spots, then choose a spot to filter packages and carry
+that exact destination ID into Create Package. The Regions toggle and all Region
+cards remain available. Typing a city, State or tourist-spot name shows choices
+automatically, including cities outside the representative country-map pins.
+Only actual catalogue entries appear. No illustrative route becomes a road km
+calculation or a fare. SVG artwork uses no map service, image API or paid key;
+motion remains finite, pauses offscreen and respects reduced motion.
+
+`db/data/india-tourist-places.json` is a curated starter set of24 cities/48 places,
+covering all six tourism regions and including Dehradun, Mussoorie, Chakrata,
+Rishikesh and Haridwar. Names/parents were reviewed against
+[Incredible India](https://www.incredibleindia.gov.in/en) and
+[Uttarakhand Tourism](https://uttarakhandtourism.gov.in/destination/chakrata/).
+The versioned records retain geographic coordinate sources. These are approximate
+place anchors, not verified vehicle entrances or promises of visitor access;
+admins can refine a pin through the existing map editor. Near-city validation
+guards against same-named places elsewhere. Each new spot uses an original,
+clearly illustrated landscape rather than an unrelated destination photograph.
+Admins can replace it with their own image.
+
+Dry run (no schema change, no additions unless explicitly requested):
+
+```powershell
+node --experimental-strip-types --env-file=.env.local db/seed-india-tourist-places.mjs --production
+```
+
+`--verify-rollback` rehearses changes without committing; `--apply` inserts missing
+records in one transaction under the existing catalogue lock. Exact and known
+alias duplicates are reused within their existing parent. Existing IDs, fields,
+active flags and deleted entries are preserved, with no automatic merge, rename
+or reparent. Inactive parents are not silently reactivated. A repeated import
+adds nothing and produces no extra audit entry. New cities are geography entries,
+not advertised pickup coverage. No package, price, hotel or departure is created.

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" role="img" aria-label="Illustrated travel landscape">
+<defs><linearGradient id="sky" x2="1" y2="1"><stop stop-color="#133a62"/><stop offset="1" stop-color="#071426"/></linearGradient><linearGradient id="hill" x2="0" y2="1"><stop stop-color="#287487"/><stop offset="1" stop-color="#16364b"/></linearGradient></defs>
+<path fill="url(#sky)" d="M0 0h800v500H0z"/><circle cx="622" cy="132" r="45" fill="#fbbf24" opacity=".9"/>
+<path d="m0 368 185-228 124 163 103-117 180 193 208-152v273H0" fill="url(#hill)"/><path d="m126 213 59-73 54 71-44-14-26 23-19-18" fill="#bde4ed"/>
+<path d="M0 401q170-65 360 4t440-15v110H0" fill="#0d5262"/><path d="M0 455q170-35 360 2t440-17" fill="none" stroke="#7dd3fc" stroke-opacity=".35" stroke-width="3"/>
+<g stroke="#fce3a4" stroke-width="4" fill="#142b40"><path d="M397 381V263h130v118M385 382h155M393 263h138M414 263v-31h26v31M483 263v-31h26v31M447 263v-54h28v54M441 209h40M451 381v-42a11 11 0 0 1 22 0v42"/><path d="M420 287v14m0 18v14m84-46v14m0 18v14m-42-46v14"/></g>
+</svg>
