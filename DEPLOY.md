@@ -1,5 +1,44 @@
 # Deploying TravelEase (free)
 
+## CMS visual editing and package drafts — 17 November 2026
+
+Open **Admin → CMS pages → Header** or **Footer** to edit site-wide branding,
+links, themes, footer columns and social icons. These sections use Homepage's
+existing draft, preview, publish and revision history; save/preview first and
+publish Homepage when ready. Contact details still come from Site settings.
+The protected draft preview renders the proposed Header/Footer together.
+
+The section picker shows a small layout illustration for each section before
+adding it. New-page template choices also show previews. Homepage's section
+list scrolls independently. About's feature items include visual icon choices,
+card style presets and a preview. New pages start with only their URL; copy it
+into manual menus or opt into Header/Footer under Page settings. Manual links
+retain their order, and opted-in pages append without duplicate URLs.
+
+New packages start as **Draft — only in admin**. Zero-price private plan drafts
+can be saved; making one live requires a positive price and active destinations.
+Select **Live — customers can book**, review the button and save explicitly.
+Drafts are excluded from public listing, details and checkout.
+
+The operator-requested Delhi template can be installed with
+`node --experimental-strip-types --import ./db/tests/_register.mjs --env-file=.env.local db/seed-delhi-draft.mjs --production --apply`.
+Without `--apply` the whole import rehearses and rolls back. It creates one
+inactive 32-destination/37-connection package, reuses exact parented masters,
+and adds only missing cities/route checkpoints. It never overwrites an existing
+matching package or the owner's later edits. Rates, stays and meals remain zero;
+no hotel, guide or inclusion promises are invented. New route-only checkpoints
+have the `Route stop` tag and stay out of public tourist discovery; retain that
+tag unless converting them deliberately into real attractions. Package plan
+resolution still supports these checkpoints when the owner publishes a plan.
+No schema change, paid map service, dependency or billing is required.
+
+Run CMS/chrome unit tests plus `db/tests/cms-chrome-db.mjs --dev` and
+`db/tests/package-draft-db.mjs --dev` using the existing TS loader and ignored
+local env. Both database tests roll back all owned fixtures. The standalone CMS
+SQL test replaces only React18's missing request-cache wrapper; actual CMS and
+SQL save/publish/revision logic remains under test.
+
+
 ## Delhi-style routes with shared destinations — 17 November 2026
 
 The existing destination tree now allows joining branches. For example, both

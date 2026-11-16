@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import AdminNavigationLink from "./AdminNavigationLink";
 import { usePathname } from "next/navigation";
 import Logo from "@/components/common/Logo";
 import Avatar from "@/components/common/Avatar";
@@ -15,7 +16,7 @@ import { adminNavigation, adminNavActive, type AdminNavGroup } from "@/lib/admin
 function AdminNavList({ groups, pathname, onNavigate }: { groups: AdminNavGroup[]; pathname: string; onNavigate?: () => void }) {
   return <div className="space-y-5">{groups.map(group => <section key={group.label} aria-label={group.label}>
     <h2 className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">{group.label}</h2>
-    <ul className="flex flex-col gap-1">{group.items.map(item => <li key={item.href}><Link href={item.href} onClick={onNavigate} aria-current={adminNavActive(pathname, item) ? "page" : undefined} className={"flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 " + (adminNavActive(pathname, item) ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white")}><Icon name={item.icon} className="h-5 w-5 shrink-0" /><span>{item.label}</span></Link></li>)}</ul>
+    <ul className="flex flex-col gap-1">{group.items.map(item => <li key={item.href}><AdminNavigationLink href={item.href} onClick={onNavigate} aria-current={adminNavActive(pathname, item) ? "page" : undefined} className={"flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 " + (adminNavActive(pathname, item) ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white")}><Icon name={item.icon} className="h-5 w-5 shrink-0" /><span>{item.label}</span></AdminNavigationLink></li>)}</ul>
   </section>)}</div>;
 }
 

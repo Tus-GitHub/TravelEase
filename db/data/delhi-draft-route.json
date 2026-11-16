@@ -1,0 +1,430 @@
+{
+  "name": "Delhi Explorer — Build Your Route",
+  "slug": "delhi-explorer-build-your-route",
+  "region": "North",
+  "places": [
+    {
+      "id": 1,
+      "name": "Delhi",
+      "city": "Delhi",
+      "state": "Delhi"
+    },
+    {
+      "id": 2,
+      "name": "Chandigarh",
+      "city": "Chandigarh",
+      "state": "Chandigarh"
+    },
+    {
+      "id": 3,
+      "name": "Shimla",
+      "city": "Shimla",
+      "state": "Himachal Pradesh"
+    },
+    {
+      "id": 4,
+      "name": "Dehradun",
+      "city": "Dehradun",
+      "state": "Uttarakhand"
+    },
+    {
+      "id": 5,
+      "name": "Jaipur",
+      "city": "Jaipur",
+      "state": "Rajasthan"
+    },
+    {
+      "id": 6,
+      "name": "Agra",
+      "city": "Agra",
+      "state": "Uttar Pradesh"
+    },
+    {
+      "id": 7,
+      "name": "Amritsar",
+      "city": "Amritsar",
+      "state": "Punjab"
+    },
+    {
+      "id": 8,
+      "name": "Nainital",
+      "city": "Nainital",
+      "state": "Uttarakhand"
+    },
+    {
+      "id": 9,
+      "name": "Dharamshala",
+      "city": "Dharamshala",
+      "state": "Himachal Pradesh"
+    },
+    {
+      "id": 10,
+      "name": "Manali",
+      "city": "Manali",
+      "state": "Himachal Pradesh"
+    },
+    {
+      "id": 11,
+      "name": "Kufri",
+      "city": "Kufri",
+      "state": "Himachal Pradesh"
+    },
+    {
+      "id": 12,
+      "name": "Mussoorie",
+      "city": "Mussoorie",
+      "state": "Uttarakhand"
+    },
+    {
+      "id": 13,
+      "name": "Rishikesh",
+      "city": "Rishikesh",
+      "state": "Uttarakhand"
+    },
+    {
+      "id": 14,
+      "name": "Pushkar",
+      "city": "Pushkar",
+      "state": "Rajasthan"
+    },
+    {
+      "id": 15,
+      "name": "Udaipur",
+      "city": "Udaipur",
+      "state": "Rajasthan"
+    },
+    {
+      "id": 16,
+      "name": "Jodhpur",
+      "city": "Jodhpur",
+      "state": "Rajasthan"
+    },
+    {
+      "id": 17,
+      "name": "Mathura",
+      "city": "Mathura",
+      "state": "Uttar Pradesh"
+    },
+    {
+      "id": 18,
+      "name": "Varanasi",
+      "city": "Varanasi",
+      "state": "Uttar Pradesh"
+    },
+    {
+      "id": 19,
+      "name": "Ranikhet",
+      "city": "Ranikhet",
+      "state": "Uttarakhand"
+    },
+    {
+      "id": 20,
+      "name": "Jim Corbett",
+      "city": "Ramnagar",
+      "state": "Uttarakhand"
+    },
+    {
+      "id": 21,
+      "name": "Dalhousie",
+      "city": "Dalhousie",
+      "state": "Himachal Pradesh"
+    },
+    {
+      "id": 22,
+      "name": "Kasol",
+      "city": "Kasol",
+      "state": "Himachal Pradesh"
+    },
+    {
+      "id": 23,
+      "name": "Solang Valley",
+      "city": "Manali",
+      "state": "Himachal Pradesh"
+    },
+    {
+      "id": 24,
+      "name": "Narkanda",
+      "city": "Narkanda",
+      "state": "Himachal Pradesh"
+    },
+    {
+      "id": 25,
+      "name": "Chakrata",
+      "city": "Chakrata",
+      "state": "Uttarakhand"
+    },
+    {
+      "id": 26,
+      "name": "Haridwar",
+      "city": "Haridwar",
+      "state": "Uttarakhand"
+    },
+    {
+      "id": 27,
+      "name": "Devprayag",
+      "city": "Devprayag",
+      "state": "Uttarakhand"
+    },
+    {
+      "id": 28,
+      "name": "Mount Abu",
+      "city": "Mount Abu",
+      "state": "Rajasthan"
+    },
+    {
+      "id": 29,
+      "name": "Jaisalmer",
+      "city": "Jaisalmer",
+      "state": "Rajasthan"
+    },
+    {
+      "id": 30,
+      "name": "Vrindavan",
+      "city": "Vrindavan",
+      "state": "Uttar Pradesh"
+    },
+    {
+      "id": 31,
+      "name": "Sarnath",
+      "city": "Varanasi",
+      "state": "Uttar Pradesh"
+    },
+    {
+      "id": 32,
+      "name": "Manikaran",
+      "city": "Manikaran",
+      "state": "Himachal Pradesh"
+    }
+  ],
+  "roots": [
+    1
+  ],
+  "connections": [
+    {
+      "id": 1,
+      "next": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 2,
+      "next": [
+        3,
+        10,
+        9
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 3,
+      "next": [
+        10,
+        11
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 4,
+      "next": [
+        12,
+        13
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 5,
+      "next": [
+        14,
+        15,
+        16
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 6,
+      "next": [
+        17,
+        18
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 7,
+      "next": [
+        9
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 8,
+      "next": [
+        19,
+        20
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 9,
+      "next": [
+        21,
+        10
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 10,
+      "next": [
+        22,
+        23
+      ],
+      "canFinish": true
+    },
+    {
+      "id": 11,
+      "next": [
+        24
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 12,
+      "next": [
+        25
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 13,
+      "next": [
+        26,
+        27
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 14,
+      "next": [
+        15
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 15,
+      "next": [
+        28
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 16,
+      "next": [
+        29
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 17,
+      "next": [
+        30
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 18,
+      "next": [
+        31
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 19,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 20,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 21,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 22,
+      "next": [
+        32
+      ],
+      "canFinish": false
+    },
+    {
+      "id": 23,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 24,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 25,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 26,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 27,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 28,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 29,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 30,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 31,
+      "next": [],
+      "canFinish": true
+    },
+    {
+      "id": 32,
+      "next": [],
+      "canFinish": true
+    }
+  ],
+  "geographySources": [
+    "https://himachaltourism.gov.in/destination/kullu-2/",
+    "https://hpkullu.nic.in/panchayats/",
+    "https://himachaltourism.gov.in/wp-content/uploads/2024/07/8.-DDR-of-Mountain-Biking-Trails-and-EV-HoHo-Buses-F.pdf",
+    "https://www.uttarakhandtourism.gov.in/destination/ranikhet",
+    "https://www.uttarakhandtourism.gov.in/destination/devprayag",
+    "https://nainital.nic.in/corbett-tiger-reserve/",
+    "https://mathura.nic.in/",
+    "https://www.incredibleindia.gov.in/en/uttar-pradesh/varanasi/sarnath"
+  ]
+}

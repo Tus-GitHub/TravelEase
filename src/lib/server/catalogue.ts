@@ -3,6 +3,7 @@ import { validatePackageContent, availableRouteTree, routeRange, type PackageCon
 import { planSpotNames } from "./package-plan";
 import { unavailableVehicleIds } from "./availability";
 import { regionPhoto } from "../region-photo";
+import { ROUTE_STOP_TAG } from "../route-stop";
 import type { Vehicle, TravelPackage, PackageTag, Region } from "@/types";
 
 /**
@@ -453,8 +454,9 @@ export async function listPublicRegions(): Promise<PublicRegion[]> {
          JOIN cities c ON c.city_id = ts.city_id AND c.is_deleted = false AND c.is_active = true
          JOIN states s ON s.state_id=c.state_id AND NOT s.is_deleted AND s.is_active
          JOIN regions r ON r.region_id=s.region_id AND NOT r.is_deleted AND r.is_active
-        WHERE ts.is_deleted = false AND ts.is_active = true
+        WHERE ts.is_deleted = false AND ts.is_active = true AND ts.tag IS DISTINCT FROM $1
         ORDER BY ts.display_order, ts.tourist_spot_id`,
+      [ROUTE_STOP_TAG],
     ),
   ]);
 

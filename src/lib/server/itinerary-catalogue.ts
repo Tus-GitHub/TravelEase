@@ -2,6 +2,7 @@ import { getPool } from "./db";
 import { ItineraryError, type ItineraryRequest } from "../itinerary-suggestions";
 import { PACKAGE_IMAGE_FALLBACK } from "./catalogue";
 import type { TouristSpot } from "@/types";
+import { ROUTE_STOP_TAG } from "../route-stop";
 
 export interface ItineraryCandidate extends TouristSpot { cityName: string }
 export const MAX_ITINERARY_CANDIDATES = 60;
@@ -14,9 +15,10 @@ export async function loadItineraryCatalogue(regionId: number, selectedIds?: num
        JOIN regions r ON r.region_id = c.region_id
       WHERE r.region_id = $1 AND r.is_active AND NOT r.is_deleted
         AND c.is_active AND NOT c.is_deleted AND ts.is_active AND NOT ts.is_deleted
+        AND ts.tag IS DISTINCT FROM $4
         AND ($2::int[] IS NULL OR ts.tourist_spot_id = ANY($2::int[]))
       ORDER BY ts.display_order, ts.tourist_spot_id LIMIT $3`,
-    [regionId, selectedIds ?? null, MAX_ITINERARY_CANDIDATES + 1],
+    [regionId, selectedIds ?? null, MAX_ITINERARY_CANDIDATES + 1, ROUTE_STOP_TAG],
   );
   if (result.rows.length > MAX_ITINERARY_CANDIDATES) {
     throw new ItineraryError("This region has too many stops for AI suggestions right now. Please choose stops manually.", 422);

@@ -149,6 +149,7 @@ async function uniqueSlug(base: string): Promise<string> {
 }
 
 export interface PackageInput {
+  isActive?: boolean;
   tripContent?: PackageContent | null;
   bookingMode?: "private" | "shared" | "both";
   regionId: number;
@@ -167,16 +168,16 @@ export async function createPackage(
 ): Promise<CataloguePackage> {
   const tripContent = input.tripContent == null ? null : validatePackageContent(input.tripContent);
   const durationDays = packagePlanDays(tripContent, input.bookingMode ?? "private", input.pricePerPerson, input.durationDays);
-  if (tripContent && input.bookingMode !== "shared" && !(input.pricePerPerson > 0)) throw new TripError("Enter a positive per-person price for a bookable package plan.");
+  if (tripContent && input.bookingMode !== "shared" && (input.isActive ?? true) && !(input.pricePerPerson > 0)) throw new TripError("Set a positive per-person price before making this package live.");
   const slug = await uniqueSlug(slugify(input.name));
   return catalogueWrite("packages", async db => {
     await assertCatalogueParents(db, "packages", { ...input });
-    await assertPlanDestinations(db, tripContent);
+    if (input.isActive ?? true) await assertPlanDestinations(db, tripContent);
     const result = await db.query(
       `INSERT INTO packages
          (region_id, vehicle_type_id, name, slug, duration_days, max_persons,
-          price_per_person, tag, rating, highlights, created_by, updated_by, booking_mode, trip_content)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '[]'::jsonb, $10, $10, $11, $12::jsonb)
+          price_per_person, tag, rating, highlights, created_by, updated_by, booking_mode, trip_content, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '[]'::jsonb, $10, $10, $11, $12::jsonb, $13)
        RETURNING package_id`,
       [
         input.regionId,
@@ -191,6 +192,7 @@ export async function createPackage(
         actorId,
         input.bookingMode ?? "private",
         tripContent,
+        input.isActive ?? true,
       ],
     );
     return (await getPackage(result.rows[0].package_id, db))!;
@@ -233,7 +235,7 @@ export async function updatePackage(
       const saved = patch.tripContent === undefined ? row.trip_content == null ? null : validatePackageContent(row.trip_content) : patch.tripContent;
       const mode = patch.bookingMode ?? row.booking_mode, price = patch.pricePerPerson ?? Number(row.price_per_person), days = patch.durationDays ?? row.duration_days;
       if (saved && packagePlanDays(saved, mode, price, days) !== days) throw new TripError("The package plan changed. Reload it before saving.", 409);
-      if (saved && mode !== "shared" && !(price > 0)) throw new TripError("Enter a positive per-person price for a bookable package plan.");
+      if (saved && mode !== "shared" && (patch.isActive ?? row.is_active) && !(price > 0)) throw new TripError("Set a positive per-person price before making this package live.");
       if (patch.isActive ?? row.is_active) await assertPlanDestinations(db, saved);
     },
   );

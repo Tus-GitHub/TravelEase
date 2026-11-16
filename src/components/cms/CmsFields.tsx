@@ -11,6 +11,9 @@ import { cmsSafeImage, type CmsContent, type CmsField, type CmsItem } from "@/li
 import { MAX_IMAGE_BYTES } from "@/lib/image-upload";
 import { catalogueDefaults, catalogueFieldApplies, catalogueFields, sourceLabels, type CatalogueSource } from '@/lib/cms-catalogue';
 import CmsLinkField from './CmsLinkField';
+import CmsIconPicker from "./CmsIconPicker";
+import FeatureCard from "@/components/cards/FeatureCard";
+import type { IconName } from "@/types";
 import { useCmsControls } from './CmsControlsContext';
 
 export const cmsInput = "mt-2 w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-sm font-normal text-fg outline-none transition focus:border-accent-500 focus:ring-2 focus:ring-accent-500/15 disabled:opacity-60";
@@ -40,9 +43,10 @@ export function CmsImageField({ label, value, onChange, onUpload, disabled = fal
   </div>;
 }
 
-export default function CmsFields({ fields, value, onChange, onUpload, prefix, disabled = false }: {
+export default function CmsFields({ fields, value, onChange, onUpload, prefix, disabled = false, darkPreview = false }: {
   fields: CmsField[]; value: CmsContent; onChange: (value: CmsContent) => void;
   onUpload: (target: string, file: File) => Promise<void>; prefix: string; disabled?: boolean;
+  darkPreview?: boolean;
 }) {
   const [remove, setRemove] = useState<{ key: string; index: number } | null>(null);
   const controls = useCmsControls();
@@ -52,7 +56,9 @@ export default function CmsFields({ fields, value, onChange, onUpload, prefix, d
   }
   return <div className="space-y-6">
     {fields.filter(field => !value.source || catalogueFieldApplies(field.key, String(value.source))).map(field => {
-      const id = `${prefix}-${field.key}`, current = value[field.key];
+      const id = `${prefix}-${field.key}`, current = value[field.key] ?? field.defaultValue;
+      if (field.key === "icon" && field.options) return <CmsIconPicker key={id} label={field.label} value={String(current)} options={field.options} disabled={disabled} onChange={next => set(field.key, next)} />;
+      if (field.key === "style" && field.options) return <fieldset key={id}><legend className="text-sm font-semibold">Card style</legend><div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">{field.options.map(style => <button type="button" key={style} disabled={disabled} aria-pressed={current === style} onClick={() => set(field.key, style)} className={`min-h-11 rounded-xl border px-3 py-2 text-sm capitalize ${current === style ? "border-accent-500 bg-accent-500/10" : "border-line bg-surface"}`}>{style}</button>)}</div><div className={`mt-3 rounded-2xl p-3 ${darkPreview ? "bg-primary-900" : "bg-canvas"}`} aria-label="Feature card preview"><FeatureCard dark={darkPreview} feature={{ id, title: String(value.title || "Your card title"), description: String(value.description || "Your description appears here."), icon: String(value.icon || "car") as IconName, style: current as "default" | "outlined" | "filled" | "minimal" }} /></div></fieldset>;
       if (field.type === 'url') return <CmsLinkField key={id} id={id} label={field.label} value={String(current ?? '')} disabled={disabled} onChange={next => set(field.key, next)} />;
       if (value.source && ['category', 'region', 'pickup'].includes(field.key)) {
         const options = field.key === 'category' ? controls.options?.categories : field.key === 'region' ? controls.options?.regions : controls.options?.cities;
@@ -69,7 +75,7 @@ export default function CmsFields({ fields, value, onChange, onUpload, prefix, d
               <button data-ui-action="" type="button" aria-label={`Move item ${index + 1} up`} disabled={disabled || index === 0} onClick={() => move(field.key, index, -1)} className="rounded-lg border border-line px-3 py-1 text-sm disabled:opacity-30">↑</button>
               <button data-ui-action="" type="button" aria-label={`Move item ${index + 1} down`} disabled={disabled || index === entries.length - 1} onClick={() => move(field.key, index, 1)} className="rounded-lg border border-line px-3 py-1 text-sm disabled:opacity-30">↓</button>
               <Button type="button" size="sm" variant="ghost" iconLeft="trash" disabled={disabled} onClick={() => setRemove({ key: field.key, index })}>Remove</Button>
-            </div><CmsFields fields={field.fields ?? []} value={entry} prefix={`${id}-${index}`} disabled={disabled} onChange={next => set(field.key, entries.map((row, i) => i === index ? next as CmsItem : row))} onUpload={(target, file) => onUpload(`${field.key}.${index}.${target}`, file)} /></div>
+            </div><CmsFields fields={field.fields ?? []} value={entry} prefix={`${id}-${index}`} disabled={disabled} darkPreview={darkPreview} onChange={next => set(field.key, entries.map((row, i) => i === index ? next as CmsItem : row))} onUpload={(target, file) => onUpload(`${field.key}.${index}.${target}`, file)} /></div>
           </details>)}
           <Button type="button" size="sm" variant="outline" disabled={disabled || entries.length >= (field.max ?? 20)} onClick={() => set(field.key, [...entries, Object.fromEntries((field.fields ?? []).map(f => [f.key, f.type === "select" ? f.options?.[0] ?? "" : ""]))])}>+ Add item</Button>
         </div>;

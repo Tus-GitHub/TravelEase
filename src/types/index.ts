@@ -88,6 +88,7 @@ export interface Vehicle {
 }
 
 export interface Feature {
+  style?: "default" | "outlined" | "filled" | "minimal";
   id: string;
   title: string;
   description: string;

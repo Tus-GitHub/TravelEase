@@ -13,13 +13,14 @@ import { navLinks } from "@/data/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { cmsNavigationLinks } from "@/lib/cms-navigation";
 import type { CmsNavItem } from "@/lib/server/cms";
+import { chromeNavigationLinks, type CmsChrome } from "@/lib/cms-chrome";
 
 /**
  * Sticky, responsive navbar. Transparent over the hero, turns solid on scroll.
  * Mobile navigation uses the signed-in traveller's avatar as its trigger.
  */
-export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[] } = {}) {
-  const links = cmsNavigationLinks(navLinks, cmsNavigation, "header");
+export default function Navbar({ cmsNavigation, header, previewPath }: { cmsNavigation?: CmsNavItem[]; header?: CmsChrome["header"]; previewPath?: string } = {}) {
+  const links = header ? chromeNavigationLinks(header.links, cmsNavigation, "header") : cmsNavigationLinks(navLinks, cmsNavigation, "header");
   const [isScrolled, setIsScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -58,16 +59,18 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
   }, [isOpen]);
 
   // Published CMS pages can put a dark hero behind the transparent navbar.
-  const overDarkHero = (cmsNavigation ? cmsNavigation.some(page => page.href === pathname && page.darkHero) : pathname === "/");
-  const solid = isScrolled || isOpen || !overDarkHero;
+  const routePath = previewPath ?? pathname;
+  const overDarkHero = (cmsNavigation ? cmsNavigation.some(page => page.href === routePath && page.darkHero) : routePath === "/");
+  const solid = isScrolled || isOpen || !overDarkHero || Boolean(header && header.appearance !== "adaptive");
+  const darkSurface = !solid || header?.appearance === "dark";
   const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+    href === "/" ? routePath === "/" : routePath === href || routePath.startsWith(href + "/");
 
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-[transform,background-color,box-shadow,backdrop-filter] duration-300 ${
         hidden && !isOpen ? "-translate-y-full" : "translate-y-0"
-      } ${solid ? "glass border-x-0 border-t-0 shadow-sm" : "bg-transparent"}`}
+      } ${header?.appearance === "dark" ? "bg-primary-950 shadow-sm" : solid ? "glass border-x-0 border-t-0 shadow-sm" : "bg-transparent"}`}
       style={{ paddingTop: "env(safe-area-inset-top)", paddingLeft: "env(safe-area-inset-left)", paddingRight: "env(safe-area-inset-right)" }}
     >
       <nav
@@ -75,7 +78,7 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
           isScrolled ? "h-14 md:h-16" : "h-16 md:h-20"
         }`}
       >
-        <Logo inverted={!solid} />
+        <Logo inverted={darkSurface} label={header?.brandName} icon={header?.brandIcon} />
 
         {/* Desktop links */}
         <ul className="hidden min-w-0 items-center gap-5 overflow-x-auto whitespace-nowrap xl:flex 2xl:gap-6">
@@ -91,9 +94,9 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
                   } ${
                     active
                       ? "text-accent-500"
-                      : solid
-                        ? "text-fg"
-                        : "text-white/90"
+                      : darkSurface
+                        ? "text-white/90"
+                        : "text-fg"
                   }`}
                 >
                   {link.label}
@@ -104,11 +107,12 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
         </ul>
 
         <div className="hidden shrink-0 items-center gap-2 xl:flex">
-          <ThemeToggle tone={solid ? "default" : "light"} />
+          {header?.buttonLabel && <Button href={header.buttonHref} variant="accent" size="sm">{header.buttonLabel}</Button>}
+          <ThemeToggle tone={darkSurface ? "light" : "default"} />
           {isLoading ? null : user ? (
             <UserMenu user={user} onLogout={() => logout()} />
           ) : (
-            <Button href="/login" variant={solid ? "ghost" : "white"} size="sm">
+            <Button href="/login" variant={darkSurface ? "white" : "ghost"} size="sm">
               Login
             </Button>
           )}
@@ -116,7 +120,7 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
 
         {/* Mobile actions */}
         <div className="flex shrink-0 items-center gap-1 xl:hidden">
-          <ThemeToggle tone={solid ? "default" : "light"} />
+          <ThemeToggle tone={darkSurface ? "light" : "default"} />
           <button data-ui-action=""
             id="site-mobile-menu-trigger"
             type="button"
@@ -124,7 +128,7 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
             aria-expanded={isOpen}
             aria-controls="site-mobile-menu"
             onClick={() => setIsOpen((v) => !v)}
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${solid ? "text-fg" : "text-white"}`}
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${darkSurface ? "text-white" : "text-fg"}`}
           >
             {user ? <Avatar name={user.name} className="!h-10 !w-10 border-2 border-accent-500/60 text-sm" /> : <Icon name={isOpen ? "close" : "menu"} className="h-7 w-7" />}
           </button>
@@ -164,6 +168,7 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
             );
           })}
           <li className="mt-2 px-3">
+            {header?.buttonLabel && <Link href={header.buttonHref} onClick={() => setIsOpen(false)} className="mb-3 flex min-h-11 items-center justify-center rounded-xl bg-accent-500 px-4 py-3 text-sm font-semibold text-primary-950">{header.buttonLabel}</Link>}
             {isLoading ? null : user ? (
               <div className="rounded-xl border border-line-subtle">
                 <div className="flex items-center gap-2 border-b border-line-subtle px-3 py-3">

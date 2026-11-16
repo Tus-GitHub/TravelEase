@@ -3,6 +3,7 @@ import { categories } from "../data/categories";
 import { features } from "../data/features";
 import { aboutIntro, aboutStats, aboutStory } from "../data/pages";
 import { catalogueFields, catalogueDefaults, validateCatalogueContent } from './cms-catalogue';
+import type { CmsChrome } from "./cms-chrome";
 
 export const CMS_MAX_BYTES = 256 * 1024;
 export const CMS_MAX_SECTIONS = 30;
@@ -12,6 +13,7 @@ export type CmsContent = Record<string, CmsValue>;
 export interface CmsAppearance { background: "default" | "light" | "muted" | "dark" | "image"; imageUrl: string; overlay: number }
 export interface CmsSection { id: string; type: CmsSectionType; visible: boolean; appearance: CmsAppearance; content: CmsContent }
 export interface CmsDocument {
+  chrome?: CmsChrome;
   schemaVersion: 1;
   seo: { title: string; description: string };
   navigation: { header: boolean; footer: boolean; label: string; order: number };
@@ -20,6 +22,7 @@ export interface CmsDocument {
 export interface CmsField {
   key: string; label: string; type: "text" | "textarea" | "url" | "image" | "checkbox" | "number" | "select" | "items";
   max?: number; options?: readonly string[]; fields?: CmsField[];
+  defaultValue?: string;
 }
 interface SectionDefinition { label: string; description: string; repeatable: boolean; fields: CmsField[]; defaults: CmsContent }
 const text = (key: string, label: string, max = 200): CmsField => ({ key, label, type: "text", max });
@@ -59,7 +62,7 @@ export const CMS_SECTIONS = {
   "package-builder": { label: "Trip builder", description: "Existing package selection and custom trip builder, using live catalogue data.", repeatable: false,
     fields: heading, defaults: headingDefaults("Travel Packages", "Plan Your Perfect Trip", "Pick from our curated packages or build your very own — your trip, your way.") },
   features: { label: "Why choose us", description: "Trust and service feature cards.", repeatable: false,
-    fields: [...heading, items([text("title", "Title"), paragraph("description", "Description"), icon])],
+    fields: [...heading, items([text("title", "Title"), paragraph("description", "Description"), icon, { key: "style", label: "Card style", type: "select", options: ["default", "outlined", "filled", "minimal"], defaultValue: "default" }])],
     defaults: { ...headingDefaults("Why Choose Us", "Travel With Total Peace of Mind", "We obsess over the details so your journey is safe, comfortable and completely hassle-free."), items: features.map(({ title, description, icon }) => ({ title, description, icon })) } },
   testimonials: { label: "Customer reviews", description: "Published customer reviews, with the existing fallback until enough reviews arrive.", repeatable: false,
     fields: heading, defaults: headingDefaults("Customer Experience", "Loved by Travellers Everywhere", "Real stories from people who booked their journeys with us.") },
@@ -142,7 +145,9 @@ function validateFields(input: unknown, fields: CmsField[]): CmsContent {
   const value = object(input); fieldsOnly(value, fields.map(field => field.key));
   const output: CmsContent = {};
   for (const field of fields) {
-    const current = value[field.key];
+    // Preserve old published JSON exactly; the renderer/editor applies optional display defaults.
+    if (value[field.key] === undefined && field.defaultValue !== undefined) continue;
+    const current = value[field.key] === undefined ? field.defaultValue : value[field.key];
     if (field.type === "items") {
       if (!Array.isArray(current) || current.length > (field.max ?? 20)) throw new CmsError(`${field.label} must contain at most ${field.max ?? 20} entries.`);
       output[field.key] = current.map(row => validateFields(row, field.fields ?? []) as CmsItem);
@@ -163,7 +168,7 @@ function validateFields(input: unknown, fields: CmsField[]): CmsContent {
   return output;
 }
 export function validateCmsDocument(input: unknown): CmsDocument {
-  const raw = object(input); fieldsOnly(raw, ["schemaVersion", "seo", "navigation", "sections"]);
+  const raw = object(input); fieldsOnly(raw, ["schemaVersion", "seo", "navigation", "sections", "chrome"]);
   if (raw.schemaVersion !== 1) throw new CmsError("Unsupported page format. Reload the editor.");
   if (new TextEncoder().encode(JSON.stringify(raw)).byteLength > CMS_MAX_BYTES) throw new CmsError("This page is too large. Reduce its content.", 413);
   const seo = object(raw.seo), nav = object(raw.navigation);
@@ -193,7 +198,25 @@ export function validateCmsDocument(input: unknown): CmsDocument {
   if (!sections.some(section => section.visible)) throw new CmsError("Keep at least one section visible.");
   const title = boundedText(seo.title, 200, "SEO title"), label = boundedText(nav.label, 80, "Navigation label");
   if (!title.trim() || ((nav.header || nav.footer) && !label.trim())) throw new CmsError("Enter the page title and navigation label.");
-  return { schemaVersion: 1, seo: { title, description: boundedText(seo.description, 500, "SEO description") }, navigation: { header: nav.header, footer: nav.footer, label, order: Number(nav.order) }, sections };
+  return { schemaVersion: 1, seo: { title, description: boundedText(seo.description, 500, "SEO description") }, navigation: { header: nav.header, footer: nav.footer, label, order: Number(nav.order) }, sections, ...(raw.chrome === undefined ? {} : { chrome: validateCmsChrome(raw.chrome) }) };
+}
+
+export function validateCmsChrome(value: unknown): CmsChrome {
+  const chrome = object(value); fieldsOnly(chrome, ["header", "footer"]);
+  const header = object(chrome.header), footer = object(chrome.footer);
+  fieldsOnly(header, ["appearance", "brandName", "brandIcon", "links", "buttonLabel", "buttonHref"]);
+  fieldsOnly(footer, ["appearance", "description", "groups", "socials"]);
+  if (!["adaptive", "solid", "dark"].includes(String(header.appearance)) || !["dark", "light"].includes(String(footer.appearance))) throw new CmsError("Choose a valid header/footer design.");
+  const icons = [...CMS_ICONS, "facebook", "twitter", "instagram", "linkedin", "mail", "phone", "location"];
+  if (!icons.includes(String(header.brandIcon))) throw new CmsError("Choose a supported brand icon.");
+  const link = (item: unknown) => { const row = object(item); fieldsOnly(row, ["label", "href"]); const label = boundedText(row.label, 80, "Link label").trim(), href = boundedText(row.href, 1000, "Link URL").trim(); if (!label || !href || !cmsSafeLink(href)) throw new CmsError("Give each link a label and a site path or HTTPS URL."); return { label, href }; };
+  const list = (items: unknown, max: number, label: string) => { if (!Array.isArray(items) || items.length > max) throw new CmsError(`${label} supports up to ${max} items.`); return items; };
+  const buttonLabel = boundedText(header.buttonLabel, 60, "Header button label").trim(), buttonHref = boundedText(header.buttonHref, 1000, "Header button URL").trim();
+  if (Boolean(buttonLabel) !== Boolean(buttonHref) || !cmsSafeLink(buttonHref)) throw new CmsError("Give the header button both a label and valid URL, or clear both.");
+  const groups = list(footer.groups, 6, "Footer columns").map(item => { const row = object(item); fieldsOnly(row, ["title", "links"]); const title = boundedText(row.title, 80, "Column title").trim(); if (!title) throw new CmsError("Name each footer column."); return { title, links: list(row.links, 20, "Footer column").map(link) }; });
+  const socials = list(footer.socials, 8, "Social links").map(item => { const row = object(item); fieldsOnly(row, ["label", "href", "icon"]); if (!icons.includes(String(row.icon))) throw new CmsError("Choose a supported social icon."); return { ...link({ label: row.label, href: row.href }), icon: row.icon as CmsChrome["footer"]["socials"][number]["icon"] }; });
+  const brandName = boundedText(header.brandName, 100, "Brand name").trim(); if (!brandName) throw new CmsError("Enter the brand name.");
+  return { header: { appearance: header.appearance as CmsChrome["header"]["appearance"], brandName, brandIcon: header.brandIcon as CmsChrome["header"]["brandIcon"], links: list(header.links, 12, "Header links").map(link), buttonLabel, buttonHref }, footer: { appearance: footer.appearance as CmsChrome["footer"]["appearance"], description: boundedText(footer.description, 1000, "Footer description"), groups, socials } };
 }
 
 /** Resolve only declared image fields; never use a client path to traverse arbitrary JSON. */

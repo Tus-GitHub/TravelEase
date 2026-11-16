@@ -38,6 +38,7 @@ export async function POST(request: Request) {
   const maxPersons = Number(body.maxPersons);
   const pricePerPerson = Number(body.pricePerPerson);
   const bookingMode = body.bookingMode ?? "private";
+  if (body.isActive !== undefined && typeof body.isActive !== "boolean") return NextResponse.json({ error: "Choose Draft or Live." }, { status: 400 });
   if (!["private", "shared", "both"].includes(String(bookingMode))) return NextResponse.json({ error: "Choose private, shared or both booking modes." }, { status: 400 });
 
   if (!Number.isInteger(regionId) || regionId <= 0) {
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
         maxPersons,
         pricePerPerson,
         bookingMode: bookingMode as "private" | "shared" | "both",
+        ...(typeof body.isActive === "boolean" ? { isActive: body.isActive } : {}),
         tag: typeof body.tag === "string" ? body.tag.trim() : "",
         rating: optRating(body.rating),
         ...(body.tripContent === undefined ? {} : { tripContent: validatePackageContent(body.tripContent) }),

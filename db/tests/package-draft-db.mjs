@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import pg from 'pg';
+import {runtimeDatabaseConfig} from '../../src/lib/server/db-config.ts';
+import {blankPackageContent} from '../../src/lib/package-content.ts';
+import {createPackage,updatePackage,listPackages} from '../../src/lib/server/admin/catalog.ts';
+import {getPublicPackage,listPublicPackages} from '../../src/lib/server/catalogue.ts';
+import {resolvePrivatePackage} from '../../src/lib/server/package-plan.ts';
+assert(process.argv.includes('--dev')&&!process.env.VERCEL);
+const host=value=>new URL(value).hostname.replace('-pooler.','.');assert.notEqual(host(process.env.DATABASE_URL),host(process.env.DATABASE_URL_PRODUCTION));
+const client=new pg.Client(runtimeDatabaseConfig(process.env.DATABASE_URL)),actor=randomUUID(),name='Owned draft '+randomUUID();let began=false,counter=0;const originalPool=globalThis.__pgPool;
+await client.connect();
+try{
+ await client.query('BEGIN');began=true;
+ globalThis.__pgPool={query:(...args)=>client.query(...args),connect:async()=>{const point='owned_draft_'+(++counter);return {query:async(sql,params)=>{const command=typeof sql==='string'?sql.trim().toUpperCase():'';if(command==='BEGIN')return client.query('SAVEPOINT '+point);if(command==='COMMIT')return client.query('RELEASE SAVEPOINT '+point);if(command==='ROLLBACK'){await client.query('ROLLBACK TO SAVEPOINT '+point);return client.query('RELEASE SAVEPOINT '+point);}return client.query(sql,params);},release(){}};}};
+ await client.query("INSERT INTO users(user_id,name,email,phone,password_hash,email_verified_at,role_id) VALUES($1,$2,$3,'','unusable',now(),(SELECT role_id FROM roles WHERE name='admin'))",[actor,name,actor+'@example.invalid']);
+ const parent=(await client.query('SELECT s.state_id,s.region_id FROM states s JOIN regions r USING(region_id) WHERE s.is_active AND NOT s.is_deleted AND r.is_active AND NOT r.is_deleted ORDER BY s.state_id LIMIT 1')).rows[0];
+ const type=(await client.query('SELECT vehicle_type_id FROM vehicle_types WHERE is_active AND NOT is_deleted ORDER BY vehicle_type_id LIMIT 1')).rows[0];assert(parent&&type);
+ const city=(await client.query('INSERT INTO cities(state_id,name,is_pickup_point,display_order) VALUES($1,$2,false,(SELECT COALESCE(MAX(display_order),0)+1 FROM cities WHERE state_id=$1 AND NOT is_deleted)) RETURNING city_id',[parent.state_id,name])).rows[0].city_id;
+ const spots=(await client.query('INSERT INTO tourist_spots(city_id,name) SELECT $1,unnest($2::text[]) RETURNING tourist_spot_id,name',[city,['Delhi','Chandigarh','Shimla','Manali']])).rows;
+ const ids=new Map(spots.map(spot=>[spot.name,spot.tourist_spot_id]));
+ const content={...blankPackageContent(),inclusions:[],routeTree:{roots:[ids.get('Delhi')],nodes:spots.map(spot=>({spotId:spot.tourist_spot_id,next:spot.name==='Delhi'?[ids.get('Chandigarh'),ids.get('Shimla')]:spot.name==='Manali'?[]:[ids.get('Manali')],nights:0,extraPricePerPerson:0,description:'',meals:{breakfast:0,lunch:0,dinner:0},canFinish:spot.name==='Manali'}))}};
+ const input={name,regionId:parent.region_id,vehicleTypeId:type.vehicle_type_id,durationDays:1,maxPersons:4,pricePerPerson:0,tag:'',rating:null,bookingMode:'private',tripContent:content};
+ await assert.rejects(()=>createPackage({...input,isActive:true},actor),/positive/);
+ const draft=await createPackage({...input,isActive:false},actor);assert.equal(draft.isActive,false);assert.equal(draft.pricePerPerson,0);assert.equal(await getPublicPackage(draft.slug),null);
+ await client.query('UPDATE tourist_spots SET is_active=false WHERE tourist_spot_id=$1',[ids.get('Manali')]);
+ const saved=await updatePackage(draft.id,{tripContent:{...content,inclusions:['Owned configurable inclusion']}},actor);assert.equal(saved.pricePerPerson,0);assert.equal(saved.isActive,false);assert.equal(saved.tripContent.inclusions[0],'Owned configurable inclusion');
+ await assert.rejects(()=>updatePackage(draft.id,{isActive:true},actor),/positive/);
+ await assert.rejects(()=>updatePackage(draft.id,{isActive:true,pricePerPerson:1000},actor),/active/);
+ assert.equal(await getPublicPackage(draft.slug),null);assert(!(await listPublicPackages()).some(pkg=>pkg.id===draft.id));
+ await assert.rejects(()=>resolvePrivatePackage({packageId:draft.id,guidedPath:[ids.get('Delhi'),ids.get('Chandigarh'),ids.get('Manali')]},client),/unavailable|not found/i);
+ await client.query('UPDATE tourist_spots SET is_active=true WHERE tourist_spot_id=$1',[ids.get('Manali')]);
+ const active=await updatePackage(draft.id,{isActive:true,pricePerPerson:1000},actor);assert.equal(active.isActive,true);assert((await getPublicPackage(draft.slug)).isBookable);
+ assert.equal((await resolvePrivatePackage({packageId:draft.id,guidedPath:[ids.get('Delhi'),ids.get('Shimla'),ids.get('Manali')]},client)).pricePerPerson,1000);
+ await updatePackage(draft.id,{isActive:false,pricePerPerson:0},actor);assert.equal(await getPublicPackage(draft.slug),null);assert((await listPackages()).some(pkg=>pkg.id===draft.id&&!pkg.isActive));
+ console.log('PASS real draft create/save at zero, hidden public list/detail/checkout, active-price/destination guards, explicit activation and deactivation.');
+}finally{
+ if(originalPool===undefined)delete globalThis.__pgPool;else globalThis.__pgPool=originalPool;
+ if(began)await client.query('ROLLBACK');
+ assert.equal(Number((await client.query('SELECT count(*) AS n FROM users WHERE user_id=$1',[actor])).rows[0].n),0);
+ assert.equal(Number((await client.query('SELECT count(*) AS n FROM cities WHERE name=$1',[name])).rows[0].n),0);
+ await client.end();console.log('PASS all owned draft/admin/geography/audit rows rolled back; no production offer or mail.');
+}

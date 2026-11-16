@@ -67,6 +67,7 @@ export default function AdminPackagesPage() {
 
   const form = useCrudForm({
     empty: {
+      isActive: false,
       tripContent: null as PackageContent | null,
       bookingMode: "private",
       regionId: "",
@@ -126,7 +127,7 @@ export default function AdminPackagesPage() {
       <AdminPageHeader className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-fg">Packages</h1>
-          <p className="text-sm text-muted">{r.items.length} curated packages</p>
+          <p className="text-sm text-muted">{r.items.length} packages · Drafts stay private until you make them live.</p>
         </div>
         <Button
           variant="accent"
@@ -156,6 +157,9 @@ export default function AdminPackagesPage() {
             <FormField label="Booking mode" icon="users">
               <Select aria-label="Booking mode" className={fieldBase} value={form.draft.bookingMode} onChange={e => form.patch({ bookingMode: e.target.value })}><option value="private">Private vehicle trips</option><option value="shared">Shared Friday departures</option><option value="both">Private and shared trips</option></Select>
             </FormField>
+            <FormField label="Publication" icon="eye">
+              <Select aria-label="Package publication" className={fieldBase} value={form.draft.isActive ? "live" : "draft"} onChange={event => form.patch({ isActive: event.target.value === "live" })}><option value="draft">Draft — only in admin</option><option value="live">Live — customers can book</option></Select>
+            </FormField>
             <FormField label="Region" icon="map-pin">
               <Select aria-label="Region" required value={form.draft.regionId} onChange={(e) => form.patch({ regionId: e.target.value })} className={`${fieldBase} appearance-none`}>
                 <option value="" disabled>Select region</option>
@@ -182,7 +186,7 @@ export default function AdminPackagesPage() {
               <input type="number" min={1} required value={form.draft.maxPersons} onChange={(e) => form.patch({ maxPersons: e.target.value })} className={fieldBase} placeholder="6" />
             </FormField>
             <FormField label="Price / person (₹)" icon="tag">
-              <input type="number" min={form.draft.tripContent?0.01:0} step="0.01" required value={form.draft.pricePerPerson} onChange={(e) => form.patch({ pricePerPerson: e.target.value })} className={fieldBase} placeholder="8200" />
+              <input type="number" min={form.draft.isActive && form.draft.tripContent ? 0.01 : 0} step="0.01" required value={form.draft.pricePerPerson} onChange={(e) => form.patch({ pricePerPerson: e.target.value })} className={fieldBase} placeholder="Set your price" />
             </FormField>
             <FormField label="Rating (0–5)" icon="star">
               <input type="number" min={0} max={5} step={0.1} value={form.draft.rating} onChange={(e) => form.patch({ rating: e.target.value })} className={fieldBase} placeholder="4.7" />
@@ -195,7 +199,7 @@ export default function AdminPackagesPage() {
             {form.error && <div className="sm:col-span-2 lg:col-span-4"><ErrorNote message={form.error} /></div>}
             <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
               <Button type="submit" variant="primary" size="sm" disabled={form.saving}>
-                {form.saving ? "Saving…" : form.editingId == null ? "Add package" : "Save changes"}
+                {form.saving ? "Saving…" : form.draft.isActive ? "Save & make live" : "Save draft"}
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={form.cancel}>
                 Cancel
@@ -231,6 +235,7 @@ export default function AdminPackagesPage() {
                   onToggleExpand={() => setExpanded(expanded === p.id ? null : p.id)}
                   onEdit={() =>
                     form.startEdit(p.id, {
+                      isActive: p.isActive,
                       tripContent: p.tripContent,
                       bookingMode: p.bookingMode,
                       regionId: String(p.regionId),
@@ -287,7 +292,7 @@ function PackageRows({
   return (
     <>
       <tr className="hover:bg-surface-hover/60">
-        <td className="px-5 py-3.5 font-medium text-fg">{pkg.name}{pkg.tripContent&&<p className="mt-1 text-xs font-normal text-muted">{pkg.tripContent.routeTree?"Guided destination tree":"Reusable day plan"}</p>}{pkg.tripContent&&!pkg.tripContent.routeTree&&["shared","both"].includes(pkg.bookingMode)&&<Button className="mt-2" href={`/admin/weekend-trips?template=${pkg.id}`} variant="outline" size="sm">Schedule Friday departure</Button>}</td>
+        <td className="px-5 py-3.5 font-medium text-fg">{pkg.name}<span className={`ml-2 inline-flex rounded-full px-2 py-1 text-xs font-semibold ${pkg.isActive ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300"}`}>{pkg.isActive ? "Live" : "Draft"}</span>{pkg.tripContent&&<p className="mt-1 text-xs font-normal text-muted">{pkg.tripContent.routeTree?"Guided destination tree":"Reusable day plan"}</p>}{pkg.tripContent&&!pkg.tripContent.routeTree&&["shared","both"].includes(pkg.bookingMode)&&<Button className="mt-2" href={`/admin/weekend-trips?template=${pkg.id}`} variant="outline" size="sm">Schedule Friday departure</Button>}</td>
         <td className="px-5 py-3.5 text-muted">{regionName}</td>
         <td className="px-5 py-3.5 text-muted">{typeTitle}</td>
         <td className="px-5 py-3.5 text-muted">{pkg.durationDays}</td>
@@ -295,10 +300,10 @@ function PackageRows({
         <td className="px-5 py-3.5">
           <button data-ui-action=""
             type="button"
-            onClick={onToggleExpand}
+            onClick={pkg.tripContent?.routeTree ? onEdit : onToggleExpand}
             className="flex items-center gap-1 text-xs font-medium text-primary-700 hover:underline"
           >
-            {pkg.stops.length} stop{pkg.stops.length === 1 ? "" : "s"}
+            {pkg.tripContent?.routeTree ? `${pkg.tripContent.routeTree.nodes.length} destinations` : `${pkg.stops.length} ${pkg.stops.length === 1 ? "stop" : "stops"}`}
             <Icon name="chevron-down" className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
           </button>
         </td>
@@ -381,6 +386,7 @@ function PackageRows({
 }
 
 function toBody(d: {
+  isActive: boolean;
   tripContent: PackageContent | null;
   bookingMode: string;
   regionId: string;
@@ -393,6 +399,7 @@ function toBody(d: {
   rating: string;
 }) {
   return {
+    isActive: d.isActive,
     tripContent: d.tripContent,
     bookingMode: d.bookingMode,
     regionId: Number(d.regionId),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { MutateResult } from "./useAdminResource";
 
 /**
@@ -18,6 +18,7 @@ export function useCrudForm<Draft>(opts: {
   const [draft, setDraft] = useState<Draft>(opts.empty);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const inFlight = useRef(false);
 
   const startCreate = () => {
     setDraft(opts.empty);
@@ -40,6 +41,8 @@ export function useCrudForm<Draft>(opts: {
   };
 
   const submit = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setSaving(true);
     setError(null);
     try {
@@ -49,7 +52,7 @@ export function useCrudForm<Draft>(opts: {
       setEditingId(null);
     } catch {
       setError("Unable to save changes. Please try again.");
-    } finally { setSaving(false); }
+    } finally { inFlight.current = false; setSaving(false); }
   };
 
   const patch = (fields: Partial<Draft>) => setDraft((d) => ({ ...d, ...fields }));
