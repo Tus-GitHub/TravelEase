@@ -15,14 +15,14 @@ const groups: AdminNavGroup[] = [
     { href: "/admin/drivers", label: "Drivers", icon: "user", section: "drivers" },
     { href: "/admin/vendors", label: "Vendors", icon: "briefcase", section: "vendors" },
   ] },
-  { label: "Trips & Packages", items: [
-    { href: "/admin/packages", label: "Packages & Routes", icon: "tag", section: "packages" },
-    { href: "/admin/weekend-trips", label: "Weekend Trips", icon: "calendar", adminOnly: true, activePaths: ["/admin/tour-guides"] },
-  ] },
   { label: "Pricing & Offers", items: [
     { href: "/admin/pricing", label: "Car pricing", icon: "tag", adminOnly: true },
     { href: "/admin/seasonal-pricing", label: "Seasonal pricing", icon: "calendar", section: "seasonal" },
     { href: "/admin/coupons", label: "Coupons", icon: "tag", section: "coupons" },
+  ] },
+  { label: "Trips & Packages", items: [
+    { href: "/admin/packages", label: "Packages & Routes", icon: "tag", section: "packages" },
+    { href: "/admin/weekend-trips", label: "Weekend Trips", icon: "calendar", adminOnly: true, activePaths: ["/admin/tour-guides"] },
   ] },
   { label: "Customers", items: [
     { href: "/admin/users", label: "Users", icon: "users", section: "users" },
