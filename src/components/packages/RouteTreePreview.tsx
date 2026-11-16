@@ -43,8 +43,8 @@ export default function RouteTreePreview({ tree, names }: { tree: RouteTree; nam
             <svg width={layout.width} height={layout.height} aria-hidden="true" className={styles.connectors}>
               <defs><marker id={marker} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" /></marker></defs>
               {layout.edges.map(edge => {
-                const highlighted = selectedId == null || edge.from === selectedId || edge.to === selectedId;
-                return <path key={`${edge.from}-${edge.to}`} data-route-edge={`${edge.from}-${edge.to}`} d={edge.path} fill="none" stroke="currentColor" strokeWidth={selectedId == null ? 2 : highlighted ? 3 : 1} opacity={highlighted ? .85 : .12} markerEnd={`url(#${marker})`} />;
+                const highlighted = !selected || edge.from === selected.id || edge.to === selected.id;
+                return <path key={`${edge.from}-${edge.to}`} data-route-edge={`${edge.from}-${edge.to}`} d={edge.path} fill="none" stroke="currentColor" strokeWidth={!selected ? 2 : highlighted ? 3 : 1} opacity={highlighted ? .85 : .12} markerEnd={`url(#${marker})`} />;
               })}
             </svg>
             <ul className={styles.nodes}>{layout.nodes.map(({ id, node, x, y, parents }) => <li key={id} data-route-node={id} style={{ left: x, top: y, width: ROUTE_CARD.width, height: ROUTE_CARD.height }} className={styles.node}>
