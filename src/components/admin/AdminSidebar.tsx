@@ -109,7 +109,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
         <Logo inverted />
         <div className="flex items-center gap-1">
           <ThemeToggle tone="light" />
-          <button
+          <button data-ui-action=""
             id="admin-mobile-menu-trigger"
             type="button"
             onClick={() => setIsMobileOpen((v) => !v)}
@@ -140,7 +140,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
               <Icon name="arrow-right" className="h-4 w-4 rotate-180" />
               Back to Site
             </Link>
-            <button
+            <button data-ui-action=""
               type="button"
               onClick={() => logout()}
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-red-300 hover:bg-white/5 hover:text-red-200"
@@ -181,7 +181,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
             <Icon name="arrow-right" className="h-4 w-4 rotate-180" />
             Back to Site
           </Link>
-          <button
+          <button data-ui-action=""
             type="button"
             onClick={() => logout()}
             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-red-300 hover:bg-white/5 hover:text-red-200"

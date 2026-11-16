@@ -57,7 +57,7 @@ export default function VehicleImageCrop({ image, name, onClose, onSave }: {
           </div>
           {mode === "crop" && <div className="mt-4 space-y-3">
             {([['zoom', 'Zoom', 1, 5, 0.05], ['x', 'Horizontal position', 0, 100, 1], ['y', 'Vertical position', 0, 100, 1]] as const).map(([key, label, min, max, step]) => <label key={key} className="block text-xs font-semibold text-muted">{label}<input aria-label={label} type="range" min={min} max={max} step={step} value={position[key]} disabled={busy || !size.width} onChange={e => setPosition(p => ({ ...p, [key]: Number(e.target.value) }))} className="mt-2 block w-full accent-amber-500" /></label>)}
-            <button type="button" disabled={busy} className="text-xs font-semibold text-accent-600 dark:text-accent-400" onClick={() => setPosition({ zoom: 1, x: 50, y: 50 })}>Reset crop</button>
+            <button data-ui-action="" type="button" disabled={busy} className="text-xs font-semibold text-accent-600 dark:text-accent-400" onClick={() => setPosition({ zoom: 1, x: 50, y: 50 })}>Reset crop</button>
           </div>}
         </div>
         <div className="min-w-0"><h3 className="mb-2 text-sm font-semibold">Traveller card preview</h3>

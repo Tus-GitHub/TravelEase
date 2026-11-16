@@ -1,4 +1,7 @@
 "use client";
+import DateInput from "@/components/controls/DateInput";
+import Select from "@/components/controls/Select";
+
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -82,7 +85,8 @@ export default function SearchForm() {
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <span className="relative block">
           <Icon name="calendar" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/55" />
-          <input
+          <DateInput
+            aria-label="Departure date"
             type="date"
             required
             min={today}
@@ -93,7 +97,8 @@ export default function SearchForm() {
         </span>
         <span className="relative block">
           <Icon name="car" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/55" />
-          <select
+          <Select
+            aria-label="Vehicle type"
             required
             value={form.vehicleType}
             onChange={update("vehicleType")}
@@ -107,15 +112,15 @@ export default function SearchForm() {
                 {c.title}
               </option>
             ))}
-          </select>
+          </Select>
         </span>
       </div>
 
       <Magnetic className="mt-4 w-full" strength={0.2} radius={80}>
-        <button
+        <button data-ui-action=""
           type="submit"
           disabled={submitting}
-          className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-accent-500 py-3.5 text-base font-semibold text-white transition-[background-color,transform] duration-200 hover:bg-accent-600 active:scale-[0.985] disabled:opacity-90 motion-reduce:active:scale-100"
+          className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-accent-500 py-3.5 text-base font-semibold text-primary-950 shadow-sm transition-[background-color,transform] duration-200 hover:bg-accent-400 active:scale-[0.985] disabled:opacity-50 motion-reduce:active:scale-100"
         >
           <span
             className={`absolute inset-y-0 left-0 bg-white/20 transition-[width] duration-700 ${

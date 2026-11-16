@@ -120,7 +120,7 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
         {/* Mobile actions */}
         <div className="flex items-center gap-1 lg:hidden">
           <ThemeToggle tone={solid ? "default" : "light"} />
-          <button
+          <button data-ui-action=""
             id="site-mobile-menu-trigger"
             type="button"
             aria-label={isOpen ? "Close menu" : user ? "Open account and navigation" : "Open menu"}
@@ -185,7 +185,7 @@ export default function Navbar({ cmsNavigation }: { cmsNavigation?: CmsNavItem[]
                   <Icon name="user" className="h-4 w-4" />
                   Profile Settings
                 </Link>
-                <button
+                <button data-ui-action=""
                   type="button"
                   onClick={() => {
                     setIsOpen(false);

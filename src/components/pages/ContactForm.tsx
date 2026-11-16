@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
@@ -130,13 +132,13 @@ export default function ContactForm() {
             </FormField>
 
             <FormField label="What's this about?" icon="headset">
-              <select aria-label="What's this about?" value={form.reason} disabled={busy} onChange={set("reason")} className={fieldBase}>
+              <Select aria-label="What's this about?" value={form.reason} disabled={busy} onChange={set("reason")} className={fieldBase}>
                 {contactReasons.map((reason) => (
                   <option key={reason} value={reason}>
                     {reason}
                   </option>
                 ))}
-              </select>
+              </Select>
             </FormField>
 
             <label className="block text-left">

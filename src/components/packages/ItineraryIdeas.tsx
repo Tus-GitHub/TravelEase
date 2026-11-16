@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
@@ -71,7 +73,7 @@ export default function ItineraryIdeas({ region, selected, onApply }: {
           <legend className="mb-3 text-sm font-semibold text-fg">What draws you in? <span className="font-normal text-muted">Pick up to three</span></legend>
           <div className="flex flex-wrap gap-2">{ITINERARY_INTERESTS.map(interest => {
             const active = interests.includes(interest);
-            return <button key={interest} type="button" aria-pressed={active} disabled={!active && interests.length >= 3}
+            return <button data-ui-action="" key={interest} type="button" aria-pressed={active} disabled={!active && interests.length >= 3}
               onClick={() => { setInterests(active ? interests.filter(value => value !== interest) : [...interests, interest]); setError(""); }}
               className={`rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 disabled:opacity-40 ${active ? "border-accent-400 bg-accent-100 text-primary-950 dark:bg-accent-400" : "border-line bg-surface text-muted hover:border-accent-400 hover:text-fg"}`}>{interest}</button>;
           })}</div>
@@ -79,10 +81,10 @@ export default function ItineraryIdeas({ region, selected, onApply }: {
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div className="min-w-0 flex-1">
             <label htmlFor={countId} className="mb-2 block text-sm font-semibold text-fg">Stops in your itinerary</label>
-            <select id={countId} value={stopCount} disabled={busy || !user || maxCount < 2} onChange={event => { setStopCount(Number(event.target.value)); setError(""); }}
+            <Select id={countId} value={stopCount} disabled={busy || !user || maxCount < 2} onChange={event => { setStopCount(Number(event.target.value)); setError(""); }}
               className="w-36 rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50">
               {Array.from({ length: Math.max(0, maxCount - minCount + 1) }, (_, index) => minCount + index).map(count => <option key={count} value={count}>{count} stops</option>)}
-            </select>
+            </Select>
           </div>
           <Button type="button" variant="accent" loading={busy} disabled={busy || !user || maxCount < minCount} iconLeft="star" onClick={() => void suggest()}>Find itinerary ideas</Button>
         </div>

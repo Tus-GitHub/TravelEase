@@ -21,7 +21,7 @@ export default function Toggle({
   const [busy, setBusy] = useState(false);
 
   return (
-    <button
+    <button data-ui-action=""
       type="button"
       role="switch"
       aria-checked={on}
@@ -29,19 +29,17 @@ export default function Toggle({
       disabled={busy}
       onClick={async () => {
         setBusy(true);
-        await onChange(!on);
-        setBusy(false);
+        try { await onChange(!on); } finally { setBusy(false); }
       }}
-      className={`inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-60 ${
-        on ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
-      }`}
+      aria-busy={busy || undefined}
+      className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-60"
     >
-      <span
+      <span aria-hidden="true" className={`inline-flex h-6 w-11 items-center rounded-full p-0.5 transition-colors ${on ? "bg-primary-700 dark:bg-accent-500" : "bg-surface-hover ring-1 ring-inset ring-line"}`}><span
         aria-hidden="true"
         className={`h-5 w-5 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] will-change-transform motion-reduce:transition-none ${
           on ? "translate-x-5" : "translate-x-0"
         }`}
-      />
+      /></span>
     </button>
   );
 }

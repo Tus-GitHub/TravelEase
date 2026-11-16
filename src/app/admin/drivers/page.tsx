@@ -42,7 +42,7 @@ export default function AdminDriversPage() {
       <tbody className="divide-y divide-line-subtle">
         {r.items.map((d) => <tr key={d.id} className="hover:bg-surface-hover/60">
           <td className="px-4 py-4 font-semibold text-fg">{d.name}</td><td className="px-4 py-4 text-muted">{d.phone}</td><td className="px-4 py-4 text-muted">{d.licenceNumber || "-"}</td><td className="px-4 py-4 text-muted">{d.note || "-"}</td><td className="px-4 py-4 text-muted">{d.activeBookings}</td>
-          <td className="px-4 py-4"><button type="button" onClick={() => r.update(d.id, { isActive: !d.isActive })} className={`rounded-full px-2.5 py-1 text-xs font-semibold ${d.isActive ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-surface-hover text-muted"}`}>{d.isActive ? "Active" : "Off"}</button></td>
+          <td className="px-4 py-4"><button data-ui-action="" type="button" onClick={() => r.update(d.id, { isActive: !d.isActive })} className={`rounded-full px-2.5 py-1 text-xs font-semibold ${d.isActive ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-surface-hover text-muted"}`}>{d.isActive ? "Active" : "Off"}</button></td>
           <td className="px-4 py-4"><DriverLoginControl id={d.id} email={d.loginEmail} reload={r.refetch} /></td>
           <td className="px-4 py-4"><RowActions name={d.name} onEdit={() => form.startEdit(d.id, { name: d.name, phone: d.phone, licenceNumber: d.licenceNumber, note: d.note })} onDelete={() => r.remove(d.id)} /></td>
         </tr>)}

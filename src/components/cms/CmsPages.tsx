@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -41,7 +43,7 @@ export default function CmsPages() {
     {open && <AdminDialog title="Create a new page" description="Start with a blank page or reuse one of your existing layouts." busy={busy} onClose={() => setOpen(false)}><form onSubmit={create} className="space-y-5 p-6 sm:p-8">
       <label className="block text-sm font-semibold">Page name<input required maxLength={200} value={title} disabled={busy} onChange={e => { setTitle(e.target.value); if (!slugEdited) setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 160)); }} className={cmsInput} placeholder="For example, Our Services" /></label>
       <label className="block text-sm font-semibold">Page address<input required maxLength={160} value={slug} disabled={busy} onChange={e => { setSlug(e.target.value); setSlugEdited(true); }} className={cmsInput} placeholder="our-services" /><span className="mt-2 block text-xs font-normal text-muted">/{slug || "your-page"} · This address stays fixed after creation.</span></label>
-      <label className="block text-sm font-semibold">Starting layout<select value={template} disabled={busy} onChange={e => setTemplate(e.target.value)} className={cmsInput}><option value="blank">Blank page</option><option value="about">About page layout</option><option value="home">Homepage layout</option></select></label>
+      <label className="block text-sm font-semibold">Starting layout<Select value={template} disabled={busy} onChange={e => setTemplate(e.target.value)} className={cmsInput}><option value="blank">Blank page</option><option value="about">About page layout</option><option value="home">Homepage layout</option></Select></label>
       {createError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{createError}</p>}
       <div className="flex justify-end gap-3 border-t border-line pt-5"><Button type="button" variant="outline" disabled={busy} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="accent" loading={busy}>Create draft</Button></div>
     </form></AdminDialog>}

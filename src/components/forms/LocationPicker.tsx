@@ -204,7 +204,7 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
           <ul className="absolute left-0 right-0 z-[1200] mt-1 max-h-56 overflow-auto rounded-xl border border-line bg-surface py-1 shadow-lg">
             {results.map((r, i) => (
               <li key={`${r.lat},${r.lng},${i}`}>
-                <button
+                <button data-ui-action=""
                   type="button"
                   onClick={() => chooseResult(r)}
                   className="block w-full px-3 py-2 text-left text-sm text-fg hover:bg-surface-hover"
@@ -253,7 +253,7 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
           {locating ? "Locating…" : "Use my location"}
         </Button>
         {value && (
-          <button
+          <button data-ui-action=""
             type="button"
             onClick={clear}
             className="text-xs font-medium text-muted underline hover:text-fg"

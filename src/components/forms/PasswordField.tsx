@@ -40,15 +40,15 @@ export default function PasswordField({
         value={value}
         aria-invalid={error ? true : undefined}
         onChange={(e) => onChange(e.target.value)}
-        className={`${fieldBase} pr-10`}
+        className={`${fieldBase} pr-14`}
         suppressHydrationWarning
       />
-      <button
+      <button data-ui-action=""
         type="button"
         onClick={() => setIsVisible((v) => !v)}
         aria-label={isVisible ? "Hide password" : "Show password"}
         aria-pressed={isVisible}
-        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-faint transition-colors hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60"
+        className="absolute right-2 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-xl text-faint transition-colors hover:bg-surface-hover hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60"
       >
         <Icon
           key={isVisible ? "off" : "on"}

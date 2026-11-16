@@ -128,7 +128,7 @@ export default function LoginPage() {
 
       <div className="mt-6 grid grid-cols-2 gap-2" role="group" aria-label="Sign-in method">
         {(["email", "mobile"] as const).map((option) => (
-          <button key={option} type="button" aria-pressed={method === option}
+          <button data-ui-action="" key={option} type="button" aria-pressed={method === option}
             onClick={() => setMethod(option)}
             className={`rounded-xl border px-3 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 ${method === option ? "border-accent-400/60 bg-accent-400/15 text-accent-200" : "border-white/15 text-white/65 hover:bg-white/10"}`}>
             {option === "email" ? "Email + password" : "Mobile + OTP"}
@@ -160,7 +160,7 @@ export default function LoginPage() {
             {resendState === "sent" ? (
               <p>Verification email sent — check your inbox (and spam).</p>
             ) : (
-              <button
+              <button data-ui-action=""
                 type="button"
                 onClick={handleResend}
                 disabled={resendState === "sending"}

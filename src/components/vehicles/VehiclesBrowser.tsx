@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -143,7 +145,7 @@ export default function VehiclesBrowser({ vehicles, types }: VehiclesBrowserProp
               className={`${controlBase} pl-10`}
             />
           </label>
-          <select
+          <Select
             className={controlBase}
             value={minSeats}
             aria-label="Minimum seats"
@@ -154,8 +156,8 @@ export default function VehiclesBrowser({ vehicles, types }: VehiclesBrowserProp
                 {o.label}
               </option>
             ))}
-          </select>
-          <select
+          </Select>
+          <Select
             className={controlBase}
             value={maxPrice}
             aria-label="Maximum daily price"
@@ -166,8 +168,8 @@ export default function VehiclesBrowser({ vehicles, types }: VehiclesBrowserProp
                 {o.label}
               </option>
             ))}
-          </select>
-          <select
+          </Select>
+          <Select
             className={controlBase}
             value={sort}
             aria-label="Sort vehicles"
@@ -177,7 +179,7 @@ export default function VehiclesBrowser({ vehicles, types }: VehiclesBrowserProp
             <option value="price-asc">Price: Low to High</option>
             <option value="price-desc">Price: High to Low</option>
             <option value="seats-desc">Most seats</option>
-          </select>
+          </Select>
         </div>
 
         <label className="mt-3 flex w-fit items-center gap-2 text-sm text-muted">
@@ -197,7 +199,7 @@ export default function VehiclesBrowser({ vehicles, types }: VehiclesBrowserProp
           {results.length === 1 ? "vehicle" : "vehicles"}
         </p>
         {isFiltered && (
-          <button
+          <button data-ui-action=""
             type="button"
             onClick={clearAll}
             className="hover-underline text-sm font-medium text-primary-700 dark:text-primary-300"
@@ -237,7 +239,7 @@ function TypeChip({
   children: React.ReactNode;
 }) {
   return (
-    <button
+    <button data-ui-action=""
       type="button"
       onClick={onClick}
       className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-[transform,color,background-color,border-color] duration-150 active:scale-95 motion-reduce:active:scale-100 ${

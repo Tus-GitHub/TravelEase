@@ -1,4 +1,7 @@
 "use client";
+import Select from "@/components/controls/Select";
+import DateInput from "@/components/controls/DateInput";
+
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useState } from "react";
@@ -101,7 +104,7 @@ export default function AdminCouponsPage() {
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-muted">Type</span>
-            <select
+            <Select
               className={fieldCls}
               disabled={!!editing}
               title={editing ? "Discount type cannot be changed" : undefined}
@@ -112,7 +115,7 @@ export default function AdminCouponsPage() {
             >
               <option value="percent">Percent (%)</option>
               <option value="flat">Flat (₹)</option>
-            </select>
+            </Select>
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-muted">
@@ -167,7 +170,7 @@ export default function AdminCouponsPage() {
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-muted">Expires</span>
-            <input
+            <DateInput
               type="date"
               className={fieldCls}
               value={form.expiresAt}
@@ -241,7 +244,7 @@ export default function AdminCouponsPage() {
                       : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    <button
+                    <button data-ui-action=""
                       type="button"
                       onClick={() => update(c.id, { isActive: !c.isActive })}
                       className={`rounded-full px-2 py-0.5 text-xs font-semibold ${

@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useCallback, useEffect, useState } from "react";
@@ -200,7 +202,7 @@ function VendorsTab() {
                 </td>
                 <td className="px-4 py-3 text-muted">{v.vehicleCount}</td>
                 <td className="px-4 py-3">
-                  <select
+                  <Select
                     value={v.status}
                     onChange={(e) => patchVendor(v.id, { status: e.target.value })}
                     className={`rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${STATUS_TONE[v.status] ?? ""}`}
@@ -208,7 +210,7 @@ function VendorsTab() {
                     {["pending", "approved", "suspended"].map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
-                  </select>
+                  </Select>
                 </td>
                 <td className="px-4 py-3 text-right">
                   <RowActions name={v.businessName} removeDescription="Their vehicles will become Jagdamba-owned. Existing payout records are retained." onDelete={() => removeVendor(v.id)} onEdit={() => { setEditing(v); setForm({ businessName: v.businessName, contactName: v.contactName || "", contactEmail: v.contactEmail || "", contactPhone: v.contactPhone || "", payoutDetails: v.payoutDetails || "" }); setErr(null); setOpen(true); }} />
@@ -238,7 +240,7 @@ function VendorsTab() {
                 <td className="px-5 py-3 text-fg">{ve.name}</td>
                 <td className="px-5 py-3 text-muted">{ve.vehicleTypeTitle}</td>
                 <td className="px-5 py-3">
-                  <select
+                  <Select
                     className={`${fieldCls} max-w-[220px]`}
                     value={ve.vendorProfileId ?? ""}
                     onChange={(e) => assignVehicle(ve.id, e.target.value ? Number(e.target.value) : null)}
@@ -247,7 +249,7 @@ function VendorsTab() {
                     {vendors.map((v) => (
                       <option key={v.id} value={v.id}>{v.businessName}</option>
                     ))}
-                  </select>
+                  </Select>
                 </td>
               </tr>
             ))}
@@ -359,8 +361,8 @@ function PayoutsTab() {
                   <td className="px-4 py-3 text-right">
                     {p.status === "pending" && (
                       <div className="flex justify-end gap-2 text-xs font-medium">
-                        <button type="button" onClick={() => setSettlement({ payout: p, status: "paid" })} className="rounded-xl border border-line px-3 py-2 text-fg hover:bg-surface-hover">Mark paid</button>
-                        <button type="button" onClick={() => setSettlement({ payout: p, status: "void" })} className="rounded-xl px-3 py-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">Void</button>
+                        <button data-ui-action="" type="button" onClick={() => setSettlement({ payout: p, status: "paid" })} className="rounded-xl border border-line px-3 py-2 text-fg hover:bg-surface-hover">Mark paid</button>
+                        <button data-ui-action="" type="button" onClick={() => setSettlement({ payout: p, status: "void" })} className="rounded-xl px-3 py-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">Void</button>
                       </div>
                     )}
                   </td>

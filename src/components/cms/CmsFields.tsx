@@ -1,4 +1,7 @@
 "use client";
+import Select from "@/components/controls/Select";
+import DateInput from "@/components/controls/DateInput";
+
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Button from "@/components/common/Button";
@@ -53,7 +56,7 @@ export default function CmsFields({ fields, value, onChange, onUpload, prefix, d
       if (field.type === 'url') return <CmsLinkField key={id} id={id} label={field.label} value={String(current ?? '')} disabled={disabled} onChange={next => set(field.key, next)} />;
       if (value.source && ['category', 'region', 'pickup'].includes(field.key)) {
         const options = field.key === 'category' ? controls.options?.categories : field.key === 'region' ? controls.options?.regions : controls.options?.cities;
-        return <label key={id} htmlFor={id} className="block text-sm font-semibold">{field.label}<select id={id} aria-label={field.label} className={cmsInput} value={String(current)} disabled={disabled || !controls.options} onChange={e => set(field.key, field.key === 'category' ? e.target.value : Number(e.target.value))}><option value={field.key === 'category' ? '' : 0}>All</option>{current && !options?.some(o => String(o.value) === String(current)) ? <option value={String(current)}>Unavailable saved selection</option> : null}{options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select>{controls.error && <span className="mt-2 block text-xs text-red-600">{controls.error} <button type="button" className="underline" onClick={controls.reload}>Retry</button></span>}</label>;
+        return <label key={id} htmlFor={id} className="block text-sm font-semibold">{field.label}<Select id={id} aria-label={field.label} className={cmsInput} value={String(current)} disabled={disabled || !controls.options} onChange={e => set(field.key, field.key === 'category' ? e.target.value : Number(e.target.value))}><option value={field.key === 'category' ? '' : 0}>All</option>{current && !options?.some(o => String(o.value) === String(current)) ? <option value={String(current)}>Unavailable saved selection</option> : null}{options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</Select>{controls.error && <span className="mt-2 block text-xs text-red-600">{controls.error} <button data-ui-action="" type="button" className="underline" onClick={controls.reload}>Retry</button></span>}</label>;
       }
       if (field.type === "image") return <CmsImageField key={id} id={id} label={field.label} value={String(current ?? "")} disabled={disabled} onChange={next => set(field.key, next)} onUpload={file => onUpload(field.key, file)} />;
       if (field.type === "checkbox") return <label key={id} className="flex items-center gap-3 rounded-xl border border-line p-4 text-sm font-semibold"><input type="checkbox" className="h-4 w-4 accent-accent-500" checked={current === true} disabled={disabled} onChange={e => set(field.key, e.target.checked)} />{field.label}</label>;
@@ -63,8 +66,8 @@ export default function CmsFields({ fields, value, onChange, onUpload, prefix, d
           {entries.map((entry, index) => <details key={index} className="group rounded-2xl border border-line bg-surface-muted/40" open={entries.length === 1 || undefined}>
             <summary className="cursor-pointer px-4 py-4 text-sm font-semibold text-fg"><span className="mr-2 text-faint">{String(index + 1).padStart(2, "0")}</span>{entry.title || entry.label || entry.question || `Item ${index + 1}`}</summary>
             <div className="space-y-4 border-t border-line p-4"><div className="flex justify-end gap-2">
-              <button type="button" aria-label={`Move item ${index + 1} up`} disabled={disabled || index === 0} onClick={() => move(field.key, index, -1)} className="rounded-lg border border-line px-3 py-1 text-sm disabled:opacity-30">↑</button>
-              <button type="button" aria-label={`Move item ${index + 1} down`} disabled={disabled || index === entries.length - 1} onClick={() => move(field.key, index, 1)} className="rounded-lg border border-line px-3 py-1 text-sm disabled:opacity-30">↓</button>
+              <button data-ui-action="" type="button" aria-label={`Move item ${index + 1} up`} disabled={disabled || index === 0} onClick={() => move(field.key, index, -1)} className="rounded-lg border border-line px-3 py-1 text-sm disabled:opacity-30">↑</button>
+              <button data-ui-action="" type="button" aria-label={`Move item ${index + 1} down`} disabled={disabled || index === entries.length - 1} onClick={() => move(field.key, index, 1)} className="rounded-lg border border-line px-3 py-1 text-sm disabled:opacity-30">↓</button>
               <Button type="button" size="sm" variant="ghost" iconLeft="trash" disabled={disabled} onClick={() => setRemove({ key: field.key, index })}>Remove</Button>
             </div><CmsFields fields={field.fields ?? []} value={entry} prefix={`${id}-${index}`} disabled={disabled} onChange={next => set(field.key, entries.map((row, i) => i === index ? next as CmsItem : row))} onUpload={(target, file) => onUpload(`${field.key}.${index}.${target}`, file)} /></div>
           </details>)}
@@ -73,14 +76,14 @@ export default function CmsFields({ fields, value, onChange, onUpload, prefix, d
       }
       return <label key={id} htmlFor={id} className="block text-sm font-semibold text-fg">{field.label}
         {field.type === "textarea" ? <textarea id={id} aria-label={field.label} value={String(current ?? "")} rows={field.key === "body" ? 7 : 3} maxLength={field.max} disabled={disabled} className={cmsInput + " resize-y"} onChange={e => set(field.key, e.target.value)} />
-          : field.type === "select" ? <select id={id} aria-label={field.label} value={String(current ?? "")} disabled={disabled} className={cmsInput} onChange={e => {
+          : field.type === "select" ? <Select id={id} aria-label={field.label} value={String(current ?? "")} disabled={disabled} className={cmsInput} onChange={e => {
             if (field.key !== 'source') { set(field.key, e.target.value); return; }
             const next: CmsContent = { ...value, source: e.target.value };
             for (const f of catalogueFields) if (!catalogueFieldApplies(f.key, e.target.value)) next[f.key] = catalogueDefaults[f.key];
             if (value.buttonHref === '/' + value.source) { next.buttonHref = '/' + e.target.value; next.buttonLabel = 'View all ' + sourceLabels[e.target.value as CatalogueSource].toLowerCase(); }
             onChange(next);
-          }}>{field.options?.map(option => <option key={option} value={option}>{field.key === 'source' ? sourceLabels[option as CatalogueSource] : option === 'recommended' && value.source === 'weekend-trips' ? 'Next departure first' : option.replaceAll('-', ' ')}</option>)}</select>
-          : <input id={id} type={field.type === "number" ? "number" : value.source && ['from', 'to'].includes(field.key) ? 'date' : "text"} min={field.type === 'number' ? field.key === 'count' ? 1 : 0 : undefined} max={field.type === 'number' ? field.max : undefined} value={String(current ?? "")} maxLength={field.max} disabled={disabled} className={cmsInput} onChange={e => set(field.key, field.type === "number" ? Number(e.target.value) : e.target.value)} />}
+          }}>{field.options?.map(option => <option key={option} value={option}>{field.key === 'source' ? sourceLabels[option as CatalogueSource] : option === 'recommended' && value.source === 'weekend-trips' ? 'Next departure first' : option.replaceAll('-', ' ')}</option>)}</Select>
+          : <DateInput id={id} type={field.type === "number" ? "number" : value.source && ['from', 'to'].includes(field.key) ? 'date' : "text"} min={field.type === 'number' ? field.key === 'count' ? 1 : 0 : undefined} max={field.type === 'number' ? field.max : undefined} value={String(current ?? "")} maxLength={field.max} disabled={disabled} className={cmsInput} onChange={e => set(field.key, field.type === "number" ? Number(e.target.value) : e.target.value)} />}
       </label>;
     })}
     {remove && <ActionDialog title="Remove this item?" description="It will be removed from your draft. The published page stays unchanged until you publish." confirmLabel="Remove item" danger onClose={() => setRemove(null)} onConfirm={async () => { set(remove.key, (value[remove.key] as CmsItem[]).filter((_, index) => index !== remove.index)); }} />}

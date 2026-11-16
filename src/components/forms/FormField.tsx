@@ -27,10 +27,12 @@ interface FormFieldProps {
 export default function FormField({ label, icon, children, description, error, valid }: FormFieldProps) {
   const errorId = useId();
   const descriptionId = useId();
+  const labelId = useId();
 
   const control =
-    (error || description) && isValidElement(children)
+    isValidElement(children)
       ? cloneElement(children as ReactElement, {
+          "aria-labelledby": children.props["aria-labelledby"] ?? labelId,
           "aria-invalid": error ? true : children.props["aria-invalid"],
           "aria-describedby": [
             children.props["aria-describedby"],
@@ -43,6 +45,7 @@ export default function FormField({ label, icon, children, description, error, v
   return (
     <label className="group block min-w-0 text-left">
       <span
+        id={labelId}
         className={`mb-1.5 block text-xs font-semibold transition-colors duration-200 ${
           error
             ? "text-red-500 dark:text-red-400"
@@ -54,14 +57,14 @@ export default function FormField({ label, icon, children, description, error, v
       <span
         className={`relative block ${
           error
-            ? "[&_input]:border-red-400 [&_input]:focus:border-red-400 [&_input]:focus:ring-red-500/20 [&_select]:border-red-400"
+            ? "[&_input]:border-red-400 [&_input]:focus:border-red-400 [&_input]:focus:ring-red-500/20 [&_[role=combobox]]:border-red-400"
             : ""
         }`}
       >
         <Icon
           name={icon}
           aria-hidden
-          className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${
+          className={`pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${
             error ? "text-red-400" : "text-faint group-focus-within:text-primary-500"
           }`}
         />
@@ -70,7 +73,7 @@ export default function FormField({ label, icon, children, description, error, v
           <Icon
             name="check"
             aria-hidden
-            className="auth-iconpop pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400"
+            className="auth-iconpop pointer-events-none absolute right-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-emerald-400"
           />
         )}
       </span>

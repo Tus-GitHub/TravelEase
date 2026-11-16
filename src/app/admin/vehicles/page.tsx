@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Fragment, useMemo, useState } from "react";
@@ -217,7 +219,7 @@ function VehiclesTab() {
               />
             </FormField>
             <FormField label="Vehicle Type" icon="tag">
-              <select
+              <Select
                 aria-label="Vehicle Type"
                 required
                 value={form.draft.vehicleTypeId}
@@ -232,7 +234,7 @@ function VehiclesTab() {
                     {t.title}
                   </option>
                 ))}
-              </select>
+              </Select>
             </FormField>
             <FormField label="Registration No." icon="tag">
               <input
@@ -327,7 +329,7 @@ function VehiclesTab() {
                 <tr className="hover:bg-surface-hover/60">
                   <td className="px-5 py-3.5 font-medium text-fg">
                     {v.name}
-                    <button
+                    <button data-ui-action=""
                       type="button"
                       onClick={() => setAvailOpen(availOpen === v.id ? null : v.id)}
                       className="ml-2 text-xs font-normal text-primary-700 hover:underline dark:text-primary-300"

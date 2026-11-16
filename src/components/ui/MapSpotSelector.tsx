@@ -62,7 +62,7 @@ export default function MapSpotSelector({
       <div className="mb-5 grid gap-3 sm:hidden">
         {region.spots.map(spot => {
           const chosen = selected.some(s => s.id === spot.id);
-          return <button key={spot.id} type="button" aria-pressed={chosen} disabled={!chosen && selected.length >= maxSpots} onClick={() => onToggle(spot)} className={`min-h-11 rounded-xl border p-4 text-left disabled:opacity-50 ${chosen ? "border-accent-500 bg-accent-500/10" : "border-line bg-surface"}`}>
+          return <button data-ui-action="" key={spot.id} type="button" aria-pressed={chosen} disabled={!chosen && selected.length >= maxSpots} onClick={() => onToggle(spot)} className={`min-h-11 rounded-xl border p-4 text-left disabled:opacity-50 ${chosen ? "border-accent-500 bg-accent-500/10" : "border-line bg-surface"}`}>
             <span className="flex items-start justify-between gap-3 font-semibold"><span>{spot.name}</span><span aria-hidden>{chosen ? "✓" : "+"}</span></span>
             <span className="mt-1 block text-sm text-muted">{spot.description}</span>
           </button>;

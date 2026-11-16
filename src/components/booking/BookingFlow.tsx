@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -387,7 +389,7 @@ export default function BookingFlow() {
         {(mode === "vehicle" || mode === "generic") && (
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold text-muted">Trip type</span>
-            <select
+            <Select
               aria-label="Trip type"
               className={fieldCls}
               value={bookingType}
@@ -398,7 +400,7 @@ export default function BookingFlow() {
                   {t.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         )}
 

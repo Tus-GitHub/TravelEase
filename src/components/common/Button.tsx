@@ -6,13 +6,13 @@ type Variant = "primary" | "accent" | "outline" | "ghost" | "white" | "glass" | 
 type Size = "sm" | "md" | "lg";
 
 const base =
-  "inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl font-semibold transition-[transform,box-shadow,background-color,border-color,color] duration-200 will-change-transform hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0 active:scale-[0.97] active:duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:scale-100 motion-reduce:transition-colors motion-reduce:hover:translate-y-0 motion-reduce:hover:scale-100 motion-reduce:active:scale-100";
+  "app-button inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-2xl font-semibold tracking-[-0.01em] transition-[transform,box-shadow,background-color,border-color,color] duration-200 hover:-translate-y-px active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas focus-visible:ring-accent-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 motion-reduce:transform-none motion-reduce:transition-colors";
 
 const variants: Record<Variant, string> = {
   primary:
     "bg-primary-900 text-white hover:bg-primary-800 shadow-sm hover:shadow-md dark:bg-primary-600 dark:hover:bg-primary-500",
   accent:
-    "bg-accent-500 text-white hover:bg-accent-600 shadow-sm hover:shadow-md",
+    "bg-accent-500 text-primary-950 shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.24),0_3px_10px_-4px_rgb(180_83_9_/_0.35)] hover:bg-accent-400 hover:shadow-md",
   outline:
     "border border-primary-200 text-primary-900 hover:border-primary-900 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-200 dark:hover:border-primary-500 dark:hover:bg-primary-950",
   ghost:
@@ -58,6 +58,7 @@ export default function Button({
   className = "",
   children,
   disabled,
+  type = "button",
   ...props
 }: ButtonProps) {
   const classes = `${base} ${variants[variant]} ${sizes[size]} ${
@@ -77,6 +78,7 @@ export default function Button({
   );
 
   if (href) {
+    if (disabled || loading) return <span role="link" aria-disabled="true" aria-busy={loading || undefined} aria-label={props["aria-label"]} className={`${classes} cursor-not-allowed opacity-50`}>{content}</span>;
     return (
       <Link href={href} className={classes}>
         {content}
@@ -85,7 +87,7 @@ export default function Button({
   }
 
   return (
-    <button className={classes} disabled={disabled ?? loading} aria-busy={loading || undefined} {...props}>
+    <button data-ui-action="" type={type} className={classes} disabled={Boolean(disabled || loading)} aria-busy={loading || undefined} {...props}>
       {content}
     </button>
   );

@@ -125,7 +125,7 @@ export default function AdminSupportPage() {
 
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
-          <button
+          <button data-ui-action=""
             key={f}
             type="button"
             onClick={() => setFilter(f)}
@@ -150,7 +150,7 @@ export default function AdminSupportPage() {
             )}
             {items.map((t) => (
               <li key={t.id}>
-                <button
+                <button data-ui-action=""
                   type="button"
                   onClick={() => setSelectedId(t.id)}
                   className={`block w-full px-4 py-3 text-left transition-colors hover:bg-surface-hover/60 ${

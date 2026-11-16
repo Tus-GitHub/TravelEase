@@ -731,7 +731,7 @@ function PreferencesCard({
         {TRAVEL_TAGS.map((tag) => {
           const active = tags.includes(tag);
           return (
-            <button
+            <button data-ui-action=""
               key={tag}
               type="button"
               onClick={() => toggle(tag)}

@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import dynamic from "next/dynamic";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -135,12 +137,12 @@ function CitiesTab() {
       {form.open && (
         <FormCard onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
           <FormField label="Region" icon="map-pin">
-            <select required value={form.draft.regionId} onChange={(e) => form.patch({ regionId: e.target.value })} className={`${fieldBase} appearance-none`}>
+            <Select required value={form.draft.regionId} onChange={(e) => form.patch({ regionId: e.target.value })} className={`${fieldBase} appearance-none`}>
               <option value="" disabled>Select region</option>
               {regions.items.map((x) => (
                 <option key={x.id} value={x.id}>{x.name}</option>
               ))}
-            </select>
+            </Select>
           </FormField>
           <FormField label="City name" icon="location">
             <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Madikeri" />
@@ -226,12 +228,12 @@ function SpotsTab() {
       {form.open && (
         <FormCard title={form.editingId == null ? "Add tourist spot" : `Edit ${form.draft.name}`} image={form.editingId == null ? undefined : { kind: "tourist-spots", id: form.editingId, name: form.draft.name }} onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
           <FormField label="City" icon="location">
-            <select required value={form.draft.cityId} onChange={(e) => form.patch({ cityId: e.target.value })} className={`${fieldBase} appearance-none`}>
+            <Select required value={form.draft.cityId} onChange={(e) => form.patch({ cityId: e.target.value })} className={`${fieldBase} appearance-none`}>
               <option value="" disabled>Select city</option>
               {cities.items.map((x) => (
                 <option key={x.id} value={x.id}>{x.name}</option>
               ))}
-            </select>
+            </Select>
           </FormField>
           <FormField label="Spot name" icon="star">
             <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Abbey Falls" />

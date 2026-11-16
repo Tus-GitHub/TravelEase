@@ -46,7 +46,7 @@ function TabSwitcher({
     <div className="flex justify-center mb-12">
       <div className="relative flex min-w-0 rounded-2xl bg-surface-hover p-1.5 gap-1">
         {TABS.map((tab) => (
-          <button
+          <button data-ui-action=""
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
@@ -93,7 +93,7 @@ function ChoosePackage({
       </div>
       <p className="mt-8 text-center text-sm text-faint">
         Can&apos;t find what you&apos;re looking for?{" "}
-        <button
+        <button data-ui-action=""
           type="button"
           onClick={onBuildOwn}
           className="font-semibold text-primary-700 underline underline-offset-2 hover:text-accent-600 transition-colors"
@@ -313,7 +313,7 @@ function RouteBuilder({
                   </Badge>
                 </div>
                 <div className="flex shrink-0 flex-col gap-1">
-                  <button
+                  <button data-ui-action=""
                     type="button"
                     disabled={i === 0}
                     onClick={() => move(i, -1)}
@@ -334,7 +334,7 @@ function RouteBuilder({
                       />
                     </svg>
                   </button>
-                  <button
+                  <button data-ui-action=""
                     type="button"
                     disabled={i === spots.length - 1}
                     onClick={() => move(i, 1)}
@@ -548,7 +548,7 @@ function PackageSummary({
                   </Link>
                 </span>
               ) : (
-                <button
+                <button data-ui-action=""
                   type="button"
                   onClick={() => onSave(vehicle)}
                   disabled={saveState === "saving"}

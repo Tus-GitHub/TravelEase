@@ -9,7 +9,7 @@ export default function AdminTabs<T extends string>({ tabs, active, onChange }: 
   return (
     <div className="mb-6 inline-flex max-w-full flex-wrap gap-1 rounded-2xl border border-line bg-surface p-1.5">
       {tabs.map((tab) => (
-        <button
+        <button data-ui-action=""
           key={tab.id}
           type="button"
           aria-pressed={active === tab.id}

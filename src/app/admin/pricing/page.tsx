@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -23,9 +25,9 @@ export default function PricingPage(){
     {error&&<p role="alert" className="text-sm text-red-600">{error}</p>}{notice&&<p role="status" className="text-sm text-green-700">{notice}</p>}
     <Button variant="accent" onClick={()=>{setForm({...empty});setError("");}}>Add car rate</Button>
     {form&&<Card padded hover={false}><form onSubmit={save} className="space-y-4"><h2 className="text-lg font-semibold">{form.id?"Edit rate":"Configure rate"}</h2>
-      <div className="grid gap-4 sm:grid-cols-2"><label className="text-sm">Car<select aria-label="Car" className={`mt-1 ${input}`} value={form.vehicleId??""} onChange={e=>setForm({...form,vehicleId:e.target.value?Number(e.target.value):null,vehicleTypeId:null,emptyReturnEnabled:e.target.value?form.emptyReturnEnabled:false})}><option value="">All vehicles / vehicle type</option>{data?.vehicles.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
-      <label className="text-sm">Trip type<select aria-label="Trip type" className={`mt-1 ${input}`} value={form.bookingType} onChange={e=>setForm({...form,bookingType:e.target.value,emptyReturnEnabled:["point_to_point","airport_transfer"].includes(e.target.value)?form.emptyReturnEnabled:false})}>{data?.bookingTypes.map(t=><option key={t.code} value={t.code}>{t.name}</option>)}</select></label>
-      {form.vehicleId===null&&<label className="text-sm">Vehicle type<select aria-label="Vehicle type" className={`mt-1 ${input}`} value={form.vehicleTypeId??""} onChange={e=>setForm({...form,vehicleTypeId:e.target.value?Number(e.target.value):null})}><option value="">All types (fallback)</option>{data?.vehicleTypes.map(v=><option key={v.id} value={v.id}>{v.title}</option>)}</select></label>}
+      <div className="grid gap-4 sm:grid-cols-2"><label className="text-sm">Car<Select aria-label="Car" className={`mt-1 ${input}`} value={form.vehicleId??""} onChange={e=>setForm({...form,vehicleId:e.target.value?Number(e.target.value):null,vehicleTypeId:null,emptyReturnEnabled:e.target.value?form.emptyReturnEnabled:false})}><option value="">All vehicles / vehicle type</option>{data?.vehicles.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</Select></label>
+      <label className="text-sm">Trip type<Select aria-label="Trip type" className={`mt-1 ${input}`} value={form.bookingType} onChange={e=>setForm({...form,bookingType:e.target.value,emptyReturnEnabled:["point_to_point","airport_transfer"].includes(e.target.value)?form.emptyReturnEnabled:false})}>{data?.bookingTypes.map(t=><option key={t.code} value={t.code}>{t.name}</option>)}</Select></label>
+      {form.vehicleId===null&&<label className="text-sm">Vehicle type<Select aria-label="Vehicle type" className={`mt-1 ${input}`} value={form.vehicleTypeId??""} onChange={e=>setForm({...form,vehicleTypeId:e.target.value?Number(e.target.value):null})}><option value="">All types (fallback)</option>{data?.vehicleTypes.map(v=><option key={v.id} value={v.id}>{v.title}</option>)}</Select></label>}
       {shown.map(key=><label key={key} className="text-sm">{labels[key]}<input aria-label={labels[key]} required type="number" min={0} max={key==="taxPercent"?100:999999} step={key==="minHours"?1:0.01} value={form[key]} onChange={e=>setForm({...form,[key]:Number(e.target.value)})} className={`mt-1 ${input}`}/></label>)}
       <label className="text-sm">Priority<input aria-label="Priority" type="number" min={-10000} max={10000} step={1} value={form.priority} onChange={e=>setForm({...form,priority:Number(e.target.value)})} className={`mt-1 ${input}`}/></label></div>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.isActive} onChange={e=>setForm({...form,isActive:e.target.checked})}/>Active</label>

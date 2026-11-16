@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import { useState } from "react";
 import BrandedDialog from "@/components/common/BrandedDialog";
@@ -34,15 +36,15 @@ export default function DateTimeSelector({ label, value, onChange, min }: { labe
   }
   return <div>
     <span className="mb-1.5 block text-xs font-semibold text-muted">{label}</span>
-    <button type="button" aria-label={label} aria-haspopup="dialog" onClick={begin} className={`${control} text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}>
+    <button data-ui-action="" type="button" aria-label={label} aria-haspopup="dialog" onClick={begin} className={`${control} text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}>
       {validDateTime(value) ? bookingInstant(value).toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"2-digit",month:"short",year:"numeric",hour:"numeric",minute:"2-digit"})+" IST" : "Choose date & time (IST)"}
     </button>
     {open && <BrandedDialog title={label} onClose={()=>setOpen(false)} compact>
       <div className="space-y-5 p-4 sm:p-6">
         <div className="flex items-center justify-between gap-2">
-          <button type="button" aria-label="Previous month" className="h-11 w-11 rounded-lg border border-line" onClick={()=>setMonth(new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()-1,1)))}>‹</button>
+          <button data-ui-action="" type="button" aria-label="Previous month" className="h-11 w-11 rounded-lg border border-line" onClick={()=>setMonth(new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()-1,1)))}>‹</button>
           <p aria-live="polite" className="font-semibold">{month.toLocaleDateString("en-IN",{timeZone:"UTC",month:"long",year:"numeric"})}</p>
-          <button type="button" aria-label="Next month" className="h-11 w-11 rounded-lg border border-line" onClick={()=>setMonth(new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()+1,1)))}>›</button>
+          <button data-ui-action="" type="button" aria-label="Next month" className="h-11 w-11 rounded-lg border border-line" onClick={()=>setMonth(new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()+1,1)))}>›</button>
         </div>
         <div role="group" aria-label="Calendar" className="grid grid-cols-7 gap-1 text-center">
           {["Su","Mo","Tu","We","Th","Fr","Sa"].map(day=><span key={day} className="py-1 text-xs text-muted">{day}</span>)}
@@ -57,9 +59,9 @@ export default function DateTimeSelector({ label, value, onChange, min }: { labe
           })}
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <label className="text-xs text-muted">Hour<select aria-label="Hour" className={`mt-1 ${control}`} value={date.getUTCHours()%12||12} onChange={e=>changeTime("hour",e.target.value)}>{Array.from({length:12},(_,i)=><option key={i} value={i+1}>{pad(i+1)}</option>)}</select></label>
-          <label className="text-xs text-muted">Minute<select aria-label="Minute" className={`mt-1 ${control}`} value={date.getUTCMinutes()} onChange={e=>changeTime("minute",e.target.value)}>{Array.from({length:60},(_,i)=><option key={i} value={i}>{pad(i)}</option>)}</select></label>
-          <label className="text-xs text-muted">AM / PM<select aria-label="AM / PM" className={`mt-1 ${control}`} value={date.getUTCHours()>=12?"PM":"AM"} onChange={e=>changeTime("period",e.target.value)}><option>AM</option><option>PM</option></select></label>
+          <label className="text-xs text-muted">Hour<Select aria-label="Hour" className={`mt-1 ${control}`} value={date.getUTCHours()%12||12} onChange={e=>changeTime("hour",e.target.value)}>{Array.from({length:12},(_,i)=><option key={i} value={i+1}>{pad(i+1)}</option>)}</Select></label>
+          <label className="text-xs text-muted">Minute<Select aria-label="Minute" className={`mt-1 ${control}`} value={date.getUTCMinutes()} onChange={e=>changeTime("minute",e.target.value)}>{Array.from({length:60},(_,i)=><option key={i} value={i}>{pad(i)}</option>)}</Select></label>
+          <label className="text-xs text-muted">AM / PM<Select aria-label="AM / PM" className={`mt-1 ${control}`} value={date.getUTCHours()>=12?"PM":"AM"} onChange={e=>changeTime("period",e.target.value)}><option>AM</option><option>PM</option></Select></label>
         </div>
         {!apply && <p role="status" className="text-sm text-red-600">Choose a time after {new Date(earliest).toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})} IST.</p>}
         <Button type="button" variant="accent" fullWidth disabled={!apply} onClick={()=>{onChange(draft);setOpen(false);}}>Use this date & time</Button>

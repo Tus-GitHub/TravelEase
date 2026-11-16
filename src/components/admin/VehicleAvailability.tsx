@@ -1,4 +1,7 @@
 "use client";
+import DateInput from "@/components/controls/DateInput";
+import Select from "@/components/controls/Select";
+
 
 import RowActions from "./RowActions";
 import Button from "@/components/common/Button";
@@ -101,17 +104,17 @@ export default function VehicleAvailability({ vehicleId }: { vehicleId: number }
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <input aria-label="Start date" type="date" className={input} value={from} onChange={(e) => setFrom(e.target.value)} />
+        <DateInput aria-label="Start date" type="date" className={input} value={from} onChange={(e) => setFrom(e.target.value)} />
         <span className="text-faint">→</span>
-        <input aria-label="End date" type="date" className={input} value={to} onChange={(e) => setTo(e.target.value)} />
-        <select
+        <DateInput aria-label="End date" type="date" className={input} value={to} onChange={(e) => setTo(e.target.value)} />
+        <Select
           className={input}
           value={kind}
           onChange={(e) => setKind(e.target.value as "blocked" | "maintenance")}
         >
           <option value="blocked">Blocked</option>
           <option value="maintenance">Maintenance</option>
-        </select>
+        </Select>
         <input
           className={input}
           placeholder="Note (optional)"

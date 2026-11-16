@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 import { useId, useState } from "react";
 import BrandedDialog from "./BrandedDialog";
 import Button from "@/components/common/Button";
@@ -29,9 +31,9 @@ export default function ActionDialog({ brand, title, description, fields = [], c
       <fieldset disabled={busy} className="space-y-4">
         {fields.map(f => <label key={f.name} className="block text-sm font-semibold text-fg">
           <span id={`${fieldId}-${f.name}`}>{f.label}</span>
-          {f.options ? <select aria-labelledby={`${fieldId}-${f.name}`} className="mt-2 w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm" value={values[f.name]} onChange={e => setValues({ ...values, [f.name]: e.target.value })} required={f.required}>
+          {f.options ? <Select aria-labelledby={`${fieldId}-${f.name}`} className="mt-2 w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm" value={values[f.name]} onChange={e => setValues({ ...values, [f.name]: e.target.value })} required={f.required}>
             {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select> : <input aria-labelledby={`${fieldId}-${f.name}`} className="mt-2 w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm" value={values[f.name]} onChange={e => setValues({ ...values, [f.name]: e.target.value })} required={f.required} />}
+          </Select> : <input aria-labelledby={`${fieldId}-${f.name}`} className="mt-2 w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm" value={values[f.name]} onChange={e => setValues({ ...values, [f.name]: e.target.value })} required={f.required} />}
         </label>)}
       </fieldset>
       {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">{error}</p>}

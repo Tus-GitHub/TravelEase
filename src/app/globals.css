@@ -65,6 +65,39 @@
   /* Prevent iOS focus zoom without disabling pinch zoom. Keep native date
      controls inside narrow grid/flex columns on both phone engines. */
   input, select, textarea { min-width: 0; max-width: 100%; }
+  button, [role="button"], summary { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  button:focus-visible, [role="button"]:focus-visible, summary:focus-visible {
+    outline: 2px solid #d97706;
+    outline-offset: 3px;
+  }
+  button:disabled { cursor: not-allowed; }
+  summary { display: flex; min-height: 2.75rem; align-items: center; gap: .75rem; list-style: none; cursor: pointer; overflow-wrap: anywhere; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: ""; width: .45rem; height: .45rem; flex-shrink: 0; margin-left: auto; margin-right: .25rem; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; opacity: .55; transform: rotate(45deg); transition: transform 150ms; }
+  details[open] > summary::after { transform: rotate(225deg); }
+  input[type="range"] { appearance: none; height: 2.75rem; background: transparent; cursor: pointer; }
+  input[type="range"]::-webkit-slider-runnable-track { height: .375rem; border-radius: 999px; background: rgb(var(--c-line)); }
+  input[type="range"]::-moz-range-track { height: .375rem; border-radius: 999px; background: rgb(var(--c-line)); }
+  input[type="range"]::-webkit-slider-thumb { appearance: none; width: 1.25rem; height: 1.25rem; margin-top: -.4375rem; border: 2px solid rgb(var(--c-surface)); border-radius: 50%; background: #d97706; box-shadow: 0 0 0 1px rgb(var(--c-line)), 0 2px 4px rgb(0 0 0 / .15); }
+  input[type="range"]::-moz-range-thumb { width: 1rem; height: 1rem; border: 2px solid rgb(var(--c-surface)); border-radius: 50%; background: #d97706; box-shadow: 0 0 0 1px rgb(var(--c-line)); }
+  input[type="range"]:focus-visible { outline: 2px solid #d97706; outline-offset: 2px; border-radius: 1rem; }
+  input[type="number"] { -moz-appearance: textfield; }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="checkbox"], input[type="radio"] {
+    appearance: none; display: inline-grid; place-content: center; flex-shrink: 0;
+    width: 1.125rem; height: 1.125rem; margin: 0;
+    border: 1.5px solid rgb(var(--c-faint)); background: rgb(var(--c-surface));
+    border-radius: 0.35rem; vertical-align: middle; cursor: pointer;
+    transition: background-color 150ms, border-color 150ms, box-shadow 150ms;
+  }
+  input[type="radio"] { border-radius: 50%; }
+  input[type="checkbox"]:checked, input[type="radio"]:checked { border-color: #d97706; background-color: #f59e0b; }
+  input[type="checkbox"]:checked::after { content: ""; width: .55rem; height: .3rem; border-left: 2px solid #172554; border-bottom: 2px solid #172554; transform: translateY(-1px) rotate(-45deg); }
+  input[type="radio"]:checked::after { content: ""; width: .45rem; height: .45rem; border-radius: 50%; background: #172554; }
+  input[type="checkbox"]:indeterminate::after { content: ""; width: .55rem; height: 2px; background: rgb(var(--c-fg)); }
+  input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outline: 2px solid #d97706; outline-offset: 3px; }
+  input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .45; cursor: not-allowed; }
   @media (max-width: 767px) {
     input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 16px !important; }
   }
@@ -90,6 +123,38 @@
 }
 
 @layer components {
+  /* Shared custom controls. The native bridge retains validation, GET forms,
+     autofill and React events; it never opens an operating-system picker. */
+  .control-native { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; border: 0 !important; opacity: 0; pointer-events: none; overflow: hidden; clip-path: inset(50%); }
+  button[data-ui-action] { min-height: 2.75rem; min-width: 2.75rem; }
+  .control-trigger {
+    display: flex; width: 100%; min-width: 0; min-height: 2.75rem; align-items: center; justify-content: space-between; gap: .625rem;
+    text-align: left; font-weight: inherit; cursor: pointer;
+    transition: border-color 150ms, box-shadow 150ms, background-color 150ms;
+  }
+  .control-trigger:disabled { opacity: .5; cursor: not-allowed; }
+  .control-trigger[aria-expanded="true"] { border-color: #d97706; box-shadow: 0 0 0 3px rgb(245 158 11 / .12); }
+  .control-trigger:focus-visible { outline: 2px solid #d97706; outline-offset: 2px; }
+  .control-popover {
+    position: fixed; inset: auto; z-index: 100; margin: 0; padding: .375rem;
+    flex-direction: column; overflow: hidden; border: 1px solid rgb(var(--c-line)); border-radius: 1.125rem;
+    background: rgb(var(--c-surface)); color: rgb(var(--c-fg));
+    box-shadow: 0 18px 48px -12px rgb(0 0 0 / .25), 0 4px 12px -5px rgb(0 0 0 / .12);
+  }
+  .control-popover:popover-open { display: flex; animation: control-appear 130ms ease-out; }
+  .control-search { display: flex; flex-shrink: 0; align-items: center; gap: .625rem; padding: .75rem; margin-bottom: .375rem; border-bottom: 1px solid rgb(var(--c-line)); }
+  .control-search input::-webkit-search-cancel-button { cursor: pointer; }
+  .control-options { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  .control-option { display: flex; min-height: 2.75rem; align-items: center; gap: .75rem; padding: .625rem .75rem; border-radius: .75rem; font-size: .875rem; line-height: 1.4; cursor: pointer; }
+  .control-option[aria-selected="true"] { font-weight: 600; background: rgb(245 158 11 / .09); }
+  .control-option[data-active="true"] { background: rgb(var(--c-surface-hover)); box-shadow: inset 0 0 0 1px rgb(var(--c-line)); }
+  .control-option[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
+  .control-calendar-nav { display: inline-flex; width: 2.25rem; min-height: 2.75rem; flex-shrink: 0; align-items: center; justify-content: center; border: 1px solid rgb(var(--c-line)); border-radius: .875rem; font-size: 1.5rem; }
+  .control-calendar-nav:disabled, .control-calendar-day:disabled { opacity: .3; }
+  .control-calendar-day { min-height: 2.5rem; border-radius: .75rem; font-size: .875rem; font-weight: 500; }
+  .control-calendar-day:hover:not(:disabled), .control-calendar-nav:hover:not(:disabled) { background: rgb(var(--c-surface-hover)); }
+  .control-calendar-day[aria-pressed="true"] { background: #f59e0b; color: #172554; font-weight: 700; box-shadow: 0 2px 6px -2px rgb(180 83 9 / .3); }
+  @keyframes control-appear { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
   /* Standalone Section pages need room for the fixed site header. Nested
      marketing/CMS sections retain their own spacing. */
   .site-page-content > section:first-of-type,

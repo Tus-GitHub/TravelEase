@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useMemo, useState } from "react";
@@ -152,23 +154,23 @@ export default function AdminPackagesPage() {
               <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Coorg Coffee Trail" />
             </FormField>
             <FormField label="Booking mode" icon="users">
-              <select aria-label="Booking mode" className={fieldBase} value={form.draft.bookingMode} onChange={e => form.patch({ bookingMode: e.target.value })}><option value="private">Private vehicle trips</option><option value="shared">Shared Friday departures</option><option value="both">Private and shared trips</option></select>
+              <Select aria-label="Booking mode" className={fieldBase} value={form.draft.bookingMode} onChange={e => form.patch({ bookingMode: e.target.value })}><option value="private">Private vehicle trips</option><option value="shared">Shared Friday departures</option><option value="both">Private and shared trips</option></Select>
             </FormField>
             <FormField label="Region" icon="map-pin">
-              <select aria-label="Region" required value={form.draft.regionId} onChange={(e) => form.patch({ regionId: e.target.value })} className={`${fieldBase} appearance-none`}>
+              <Select aria-label="Region" required value={form.draft.regionId} onChange={(e) => form.patch({ regionId: e.target.value })} className={`${fieldBase} appearance-none`}>
                 <option value="" disabled>Select region</option>
                 {regions.items.map((x) => (
                   <option key={x.id} value={x.id}>{x.name}</option>
                 ))}
-              </select>
+              </Select>
             </FormField>
             <FormField label="Vehicle Type" icon="car">
-              <select aria-label="Vehicle Type" required value={form.draft.vehicleTypeId} onChange={(e) => form.patch({ vehicleTypeId: e.target.value })} className={`${fieldBase} appearance-none`}>
+              <Select aria-label="Vehicle Type" required value={form.draft.vehicleTypeId} onChange={(e) => form.patch({ vehicleTypeId: e.target.value })} className={`${fieldBase} appearance-none`}>
                 <option value="" disabled>Select type</option>
                 {types.items.map((x) => (
                   <option key={x.id} value={x.id}>{x.title}</option>
                 ))}
-              </select>
+              </Select>
             </FormField>
             <FormField label="Tag" icon="tag">
               <input value={form.draft.tag} onChange={(e) => form.patch({ tag: e.target.value })} className={fieldBase} placeholder="Popular / Premium / …" />
@@ -291,7 +293,7 @@ function PackageRows({
         <td className="px-5 py-3.5 text-muted">{pkg.durationDays}</td>
         <td className="px-5 py-3.5 text-muted">₹{pkg.pricePerPerson.toLocaleString("en-IN")}</td>
         <td className="px-5 py-3.5">
-          <button
+          <button data-ui-action=""
             type="button"
             onClick={onToggleExpand}
             className="flex items-center gap-1 text-xs font-medium text-primary-700 hover:underline"
@@ -337,7 +339,7 @@ function PackageRows({
               }}
               className="flex flex-wrap items-end gap-2"
             >
-              <select
+              <Select
                 value={stop.touristSpotId}
                 onChange={(e) => setStop({ ...stop, touristSpotId: e.target.value })}
                 className="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs"
@@ -349,7 +351,7 @@ function PackageRows({
                     {s.name} ({s.cityName})
                   </option>
                 ))}
-              </select>
+              </Select>
               <input
                 type="number"
                 min={1}

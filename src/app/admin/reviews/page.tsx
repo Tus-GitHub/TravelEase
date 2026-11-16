@@ -66,7 +66,7 @@ export default function AdminReviewsPage() {
                     {r.bookingReference}
                   </td>
                   <td className="px-4 py-3">
-                    <button
+                    <button data-ui-action=""
                       type="button"
                       onClick={() => update(r.id, { isPublished: !r.isPublished })}
                       className={`rounded-full px-2 py-0.5 text-xs font-semibold ${

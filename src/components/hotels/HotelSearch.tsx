@@ -1,4 +1,7 @@
 "use client";
+import Select from "@/components/controls/Select";
+import DateInput from "@/components/controls/DateInput";
+
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
@@ -84,13 +87,13 @@ function SearchForm({ destinations, initial, connected, today, loadFailed, userI
     <form onSubmit={search} className="rounded-3xl border border-line bg-surface p-5 shadow-sm sm:p-7" aria-label="Hotel search">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-lg font-semibold text-fg">Find a place to pause</h2><span className="text-xs text-muted">1 room · 1–4 adults</span></div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <label className="text-sm font-semibold text-fg">Destination<select aria-label="Destination" value={input.cityId} onChange={event => change("cityId", Number(event.target.value))} className={field} disabled={!destinations.length}>
+        <label className="text-sm font-semibold text-fg">Destination<Select aria-label="Destination" value={input.cityId} onChange={event => change("cityId", Number(event.target.value))} className={field} disabled={!destinations.length}>
           {!destinations.length && <option value={0}>No destinations available</option>}{destinations.map(city => <option key={city.id} value={city.id}>{city.name}, {city.regionName}</option>)}
-        </select></label>
-        <label className="text-sm font-semibold text-fg">Check-in<input type="date" required min={today} max={hotelDateAfter(today, 365)} value={input.checkin} onChange={event => change("checkin", event.target.value)} className={field} /></label>
-        <label className="text-sm font-semibold text-fg">Check-out<input type="date" required min={input.checkin || today} value={input.checkout} onChange={event => change("checkout", event.target.value)} className={field} /></label>
-        <label className="text-sm font-semibold text-fg">Adults<select aria-label="Adults" value={input.adults} onChange={event => change("adults", Number(event.target.value))} className={field}>{[1,2,3,4].map(count => <option key={count} value={count}>{count} {count === 1 ? "adult" : "adults"}</option>)}</select></label>
-        <label className="text-sm font-semibold text-fg">Guest nationality<select aria-label="Guest nationality" value={input.nationality} onChange={event => change("nationality", event.target.value)} className={field}>{Object.entries(HOTEL_NATIONALITIES).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label>
+        </Select></label>
+        <label className="text-sm font-semibold text-fg">Check-in<DateInput type="date" required min={today} max={hotelDateAfter(today, 365)} value={input.checkin} onChange={event => change("checkin", event.target.value)} className={field} /></label>
+        <label className="text-sm font-semibold text-fg">Check-out<DateInput type="date" required min={input.checkin || today} value={input.checkout} onChange={event => change("checkout", event.target.value)} className={field} /></label>
+        <label className="text-sm font-semibold text-fg">Adults<Select aria-label="Adults" value={input.adults} onChange={event => change("adults", Number(event.target.value))} className={field}>{[1,2,3,4].map(count => <option key={count} value={count}>{count} {count === 1 ? "adult" : "adults"}</option>)}</Select></label>
+        <label className="text-sm font-semibold text-fg">Guest nationality<Select aria-label="Guest nationality" value={input.nationality} onChange={event => change("nationality", event.target.value)} className={field}>{Object.entries(HOTEL_NATIONALITIES).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</Select></label>
         <div className="flex items-end"><Button type="submit" variant="accent" fullWidth iconLeft="search" loading={busy} disabled={busy || !userId || !destinations.length || !connected}>Search hotels</Button></div>
       </div>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-xs leading-5 text-muted">

@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
@@ -156,7 +158,7 @@ function SupportInner() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold text-muted">Category</span>
-                  <select
+                  <Select
                     className={fieldCls}
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
@@ -166,13 +168,13 @@ function SupportInner() {
                         {c[0].toUpperCase() + c.slice(1)}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold text-muted">
                     Related booking (optional)
                   </span>
-                  <select
+                  <Select
                     className={fieldCls}
                     value={bookingId}
                     onChange={(e) => setBookingId(e.target.value)}
@@ -183,7 +185,7 @@ function SupportInner() {
                         {b.reference}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
               </div>
               <label className="block">

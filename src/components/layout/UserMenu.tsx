@@ -42,7 +42,7 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
 
   return (
     <div ref={rootRef} className="relative">
-      <button
+      <button data-ui-action=""
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
@@ -99,7 +99,7 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
           Help &amp; Support
         </Link>
 
-        <button
+        <button data-ui-action=""
           type="button"
           onClick={() => {
             setIsOpen(false);

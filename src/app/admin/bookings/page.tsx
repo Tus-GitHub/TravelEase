@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -150,7 +152,7 @@ export default function AdminBookingsPage() {
 
       <div className="mb-4 flex flex-wrap gap-2">
         {STATUS_FILTERS.map((s) => (
-          <button
+          <button data-ui-action=""
             key={s}
             type="button"
             onClick={() => setFilter(s)}
@@ -198,7 +200,7 @@ export default function AdminBookingsPage() {
                   <Fragment key={b.id}>
                     <tr id={b.id} className="scroll-mt-24 hover:bg-surface-hover/60">
                       <td className="px-4 py-3">
-                        <button
+                        <button data-ui-action=""
                           type="button"
                           className="font-mono text-xs font-semibold text-primary-700 hover:underline dark:text-primary-300"
                           onClick={() => setExpanded(expanded === b.id ? null : b.id)}
@@ -222,7 +224,7 @@ export default function AdminBookingsPage() {
                         <div className="flex items-center gap-2">
                           <BookingStatusBadge status={b.status} />
                           {nexts.length > 0 && (
-                            <select
+                            <Select
                               className={cellSelect}
                               value=""
                               disabled={busyId === b.id}
@@ -238,12 +240,12 @@ export default function AdminBookingsPage() {
                                   → {n === "Confirmed" && b.status === "PendingPayment" ? "Confirmed (mark paid)" : n}
                                 </option>
                               ))}
-                            </select>
+                            </Select>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <select
+                        <Select
                           className={cellSelect}
                           value={b.assignedAgentUserId ?? ""}
                           disabled={busyId === b.id}
@@ -257,10 +259,10 @@ export default function AdminBookingsPage() {
                               {a.name}
                             </option>
                           ))}
-                        </select>
+                        </Select>
                       </td>
                       <td className="px-4 py-3">
-                        <select
+                        <Select
                           className={cellSelect}
                           value={b.driverId ?? ""}
                           disabled={busyId === b.id || !!b.departureId}
@@ -282,7 +284,7 @@ export default function AdminBookingsPage() {
                               {d.name}
                             </option>
                           ))}
-                        </select>
+                        </Select>
                       </td>
                     </tr>
                     {expanded === b.id && (

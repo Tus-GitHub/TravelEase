@@ -426,7 +426,7 @@ function ReviewForm({
       {editing && <AccountEditor title={existing ? "Edit your review" : "Review your trip"} description="Tell us about your journey with Jagdamba Travellers." busy={busy} onClose={() => setEditing(false)}>
       <div className="mt-2 flex gap-1">
         {[1, 2, 3, 4, 5].map((n) => (
-          <button
+          <button data-ui-action=""
             key={n}
             type="button"
             onClick={() => setRating(n)}

@@ -28,7 +28,7 @@ export default function ThemeToggle({
       : "text-muted hover:bg-surface-hover hover:text-fg";
 
   return (
-    <button
+    <button data-ui-action=""
       type="button"
       onClick={toggle}
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}

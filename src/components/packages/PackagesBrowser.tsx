@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import { useMemo, useState } from "react";
 import Card from "@/components/common/Card";
@@ -50,7 +52,7 @@ export default function PackagesBrowser({ packages }: { packages: TravelPackage[
           ))}
         </div>
         <div className="mt-4 sm:max-w-xs">
-          <select
+          <Select
             className={controlBase}
             value={sort}
             aria-label="Sort packages"
@@ -60,7 +62,7 @@ export default function PackagesBrowser({ packages }: { packages: TravelPackage[
             <option value="price-asc">Price: Low to High</option>
             <option value="price-desc">Price: High to Low</option>
             <option value="duration-asc">Shortest trip</option>
-          </select>
+          </Select>
         </div>
       </Card>
 
@@ -94,7 +96,7 @@ function Chip({
   children: React.ReactNode;
 }) {
   return (
-    <button
+    <button data-ui-action=""
       type="button"
       onClick={onClick}
       className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-[transform,color,background-color,border-color] duration-150 active:scale-95 motion-reduce:active:scale-100 ${

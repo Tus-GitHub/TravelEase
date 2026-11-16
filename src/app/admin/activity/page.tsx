@@ -1,4 +1,6 @@
 "use client";
+import Select from "@/components/controls/Select";
+
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useCallback, useEffect, useState } from "react";
@@ -86,7 +88,7 @@ export default function AdminActivityPage() {
       </AdminPageHeader>
 
       <div className="mb-4">
-        <select
+        <Select
           value={action}
           onChange={(e) => setAction(e.target.value)}
           className="rounded-xl border border-line bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/60"
@@ -97,7 +99,7 @@ export default function AdminActivityPage() {
               {a}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <Card hover={false} className="overflow-hidden">

@@ -1,4 +1,6 @@
 "use client";
+import DateInput from "@/components/controls/DateInput";
+
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useState } from "react";
@@ -80,7 +82,7 @@ export default function AdminSeasonalPricingPage() {
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-muted">Starts</span>
-            <input
+            <DateInput
               type="date"
               className={fieldCls}
               value={form.startsOn}
@@ -90,7 +92,7 @@ export default function AdminSeasonalPricingPage() {
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-muted">Ends</span>
-            <input
+            <DateInput
               type="date"
               className={fieldCls}
               value={form.endsOn}
@@ -153,7 +155,7 @@ export default function AdminSeasonalPricingPage() {
                   </td>
                   <td className="px-4 py-3 text-muted">{s.priority}</td>
                   <td className="px-4 py-3">
-                    <button
+                    <button data-ui-action=""
                       type="button"
                       onClick={() => update(s.id, { isActive: !s.isActive })}
                       className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
