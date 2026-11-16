@@ -19,7 +19,7 @@
 .land { stroke-linejoin: round; stroke-linecap: round; }
 .marker { cursor: pointer; outline: none; }
 .focusRing { opacity: 0; }
-.marker:focus-visible .focusRing { opacity: 1; }
+.marker:focus .focusRing, .marker:focus-visible .focusRing { opacity: 1; }
 .marker:hover .pin, .marker:focus-visible .pin { fill: #fcd34d; stroke: #fff7d6; }
 .label {
   paint-order: stroke;

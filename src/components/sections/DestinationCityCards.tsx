@@ -6,8 +6,8 @@ import DestinationPhoto from "@/components/common/DestinationPhoto";
 import type { DestinationCity } from "@/lib/destination-explorer";
 import styles from "./DestinationMap.module.css";
 
-export default function DestinationCityCards({ cities, ready, initialCount, onPick }: {
-  cities: DestinationCity[]; ready: boolean; initialCount: number; onPick: (city: DestinationCity) => void;
+export default function DestinationCityCards({ cities, ready, initialCount, onPick, lightSurface = false }: {
+  cities: DestinationCity[]; ready: boolean; initialCount: number; onPick: (city: DestinationCity) => void; lightSurface?: boolean;
 }) {
   const [count, setCount] = useState(initialCount);
   return <div>
@@ -15,6 +15,6 @@ export default function DestinationCityCards({ cities, ready, initialCount, onPi
       <span className="relative block aspect-[4/3] bg-surface-muted"><DestinationPhoto imageUrl={city.spots[0]?.imageUrl ?? ""} alt={city.spots[0]?.name ?? city.name} decorative sizes="(min-width:1024px) 190px, (min-width:640px) 30vw, 45vw" /></span>
       <span className="block p-3"><span className="block break-words text-sm font-semibold">{city.name}</span><span className="mt-1 block text-xs text-muted">{city.spots.length} places</span><span className="mt-2 block truncate text-[10px] text-muted">{city.spots[0]?.name}</span></span>
     </button>)}</div>
-    {count < cities.length && <Button variant="outline" className="mt-4" disabled={!ready} onClick={() => setCount(value => value + 12)}>Show more cities ({cities.length - count})</Button>}
+    {count < cities.length && <Button variant={lightSurface ? "outline" : "glass"} className="mt-4" disabled={!ready} onClick={() => setCount(value => value + 12)}>Show more cities ({cities.length - count})</Button>}
   </div>;
 }
