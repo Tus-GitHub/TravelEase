@@ -1,8 +1,12 @@
 "use client";
 import Select from "@/components/controls/Select";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Button from "@/components/common/Button";
+import dynamic from "next/dynamic";
+import LocationSearchInput, { locationName, type LocationSuggestion } from "@/components/forms/LocationSearchInput";
+import type { LatLng } from "@/components/forms/LocationPicker";
+const LocationPicker = dynamic(() => import("@/components/forms/LocationPicker"), { ssr: false });
 import { MEALS, emptyMeals, type DayExtras, type GuestStay } from "@/lib/trip-plan";
 import { validateRouteTree, type PackageContent, type RouteNode, type RouteTree } from "@/lib/package-content";
 const field="min-h-11 w-full min-w-0 rounded-xl border border-line bg-surface px-3 py-2 text-base text-fg";
@@ -13,7 +17,15 @@ export function DayPlanExtras({value,onChange,label}:{value:DayExtras;onChange:(
     {value.hotel&&<GuestStayEditor label={label} value={value.hotel} onChange={hotel=>onChange({...value,hotel})}/>}</div>;
 }
 function GuestStayEditor({value,onChange,label}:{value:GuestStay;onChange:(next:GuestStay)=>void;label:string}){
-  return <div className="grid gap-3 rounded-xl border border-line p-3 sm:grid-cols-2">{([['hotelName','Hotel name / category',200],['hotelAddress','Hotel location',500],['roomType','Room / sharing type',120],['notes','Guest-facing stay details',1000]] as const).map(([key,text,max])=><label key={key} className="min-w-0 text-sm">{text}<input aria-label={`${label} ${text}`} maxLength={max} value={value[key]} onChange={e=>onChange({...value,[key]:e.target.value})} className={`mt-1 ${field}`}/></label>)}<p className="text-xs text-muted sm:col-span-2">These details are shown to travellers. Keep supplier costs, private references and hotel contacts in the departure’s private hotel fields.</p></div>;
+  const [mapOpen,setMapOpen]=useState(false),[point,setPoint]=useState<LatLng|null>(null);
+  const choose=(place:LocationSuggestion)=>onChange({...value,hotelName:value.hotelName||locationName(place),hotelAddress:place.label.slice(0,500)});
+  return <div className="grid gap-3 rounded-xl border border-line p-3 sm:grid-cols-2">
+    <label className="min-w-0 text-sm">Hotel name / category<LocationSearchInput aria-label={`${label} Hotel name / category`} maxLength={200} value={value.hotelName} onValueChange={hotelName=>onChange({...value,hotelName})} onChoose={place=>onChange({...value,hotelName:locationName(place).slice(0,200),hotelAddress:place.label.slice(0,500)})} className={`mt-1 ${field}`} placeholder="Type a hotel or enter its category"/></label>
+    <label className="min-w-0 text-sm">Hotel location<LocationSearchInput aria-label={`${label} Hotel location`} maxLength={500} value={value.hotelAddress} onValueChange={hotelAddress=>onChange({...value,hotelAddress})} onChoose={choose} className={`mt-1 ${field}`} placeholder="Type a public hotel, city or area"/></label>
+    {([['roomType','Room / sharing type',120],['notes','Guest-facing stay details',1000]] as const).map(([key,text,max])=><label key={key} className="min-w-0 text-sm">{text}<input aria-label={`${label} ${text}`} maxLength={max} value={value[key]} onChange={e=>onChange({...value,[key]:e.target.value})} className={`mt-1 ${field}`}/></label>)}
+    <details className="sm:col-span-2" onToggle={event=>setMapOpen(event.currentTarget.open)}><summary className="cursor-pointer text-sm font-medium">Choose hotel location on map (optional)</summary>{mapOpen&&<div className="mt-3"><LocationPicker value={point} onChange={setPoint} onResolve={choose}/></div>}</details>
+    <p className="text-xs text-muted sm:col-span-2">These details are shown to travellers. Keep supplier costs, private references and hotel contacts in the departure’s private hotel fields.</p>
+  </div>;
 }
 export default function PackagePlanEditor({value,onChange,spots}:{value:PackageContent;onChange:(next:PackageContent)=>void;spots:{id:number;name:string;cityName?:string;isActive?:boolean}[]}){
   const patch=(next:Partial<PackageContent>)=>onChange({...value,...next});

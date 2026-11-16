@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { readBoundedJsonObject } from "@/lib/server/http-json";
 import { matchesRequestOrigin } from "@/lib/server/request-origin";
 import { calculatePrice, PER_PERSON_PACKAGE_RULE, type BookingTypeCode, type TripInput } from "@/lib/server/pricing";
-import { resolveBookingTypeId, resolvePricingRule } from "@/lib/server/pricing-rules";
+import { resolveBookingTypeId, resolvePricingRule, resolveVehicleDailyRule } from "@/lib/server/pricing-rules";
 import { validateCoupon } from "@/lib/server/coupons";
 import { resolveSeason } from "@/lib/server/seasonal-pricing";
 import { getUserIdForToken, SESSION_COOKIE } from "@/lib/server/session";
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
 
   const date = typeof body.startDate === "string" ? new Date(body.startDate) : undefined;
   if (date && Number.isNaN(date.getTime())) return NextResponse.json({ error: "Choose a valid travel date." }, { status: 400 });
-  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId, vehicleId, date) ?? (packagePlan && packagePlan.pricePerPerson > 0 ? PER_PERSON_PACKAGE_RULE : null);
+  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId, vehicleId, date) ?? (packagePlan && packagePlan.pricePerPerson > 0 ? PER_PERSON_PACKAGE_RULE : !packagePlan && trip.bookingType === "package" && vehicleId !== null ? await resolveVehicleDailyRule(vehicleId) : null);
   if (!rule) {
     return NextResponse.json(
       { error: "No pricing is configured for this trip yet." },

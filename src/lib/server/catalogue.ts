@@ -388,6 +388,8 @@ export async function getPublicPackage(
 // ─── Regions (with spots, for the Package Builder) ───────────────────────────
 
 export interface PublicRegionSpot {
+  latitude: number | null;
+  longitude: number | null;
   id: number;
   name: string;
   tag: string | null;
@@ -422,6 +424,7 @@ export function toBuilderRegion(r: PublicRegion): Region {
       tag: s.tag ?? "",
       description: s.description ?? "",
       imageUrl: s.imageUrl ?? PACKAGE_IMAGE_FALLBACK,
+      cityName: s.cityName, latitude: s.latitude, longitude: s.longitude,
     })),
   };
 }
@@ -436,7 +439,7 @@ export async function listPublicRegions(): Promise<PublicRegion[]> {
     ),
     pool.query(
       `SELECT c.region_id, ts.tourist_spot_id, ts.name, ts.tag, ts.description,
-              ts.image_url, ts.city_id, c.name AS city_name
+              ts.image_url, ts.city_id, c.name AS city_name, ts.latitude, ts.longitude
          FROM tourist_spots ts
          JOIN cities c ON c.city_id = ts.city_id AND c.is_deleted = false AND c.is_active = true
         WHERE ts.is_deleted = false AND ts.is_active = true
@@ -455,6 +458,7 @@ export async function listPublicRegions(): Promise<PublicRegion[]> {
       imageUrl: s.image_url,
       cityId: s.city_id,
       cityName: s.city_name,
+      latitude: s.latitude == null ? null : Number(s.latitude), longitude: s.longitude == null ? null : Number(s.longitude),
     });
     byRegion.set(s.region_id, list);
   }

@@ -1,7 +1,8 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useId, useState } from "react";
 import Image from "next/image";
+import Select from "@/components/controls/Select";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -14,6 +15,8 @@ import PackageCard from "@/components/cards/PackageCard";
 import RouteOptimizer from "@/components/packages/RouteOptimizer";
 import ItineraryIdeas from "@/components/packages/ItineraryIdeas";
 import MapSpotSelector from "@/components/ui/MapSpotSelector";
+import dynamic from "next/dynamic";
+const BookingFlow = dynamic(() => import("@/components/booking/BookingFlow"), { loading: () => <p role="status" className="text-center text-sm text-muted">Loading transfer booking…</p> });
 import { useAuth } from "@/context/AuthContext";
 import type { Region, TouristSpot, TravelPackage } from "@/types";
 import { cmsHeading, type CmsSection } from "@/lib/cms";
@@ -25,54 +28,28 @@ interface PackageBuilderProps {
   regions: Region[];
   packages: TravelPackage[];
   initialMode?: Mode;
-  selectedVehicle?: { id: number; name: string; typeSlug: string; typeTitle: string };
+  showTransfer?: boolean;
+  compact?: boolean;
+  selectedVehicle?: { id: number; name: string; typeSlug: string; typeTitle: string; pricePerDay?: number };
 }
 
 // ─── Tab modes ────────────────────────────────────────────────────────────────
 
-type Mode = "packages" | "custom";
+type Mode = "packages" | "custom" | "transfer";
 
-const TABS: { id: Mode; label: string; icon: string }[] = [
-  { id: "packages", label: "Choose a Package", icon: "✨" },
-  { id: "custom",   label: "Build Your Own",   icon: "🗺️" },
+const TABS: { id: Mode; label: string; icon: "map-pin" | "location" | "car" }[] = [
+  { id: "packages", label: "Choose Package", icon: "map-pin" },
+  { id: "custom", label: "Create Package", icon: "location" },
+  { id: "transfer", label: "Point to Point", icon: "car" },
 ];
-
-function TabSwitcher({
-  active,
-  onChange,
-}: {
-  active: Mode;
-  onChange: (m: Mode) => void;
-}) {
-  return (
-    <div className="flex justify-center mb-12">
-      <div className="relative flex min-w-0 rounded-2xl bg-surface-hover p-1.5 gap-1">
-        {TABS.map((tab) => (
-          <button data-ui-action=""
-            key={tab.id}
-            type="button"
-            onClick={() => onChange(tab.id)}
-            className={`relative z-10 flex min-w-0 items-center gap-1.5 rounded-xl px-3 py-3 text-sm font-semibold transition-colors duration-200 sm:gap-2 sm:px-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${
-              active === tab.id
-                ? "text-white"
-                : "text-muted hover:text-fg"
-            }`}
-          >
-            {/* Sliding background */}
-            {active === tab.id && (
-              <motion.span
-                layoutId="tab-bg"
-                className="absolute inset-0 rounded-xl bg-primary-900 shadow-md"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-            )}
-            <span className="relative z-10">{tab.icon}</span>
-            <span className="relative z-10">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+function TabSwitcher({ active, onChange, showTransfer, tabId }: { active: Mode; onChange: (mode: Mode) => void; showTransfer: boolean; tabId: string }) {
+  const tabs = TABS.filter(tab => showTransfer || tab.id !== "transfer");
+  return <div role="tablist" aria-label="Choose your trip" className={`mx-auto mb-8 grid w-full max-w-2xl ${showTransfer ? "grid-cols-3" : "grid-cols-2"} gap-1 rounded-2xl border border-line bg-surface-muted p-1.5`}>
+    {tabs.map((tab, index) => <button data-ui-action="" key={tab.id} id={`${tabId}-${tab.id}`} type="button" role="tab" aria-selected={active === tab.id} aria-controls={`${tabId}-panel`} tabIndex={active === tab.id ? 0 : -1} onClick={() => onChange(tab.id)} onKeyDown={event => {
+      const next = event.key === "ArrowRight" ? (index + 1) % tabs.length : event.key === "ArrowLeft" ? (index + tabs.length - 1) % tabs.length : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : -1;
+      if (next >= 0) { event.preventDefault(); onChange(tabs[next].id); (event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next])?.focus(); }
+    }} className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-3 text-center text-xs font-semibold transition-colors sm:flex-row sm:gap-2 sm:px-4 sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${active === tab.id ? "bg-primary-900 text-white shadow-sm" : "text-muted hover:bg-surface-hover hover:text-fg"}`}><Icon name={tab.icon} className="h-4 w-4 shrink-0"/><span>{tab.label}</span></button>)}
+  </div>;
 }
 
 // ─── Curated packages grid ────────────────────────────────────────────────────
@@ -88,7 +65,7 @@ function ChoosePackage({
 }) {
   return (
     <div>
-      {packages.length === 0 && <div className="rounded-2xl border border-line bg-surface p-6 text-center"><h3 className="text-lg font-semibold text-fg">No ready-made packages published{vehicleId ? " for this vehicle" : ""} yet</h3><p className="mt-2 text-sm text-muted">Create your own route below or contact our team to arrange a complete package with stays and meals.</p><Button href="/contact" variant="outline" className="mt-4">Ask about a package</Button></div>}
+      {packages.length === 0 && <div className="rounded-2xl border border-line bg-surface p-6 text-center"><h3 className="text-lg font-semibold text-fg">No ready-made packages published{vehicleId ? " for this vehicle" : ""} yet</h3><p className="mt-2 text-sm text-muted">Create your own route from available destinations. Review what is included before booking.</p><Button onClick={onBuildOwn} variant="accent" className="mt-4">Create your package</Button></div>}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {packages.map((pkg, i) => (
           <AnimateInView key={pkg.id} delay={i * 0.08}>
@@ -120,55 +97,7 @@ const STEPS = [
 ];
 
 function StepIndicator({ current }: { current: number }) {
-  return (
-    <div className="flex items-center justify-center gap-0 mb-10">
-      {STEPS.map((step, i) => (
-        <div key={step.num} className="flex items-center">
-          <div className="flex flex-col items-center gap-1.5">
-            <motion.div
-              animate={
-                current === step.num
-                  ? { scale: 1.15, backgroundColor: "#f59e0b" }
-                  : current > step.num
-                  ? { scale: 1, backgroundColor: "#1d4ed8" }
-                  : { scale: 1, backgroundColor: "#f1f5f9" }
-              }
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold shadow-sm"
-              style={{ color: current >= step.num ? "white" : "#94a3b8" }}
-            >
-              {current > step.num ? (
-                <Icon name="check" className="h-4 w-4" />
-              ) : (
-                step.num
-              )}
-            </motion.div>
-            <span
-              className={`hidden text-xs font-medium sm:block transition-colors duration-200 ${
-                current === step.num
-                  ? "text-accent-600"
-                  : current > step.num
-                  ? "text-primary-700"
-                  : "text-faint"
-              }`}
-            >
-              {step.label}
-            </span>
-          </div>
-          {i < STEPS.length - 1 && (
-            <motion.div
-              className="mx-2 mb-4 h-0.5 w-12 sm:w-20"
-              animate={{
-                backgroundColor:
-                  current > step.num ? "#1d4ed8" : "#e2e8f0",
-              }}
-              transition={{ duration: 0.4 }}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  );
+  return <ol aria-label="Package planning progress" className="mx-auto mb-8 grid max-w-2xl grid-cols-4 gap-2">{STEPS.map(step => <li key={step.num} aria-current={current === step.num ? "step" : undefined} className="flex min-w-0 flex-col items-center gap-2 text-center"><span className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold ${current >= step.num ? "border-primary-900 bg-primary-900 text-white" : "border-line bg-surface text-muted"}`}>{current > step.num ? <Icon name="check" className="h-4 w-4"/> : step.num}</span><span className={`text-xs leading-relaxed ${current === step.num ? "font-semibold text-fg" : "text-muted"}`}>{step.label}</span></li>)}</ol>;
 }
 
 // ─── Step 1: Region picker ────────────────────────────────────────────────────
@@ -182,13 +111,17 @@ function RegionPicker({
   selected: Region | null;
   onSelect: (r: Region) => void;
 }) {
+  const [query, setQuery] = useState("");
+  const shown = regions.filter(region => `${region.name} ${region.state} ${region.spots.map(spot => `${spot.name} ${spot.cityName || ""}`).join(" ")}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   return (
     <div>
       <p className="mb-6 text-center text-muted">
         Select the region you want to explore
       </p>
+      <label className="mx-auto mb-6 block max-w-xl text-sm font-semibold text-fg">Find a region, city or destination<input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Start typing a place…" className="mt-2 min-h-11 w-full rounded-xl border border-line bg-surface px-4 py-3 text-base font-normal text-fg" /></label>
+      {!shown.length && <p role="status" className="mb-5 text-center text-sm text-muted">No published destinations match this search. Try another city or region.</p>}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
-        {regions.map((region, i) => (
+        {shown.map((region, i) => (
           <motion.button
             key={region.id}
             type="button"
@@ -387,13 +320,6 @@ function RouteBuilder({
 
 // ─── Step 4: Package summary ──────────────────────────────────────────────────
 
-const vehicleOptions = [
-  { value: "tempo-traveller", label: "Tempo Traveller" },
-  { value: "luxury-cars",     label: "Luxury Car" },
-  { value: "family-cars",     label: "Family Car" },
-  { value: "group-travel",    label: "Group Coach" },
-];
-
 const CONFETTI_COLORS = [
   "#f59e0b", "#3b82f6", "#10b981", "#f43f5e",
   "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16",
@@ -412,13 +338,29 @@ function PackageSummary({
   region: Region;
   spots: TouristSpot[];
   onReset: () => void;
-  onBook: (vehicleSlug: string) => void;
+  onBook: (vehicleSlug: string, vehicleId: number) => void;
   onSave: (vehicleSlug: string) => void;
   saveState: SaveState;
   canSave: boolean;
   selectedVehicle?: PackageBuilderProps["selectedVehicle"];
 }) {
-  const [vehicle, setVehicle] = useState(selectedVehicle?.typeSlug ?? vehicleOptions[0].value);
+  const [vehicles, setVehicles] = useState<NonNullable<PackageBuilderProps["selectedVehicle"]>[]>([]);
+  const [vehicleId, setVehicleId] = useState(selectedVehicle ? String(selectedVehicle.id) : "");
+  const [vehicleError, setVehicleError] = useState(""), [vehicleLoading, setVehicleLoading] = useState(!selectedVehicle);
+  useEffect(() => {
+    if (selectedVehicle) return;
+    const controller = new AbortController();
+    fetch("/api/vehicles?available=1", { signal: controller.signal }).then(async response => {
+      if (!response.ok) throw new Error("Could not load vehicles. Return to the vehicle list and choose your car.");
+      const data = await response.json(); if (controller.signal.aborted) return;
+      const available = Array.isArray(data.vehicles) ? data.vehicles : [];
+      setVehicles(available); if (available.length === 1) setVehicleId(String(available[0].id));
+      if (!available.length) setVehicleError("No vehicles are available to book right now. Your route remains here.");
+    }).catch(error => { if (!controller.signal.aborted) setVehicleError(error.message); }).finally(() => { if (!controller.signal.aborted) setVehicleLoading(false); });
+    return () => controller.abort();
+  }, [selectedVehicle]);
+  const vehicle = selectedVehicle || vehicles.find(item => String(item.id) === vehicleId);
+
 
   return (
     <div className="mx-auto max-w-2xl relative">
@@ -511,23 +453,10 @@ function PackageSummary({
               <label className="block text-sm font-semibold text-fg">
                 Choose Vehicle
               </label>
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {(selectedVehicle ? [{ value: selectedVehicle.typeSlug, label: selectedVehicle.name }] : vehicleOptions).map((opt) => (
-                  <motion.button
-                    key={opt.value}
-                    type="button"
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setVehicle(opt.value)}
-                    className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                      vehicle === opt.value
-                        ? "border-accent-500 bg-accent-50 text-accent-700 shadow-sm"
-                        : "border-line text-muted hover:border-primary-300 hover:bg-primary-50"
-                    }`}
-                  >
-                    {opt.label}
-                  </motion.button>
-                ))}
-              </div>
+              {selectedVehicle ? <p className="mt-3 rounded-xl border border-line bg-surface-muted p-4 text-sm font-semibold text-fg">{selectedVehicle.name}</p> : <Select aria-label="Trip vehicle" searchable value={vehicleId} disabled={vehicleLoading} onChange={event => setVehicleId(event.target.value)} className="mt-3 w-full rounded-xl border border-line bg-surface px-3 py-3 text-base text-fg"><option value="">{vehicleLoading ? "Loading available vehicles…" : "Choose your trip vehicle"}</option>{vehicles.map(item => <option key={item.id} value={item.id}>{item.name} · {item.typeTitle}</option>)}</Select>}
+              {vehicleError && <p role="status" className="mt-2 text-sm text-muted">{vehicleError}</p>}
+              {vehicle?.pricePerDay != null && <p className="mt-3 text-sm text-muted">Vehicle hire from ₹{vehicle.pricePerDay.toLocaleString("en-IN")}/day. Your dates and any configured trip rates determine the final quote.</p>}
+              <p className="mt-2 text-xs leading-relaxed text-muted">Your itinerary reserves vehicle transport. Stays, meals, guide arrangements and extras are included only when listed in a published package.</p>
             </div>
 
             {/* CTAs */}
@@ -537,7 +466,8 @@ function PackageSummary({
                 size="lg"
                 fullWidth
                 iconRight="arrow-right"
-                onClick={() => onBook(vehicle)}
+                disabled={!vehicle || vehicleLoading}
+                onClick={() => { if (vehicle) onBook(vehicle.typeSlug, vehicle.id); }}
               >
                 Book This Package
               </Button>
@@ -557,8 +487,8 @@ function PackageSummary({
               ) : (
                 <button data-ui-action=""
                   type="button"
-                  onClick={() => onSave(vehicle)}
-                  disabled={saveState === "saving"}
+                  onClick={() => { if (vehicle) onSave(vehicle.typeSlug); }}
+                  disabled={saveState === "saving" || !vehicle || vehicleLoading}
                   className="inline-flex items-center gap-1.5 font-medium text-primary-700 underline underline-offset-2 transition-colors hover:text-accent-600 disabled:opacity-60 dark:text-primary-300"
                 >
                   <Icon name="bookmark" className="h-4 w-4" />
@@ -600,9 +530,13 @@ const stepVariants = {
 
 // ─── Main PackageBuilder section ──────────────────────────────────────────────
 
-export default function PackageBuilder({ regions, packages, cms, initialMode = "packages", selectedVehicle }: PackageBuilderProps) {
+export default function PackageBuilder({ regions, packages, cms, initialMode = "packages", selectedVehicle, showTransfer = false, compact = false }: PackageBuilderProps) {
   const router = useRouter();
+  const tabId = useId();
+  const [interactive, setInteractive] = useState(false);
+  useEffect(() => setInteractive(true), []);
   const { user } = useAuth();
+  const [transferVisited, setTransferVisited] = useState(initialMode === "transfer");
   const [mode, setMode]               = useState<Mode>(initialMode);
   const [step, setStep]               = useState(1);
   const [region, setRegion]           = useState<Region | null>(null);
@@ -615,7 +549,7 @@ export default function PackageBuilder({ regions, packages, cms, initialMode = "
 
   // Build Your Own -> the booking flow. Spot ids are the real tourist_spot_ids
   // (as strings); /booking/new parses them back and snapshots them as stops.
-  const bookCustomPackage = (vehicleSlug: string) => {
+  const bookCustomPackage = (vehicleSlug: string, chosenVehicleId: number) => {
     if (!region || orderedSpots.length === 0) return;
     const params = new URLSearchParams({
       type: "package",
@@ -623,7 +557,7 @@ export default function PackageBuilder({ regions, packages, cms, initialMode = "
       vehicleType: vehicleSlug,
       regionName: region.name,
     });
-    if (selectedVehicle) params.set("vehicle", String(selectedVehicle.id));
+    params.set("vehicle", String(selectedVehicle?.id ?? chosenVehicleId));
     router.push(`/booking/new?${params.toString()}`);
   };
 
@@ -656,6 +590,7 @@ export default function PackageBuilder({ regions, packages, cms, initialMode = "
   const handleRegionSelect = (r: Region) => {
     setRegion(r);
     setSelectedSpots([]);
+    setStep(2);
   };
 
   const toggleSpot = (spot: TouristSpot) => {
@@ -684,17 +619,20 @@ export default function PackageBuilder({ regions, packages, cms, initialMode = "
     <Section
       id="build-package"
       bg="white"
-      eyebrow="Travel Packages"
-      title="Plan Your Perfect Trip"
-      subtitle="Pick from our curated packages or build your very own — your trip, your way."
+      className={compact ? "!pb-8 !pt-2" : undefined}
+      eyebrow={compact ? undefined : "Travel Packages"}
+      title={compact ? undefined : "Plan Your Perfect Trip"}
+      subtitle={compact ? undefined : "Pick from our curated packages or build your very own — your trip, your way."}
       {...cmsHeading(cms)}
     >
+      <fieldset disabled={!interactive} aria-busy={!interactive} className="min-w-0">
       {/* Tab switcher */}
-      <TabSwitcher active={mode} onChange={(m) => { setMode(m); if (m === "custom") reset(); }} />
+      <TabSwitcher active={mode} onChange={next => { setMode(next); if (next === "transfer") setTransferVisited(true); }} showTransfer={showTransfer} tabId={tabId} />
+      <div id={`${tabId}-panel`} role="tabpanel" aria-labelledby={`${tabId}-${mode}`} tabIndex={0} className="min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500">
 
       {/* Mode panels */}
       <AnimatePresence mode="wait" initial={false}>
-        {mode === "packages" ? (
+        {mode !== "transfer" && (mode === "packages" ? (
           <motion.div
             key="packages-panel"
             initial={{ opacity: 0, y: 16 }}
@@ -717,8 +655,8 @@ export default function PackageBuilder({ regions, packages, cms, initialMode = "
             transition={{ duration: 0.25, ease: "easeInOut" }}
           >
             {packages.some(pkg=>pkg.isGuided&&pkg.isBookable!==false)&&<div className="mb-8 space-y-4"><h3 className="text-xl font-semibold text-fg">Choose a route to customise</h3><p className="text-sm text-muted">Start with a trip our team can arrange, then choose the next destinations and see how the price changes.</p><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{packages.filter(pkg=>pkg.isGuided&&pkg.isBookable!==false).map(pkg=><PackageCard key={pkg.id} pkg={pkg} vehicleId={selectedVehicle?.id}/>)}</div></div>}
-            {!packages.some(pkg=>pkg.isGuided&&pkg.isBookable!==false)&&<div className="mb-8 rounded-2xl border border-line bg-surface-muted p-6"><h3 className="text-lg font-semibold text-fg">Let’s plan your getaway</h3><p className="mt-2 text-sm leading-relaxed text-muted">Guided custom packages will appear here when published. For a complete trip with accommodation, meals or a guide, contact our team to arrange the itinerary and quote.</p><Button href="/contact" variant="accent" className="mt-4">Talk to our trip team</Button></div>}
-            <details className="space-y-6"><summary className="mb-6 min-h-11 cursor-pointer text-sm font-medium text-fg">Plan a transport-only route with your own stops</summary><p className="mb-6 text-sm text-muted">This option arranges vehicle transport. Hotels, meals and a guide are included only when explicitly stated in a curated package.</p>
+            <div className="space-y-6">
+            <div className="rounded-2xl border border-line bg-surface-muted p-4 text-sm leading-relaxed text-muted"><h3 className="font-semibold text-fg">Build your own itinerary</h3><p className="mt-2">Choose a region, add destinations and set your route. You can save your plan or continue straight to booking. Hotels, meals and a guide are included only when listed in a chosen package.</p></div>
             <StepIndicator current={step} />
 
             {/* Animated step container */}
@@ -847,10 +785,13 @@ export default function PackageBuilder({ regions, packages, cms, initialMode = "
                 </motion.div>
               )}
             </AnimatePresence>
-            </details>
+            </div>
           </motion.div>
-        )}
+        ))}
       </AnimatePresence>
+      {showTransfer && transferVisited && <div hidden={mode !== "transfer"} className="space-y-6"><p className="mx-auto max-w-3xl text-center text-sm leading-relaxed text-muted">Just need a pickup and drop? Select the two locations below. Road distance and fare update automatically; any configured empty-return charge is itemised before you book.</p><Suspense fallback={<p role="status" className="text-center text-sm text-muted">Loading transfer booking…</p>}><BookingFlow enabled={mode === "transfer"} /></Suspense></div>}
+      </div>
+      </fieldset>
     </Section>
   );
 }

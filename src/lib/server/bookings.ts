@@ -18,7 +18,7 @@ import {
   type PriceBreakdown,
   type TripInput,
 } from "./pricing";
-import { resolveBookingTypeId, resolvePricingRule } from "./pricing-rules";
+import { resolveBookingTypeId, resolvePricingRule, resolveVehicleDailyRule } from "./pricing-rules";
 import {
   notifyBookingCreated,
   captureBookingNotification,
@@ -625,7 +625,9 @@ export async function createBooking(
   if (bookingTypeId == null) {
     return { ok: false, status: 500, message: "Booking type is not configured." };
   }
-  const rule = await resolvePricingRule(bookingTypeId, vehicleTypeId, input.vehicleId ?? null, start) ?? (packagePricePerPerson && packagePricePerPerson > 0 ? PER_PERSON_PACKAGE_RULE : null);
+  const configuredRule = await resolvePricingRule(bookingTypeId, vehicleTypeId, input.vehicleId ?? null, start);
+  const usesVehicleDayRate = !configuredRule && !packagePlan && input.bookingType === "package" && typeof input.vehicleId === "number";
+  const rule = configuredRule ?? (packagePricePerPerson && packagePricePerPerson > 0 ? PER_PERSON_PACKAGE_RULE : usesVehicleDayRate ? await resolveVehicleDailyRule(input.vehicleId!) : null);
   if (!rule) {
     return { ok: false, status: 422, message: "No pricing is configured for this trip yet." };
   }
@@ -709,6 +711,18 @@ export async function createBooking(
         { ...trip, discountAmount: res.coupon.discountAmount },
         rule,
       );
+    }
+
+    if (usesVehicleDayRate) {
+      // Match the existing coupon → vehicle lock order. Retain the reviewed
+      // admin rate until commit, so an edit cannot race a stale day-rate quote.
+      const current = (await client.query(`SELECT v.base_price_per_day FROM vehicles v JOIN vehicle_types t USING(vehicle_type_id)
+        WHERE v.vehicle_id=$1 AND v.vehicle_type_id=$2 AND v.seating_capacity>=$3 AND v.is_active AND NOT v.is_deleted AND v.is_available
+          AND t.is_active AND NOT t.is_deleted FOR UPDATE OF v`, [input.vehicleId, vehicleTypeId, passengerCount])).rows[0];
+      if (!current || Number(current.base_price_per_day) !== rule.perDayRate) {
+        await client.query("ROLLBACK");
+        return { ok: false, status: 409, message: "The vehicle or its daily fare changed. Review the refreshed quote before confirming." };
+      }
     }
 
     if (input.expectedTotal !== undefined && (typeof input.expectedTotal !== "number" || !Number.isFinite(input.expectedTotal) || Math.abs(input.expectedTotal - price.totalAmount) > 0.009)) {

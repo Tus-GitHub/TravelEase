@@ -111,6 +111,9 @@ export interface SearchFormData {
 }
 
 export interface TouristSpot {
+  cityName?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   id: string;
   name: string;
   imageUrl: string;

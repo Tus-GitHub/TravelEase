@@ -75,3 +75,9 @@ test("Photon daily allowance fails closed without a provider request",()=>withDb
   const previous=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;return Response.json({features:[]});};
   try{await assert.rejects(suggestMapPlaces("Dehradun"),e=>e instanceof MapServiceError&&e.status===429);assert.equal(calls,0);}finally{globalThis.fetch=previous;}
 }));
+
+test("automatic geography metadata keeps the place name and resolves town/village city fields",()=>withDb({},async()=>{
+  const previous=globalThis.fetch;
+  globalThis.fetch=async()=>Response.json({features:[{geometry:{type:"Point",coordinates:[77.86,30.7]},properties:{name:"Deoban",town:"Chakrata",state:"Uttarakhand",postcode:"248123",countrycode:"IN"}}]});
+  try {const [place]=await suggestMapPlaces("Deoban Chakrata");assert.equal(place.name,"Deoban");assert.equal(place.city,"Chakrata");assert.equal(place.state,"Uttarakhand");assert.equal(place.pincode,"248123");assert.equal(place.lat,30.7);assert.equal(place.lng,77.86);}finally{globalThis.fetch=previous;}
+}));

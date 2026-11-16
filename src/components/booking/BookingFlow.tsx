@@ -45,7 +45,7 @@ const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 const fieldCls =
   "w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg outline-none transition-[border-color,box-shadow] focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/60";
 
-export default function BookingFlow() {
+export default function BookingFlow({ enabled = true }: { enabled?: boolean } = {}) {
   const params = useSearchParams();
   const router = useRouter();
   const { user, isLoading } = useAuth();
@@ -233,7 +233,7 @@ export default function BookingFlow() {
   }, [bookingType, passengers, packageSlug, days, nights, vehicleTypeId, distanceKm, hours, couponCode, startDate, endDate, vehicleId, requiresRoadRoute, roadRoute, pickupPoint, dropPoint, guidedPath]);
 
   useEffect(() => {
-    if (!meta) return;
+    if (!enabled || !meta) { setQuoting(false); return; }
     const controller = new AbortController();
     // Invalidate the old estimate immediately, including during the debounce.
     setQuote(null);
@@ -263,7 +263,7 @@ export default function BookingFlow() {
       }
     }, 350);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [quoteBody, meta, roadRoute, requiresRoadRoute, quoteRefresh, bookingType, startDate, endDate]);
+  }, [quoteBody, meta, roadRoute, requiresRoadRoute, quoteRefresh, bookingType, startDate, endDate, enabled]);
 
   const currentUrlWithState = useCallback(() => {
     const p = new URLSearchParams(params.toString());
@@ -389,6 +389,7 @@ export default function BookingFlow() {
           <h2 className="mt-1 font-display text-xl font-bold text-fg">{meta.title}</h2>
           <p className="mt-1 text-sm text-muted">{meta.subtitle}</p>
         </div>
+        {mode === "custom" && <p className="rounded-xl border border-line bg-surface-muted p-3 text-sm text-muted">Custom vehicle itinerary. Your selected car’s configured trip rate or daily hire rate applies. Hotels, meals, guide services and extras are included only when listed in a published package.</p>}
         {packagePreview&&<section className="space-y-4 rounded-2xl border border-line p-4">
           {packagePreview.content.guideIncluded&&<p className="text-sm font-semibold text-fg">Guide / trip leader included</p>}
           <div className="grid gap-4 sm:grid-cols-2">{([['inclusions','Included in your price'],['exclusions','Excluded / additional charges']] as const).map(([key,label])=><div key={key}><h3 className="text-sm font-semibold text-fg">{label}</h3><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-muted">{packagePreview.content[key].map((line,i)=><li key={i}>{line}</li>)}</ul>{!packagePreview.content[key].length&&<p className="mt-2 text-xs text-muted">Confirm these details with the team before payment.</p>}</div>)}</div>
@@ -433,7 +434,7 @@ export default function BookingFlow() {
           <p className="text-sm text-muted">{duration ? `${duration.days} ${duration.days === 1 ? "day" : "days"} · ${duration.nights} nights. You and the chauffeur return together.` : "Choose when your group returns. Daily allowances follow calendar dates in India."} The route includes both directions; no empty-return fee applies.</p>
         </div>}
 
-        {requiresRoadRoute&&<TripRouteSelector roundTrip={bookingType==="outstation"} pickup={pickupPoint} drop={dropPoint} pickupLabel={pickupAddress} dropLabel={dropAddress} onPickup={choosePickup} onDrop={chooseDrop} onRoute={setRoadRoute}/>}
+        {requiresRoadRoute&&<TripRouteSelector enabled={enabled} roundTrip={bookingType==="outstation"} pickup={pickupPoint} drop={dropPoint} pickupLabel={pickupAddress} dropLabel={dropAddress} onPickup={choosePickup} onDrop={chooseDrop} onRoute={setRoadRoute}/>}
 
         <details open={!requiresRoadRoute} className="rounded-xl border border-line p-3">
           <summary className="min-h-8 cursor-pointer text-sm font-medium text-fg">{requiresRoadRoute ? "Exact pickup / drop instructions (optional)" : "Pickup details"}</summary>

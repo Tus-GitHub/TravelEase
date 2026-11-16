@@ -5,8 +5,8 @@ import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-lea
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import Button from "@/components/common/Button";
-import Icon from "@/components/common/Icon";
-import { fieldBase } from "./FormField";
+import LocationSearchInput, { locationPoint, type LocationSuggestion } from "./LocationSearchInput";
+
 
 export interface LatLng {
   lat: number;
@@ -14,6 +14,7 @@ export interface LatLng {
 }
 
 export interface ResolvedPlace {
+  name?: string;
   label: string;
   city: string;
   state: string;
@@ -65,43 +66,25 @@ function FlyTo({ target }: { target: { point: LatLng; key: number } | null }) {
 
 export default function LocationPicker({ value, onChange, onResolve }: LocationPickerProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Array<LatLng & ResolvedPlace>>([]);
-  const [searching, setSearching] = useState(false);
-  const [open, setOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [flyTarget, setFlyTarget] = useState<{ point: LatLng; key: number } | null>(null);
-  const searchAbort = useRef<AbortController|null>(null);
-
-  useEffect(()=>()=>searchAbort.current?.abort(),[]);
-  const search = async () => {
-    const q = query.trim();
-    searchAbort.current?.abort();
-    const controller=new AbortController();searchAbort.current=controller;
-    if (q.length < 3) {
-      setResults([]);
-      return;
+  const resolution = useRef(0), picked = useRef<LatLng | null>(value);
+  useEffect(() => () => { resolution.current++; }, []);
+  useEffect(() => {
+    if (!value) { resolution.current++; picked.current = null; return; }
+    if (picked.current?.lat !== value.lat || picked.current?.lng !== value.lng) {
+      resolution.current++; picked.current = value; setFlyTarget({ point: value, key: Date.now() });
     }
-      setSearching(true);
-      try {
-        const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`,{signal:controller.signal});
-        const data = await res.json();
-        if(controller.signal.aborted)return;
-        if(!res.ok){setStatus(data.error??"Search is unavailable. Please try again later.");return;}
-        setResults(Array.isArray(data.results) ? data.results : []);
-        setOpen(true);
-      } catch {
-        if(!controller.signal.aborted)setResults([]);
-      } finally {
-        if(!controller.signal.aborted)setSearching(false);
-      }
-  };
+  }, [value]);
 
   const reverse = useCallback(
-    async (v: LatLng) => {
+    async (v: LatLng, revision: number) => {
       try {
         const res = await fetch(`/api/geocode?lat=${v.lat}&lng=${v.lng}`);
         const data = await res.json();
+        if (resolution.current !== revision) return;
+        if (!res.ok) { setStatus(data.error || "Address lookup unavailable; the map pin is kept."); return; }
         if (data.result) {
           setStatus(data.result.label);
           onResolve?.(data.result);
@@ -110,7 +93,7 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
       } catch {
         /* fall through */
       }
-      setStatus("Location pinned on map");
+      if (resolution.current === revision) setStatus("Location pinned on map");
     },
     [onResolve],
   );
@@ -118,8 +101,9 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
   // Drag / map-click: update the value and label, but don't move the map.
   const pick = useCallback(
     (v: LatLng) => {
+      const revision = ++resolution.current; picked.current = v;
       onChange(v);
-      void reverse(v);
+      void reverse(v, revision);
     },
     [onChange, reverse],
   );
@@ -128,9 +112,10 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
   // `withReverse` is false when the caller already has the resolved address.
   const jumpTo = useCallback(
     (v: LatLng, withReverse = true) => {
+      const revision = ++resolution.current; picked.current = v;
       onChange(v);
       setFlyTarget({ point: v, key: Date.now() });
-      if (withReverse) void reverse(v);
+      if (withReverse) void reverse(v, revision);
     },
     [onChange, reverse],
   );
@@ -140,14 +125,17 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
       setStatus("Your browser can’t share a location.");
       return;
     }
+    const revision = ++resolution.current;
     setLocating(true);
     setStatus("Getting your location…");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (resolution.current !== revision) return;
         setLocating(false);
         jumpTo({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       },
       () => {
+        if (resolution.current !== revision) return;
         setLocating(false);
         setStatus("Couldn’t get your location — search or tap the map instead.");
       },
@@ -155,66 +143,24 @@ export default function LocationPicker({ value, onChange, onResolve }: LocationP
     );
   };
 
-  const chooseResult = (r: LatLng & ResolvedPlace) => {
-    searchAbort.current?.abort();
-    setQuery(r.label);
-    setResults([]);
-    setOpen(false);
-    setStatus(r.label);
-    onResolve?.({ label: r.label, city: r.city, state: r.state, pincode: r.pincode });
-    jumpTo({ lat: r.lat, lng: r.lng }, false);
+  const chooseResult = (place: LocationSuggestion) => {
+    const point = locationPoint(place); if (!point) return;
+    setLocating(false); setQuery(place.label); setStatus(place.label);
+    jumpTo(point, false);
+    onResolve?.({ label: place.label, name: place.name, city: place.city || "", state: place.state || "", pincode: place.pincode || "" });
   };
-
   const clear = () => {
-    onChange(null);
-    setStatus(null);
-    setQuery("");
-    setResults([]);
+    resolution.current++; picked.current = null; setLocating(false);
+    onChange(null); setStatus(null); setQuery("");
   };
 
   const center: [number, number] = value ? [value.lat, value.lng] : INDIA_CENTER;
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative z-[1200]">
-        <span className="relative block">
-          <Icon
-            name="search"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint"
-          />
-          <input
-            type="text"
-            value={query}
-            aria-label="Search a public place or area"
-            placeholder="Search a public place or area"
-            onChange={(e) => {searchAbort.current?.abort();setSearching(false);setQuery(e.target.value);setResults([]);setOpen(false);}}
-            onKeyDown={(e)=>{if(e.key==="Enter"){e.preventDefault();void search();}}}
-            onFocus={() => results.length > 0 && setOpen(true)}
-            className={`${fieldBase} pr-9`}
-          />
-          {searching && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-faint">
-              …
-            </span>
-          )}
-        </span>
-        <Button type="button" variant="outline" size="sm" className="mt-2" disabled={searching||query.trim().length<3} onClick={search}>Search location</Button>
-        <p className="mt-1 text-xs text-muted">Search public places only. Searches are sent to OpenStreetMap; do not include personal details.</p>
-        {open && results.length > 0 && (
-          <ul className="absolute left-0 right-0 z-[1200] mt-1 max-h-56 overflow-auto rounded-xl border border-line bg-surface py-1 shadow-lg">
-            {results.map((r, i) => (
-              <li key={`${r.lat},${r.lng},${i}`}>
-                <button data-ui-action=""
-                  type="button"
-                  onClick={() => chooseResult(r)}
-                  className="block w-full px-3 py-2 text-left text-sm text-fg hover:bg-surface-hover"
-                >
-                  {r.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+      <div>
+        <LocationSearchInput aria-label="Search a public place or area" placeholder="Type a city, area or landmark" value={query} onValueChange={setQuery} onChoose={chooseResult} />
+        <p className="mt-1 text-xs text-muted">Suggestions appear as you type. Search public places only; do not include personal details.</p>
       </div>
 
       <div className="h-64 w-full overflow-hidden rounded-xl border border-line">

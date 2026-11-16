@@ -62,7 +62,7 @@ async function upstream(url: URL): Promise<unknown> {
   return JSON.parse(text);
 }
 
-export interface MapPlace extends RoutePoint { label: string; city: string; state: string; pincode: string }
+export interface MapPlace extends RoutePoint { name?: string; label: string; city: string; state: string; pincode: string }
 /** Photon permits search-as-you-type; public Nominatim expressly forbids it.
  * The same shared cache, hard daily cap and spacing gate protect its free API. */
 export async function suggestMapPlaces(query: string): Promise<MapPlace[]> {
@@ -83,7 +83,7 @@ export async function suggestMapPlaces(query: string): Promise<MapPlace[]> {
       const parts = [p.name, [p.housenumber, p.street].filter(v => typeof v === "string").join(" "), p.city ?? p.town ?? p.village ?? p.county, p.state, p.country];
       const label = Array.from(new Set(parts.filter(v => typeof v === "string" && v.trim()).map(v => String(v).trim()))).join(", ").slice(0, 280);
       if (!point || !label || found.some(v => samePoint(v, point) && v.label === label)) continue;
-      found.push({ ...point, label, city: typeof p.city === "string" ? p.city : "", state: typeof p.state === "string" ? p.state : "", pincode: typeof p.postcode === "string" ? p.postcode : "" });
+      found.push({ ...point, label, name: typeof p.name === "string" ? p.name.slice(0, 160) : label.split(",")[0], city: [p.city, p.town, p.village, p.county].find((v): v is string => typeof v === "string" && Boolean(v.trim())) ?? "", state: typeof p.state === "string" ? p.state : "", pincode: typeof p.postcode === "string" ? p.postcode : "" });
     }
     return found;
   });

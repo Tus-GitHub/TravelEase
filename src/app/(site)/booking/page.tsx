@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Section from "@/components/common/Section";
 import Button from "@/components/common/Button";
 import PackageBuilder from "@/components/sections/PackageBuilder";
 import { getPublicVehicle, listPublicPackages, listPublicRegions, toCardPackage, toBuilderRegion } from "@/lib/server/catalogue";
@@ -16,15 +15,13 @@ export default async function BookingPage({ searchParams }: { searchParams: { ve
   ]);
   if (searchParams.vehicle && !vehicle) notFound();
   const packages = rows.filter(pkg => !vehicle || pkg.vehicleTypeSlug === vehicle.typeSlug).map(toCardPackage);
-  return <>
-    <Section bg="white" eyebrow="Your next getaway" title={vehicle ? `Plan a trip with ${vehicle.name}` : "A whole trip, planned around you"} subtitle="Choose a ready-made itinerary or create your own package. Review the included stays, meals, activities and any extra costs before booking.">
-      {vehicle && <div className="mb-6 rounded-2xl border border-line bg-surface p-5 text-fg"><p className="font-semibold">{vehicle.name} · {vehicle.seatingCapacity} seats</p><p className="mt-2 text-sm text-muted">Showing packages for this vehicle type. Your selected vehicle is carried into checkout; availability is checked for your dates.</p><Button href="/booking" variant="outline" size="sm" className="mt-3">Explore without this vehicle</Button></div>}
-      <div className="flex flex-wrap gap-3"><Button href="#build-package" variant="accent">Choose or create a package</Button><Button href="/weekend-trips" variant="outline">Join a weekend group</Button></div>
-      <p className="mt-4 text-sm text-muted">Weekend groups use the vehicle assigned to their departure.</p>
-    </Section>
-    <PackageBuilder key={`${vehicle?.id ?? "any"}-${searchParams.mode ?? "packages"}`} packages={packages} regions={regions.map(toBuilderRegion)} initialMode={searchParams.mode === "custom" ? "custom" : "packages"} selectedVehicle={vehicle ? { id: vehicle.id, name: vehicle.name, typeSlug: vehicle.typeSlug, typeTitle: vehicle.typeTitle } : undefined} />
-    <Section bg="gray" eyebrow="Just need transport?" title="Point-to-point travel is available too" subtitle="For a pickup and drop without a holiday package, use our separate transfer booking. Any applicable empty-return charge is shown before confirmation.">
-      <Button href={vehicle ? `/booking/new?vehicle=${vehicle.id}&type=point_to_point` : "/booking/new?type=point_to_point"} variant="outline">Book a point-to-point transfer</Button>
-    </Section>
-  </>;
+  return <main className="bg-canvas pb-12 pt-24 text-fg">
+    <div className="section-container pb-5 pt-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted">Plan your getaway</p>
+      <h1 className="mt-2 font-display text-2xl font-bold sm:text-3xl">{vehicle ? `Travel with ${vehicle.name}` : "Choose your trip"}</h1>
+      <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted">Choose a package, create your own route or book a point-to-point journey. Review your quote before confirming.</p>
+      {vehicle && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-surface-muted px-4 py-3"><p className="text-sm font-semibold">{vehicle.name} · {vehicle.seatingCapacity} seats</p><Button href="/booking" variant="ghost" size="sm">Change vehicle</Button></div>}
+    </div>
+    <PackageBuilder key={`${vehicle?.id ?? "any"}-${searchParams.mode ?? "packages"}`} compact packages={packages} regions={regions.map(toBuilderRegion)} showTransfer initialMode={searchParams.mode === "transfer" ? "transfer" : searchParams.mode === "custom" ? "custom" : "packages"} selectedVehicle={vehicle ? { id: vehicle.id, name: vehicle.name, typeSlug: vehicle.typeSlug, typeTitle: vehicle.typeTitle, pricePerDay: vehicle.pricePerDay } : undefined} />
+  </main>;
 }

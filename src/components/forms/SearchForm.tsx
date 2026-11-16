@@ -6,6 +6,7 @@ import Select from "@/components/controls/Select";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Icon from "@/components/common/Icon";
+import LocationSearchInput from "./LocationSearchInput";
 import Magnetic from "@/components/motion/Magnetic";
 import { categories } from "@/data/categories";
 import type { SearchFormData } from "@/types";
@@ -60,25 +61,11 @@ export default function SearchForm() {
         <span className="pointer-events-none absolute left-[15px] top-9 bottom-9 w-px bg-white/15" />
         <span className="relative block">
           <Icon name="map-pin" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-accent-300" />
-          <input
-            type="text"
-            required
-            placeholder="Pickup — e.g. Mumbai Airport"
-            value={form.pickupLocation}
-            onChange={update("pickupLocation")}
-            className={field}
-          />
+          <LocationSearchInput required aria-label="Pickup location" placeholder="Pickup — e.g. Mumbai Airport" value={form.pickupLocation} onValueChange={value => setForm(previous => ({ ...previous, pickupLocation: value }))} onChoose={place => setForm(previous => ({ ...previous, pickupLocation: place.label }))} className={`${field} !bg-white/[0.04] !text-white`} />
         </span>
         <span className="relative mt-3 block">
           <Icon name="location" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/55" />
-          <input
-            type="text"
-            required
-            placeholder="Drop — e.g. Pune Station"
-            value={form.dropLocation}
-            onChange={update("dropLocation")}
-            className={field}
-          />
+          <LocationSearchInput required aria-label="Drop location" placeholder="Drop — e.g. Pune Station" value={form.dropLocation} onValueChange={value => setForm(previous => ({ ...previous, dropLocation: value }))} onChoose={place => setForm(previous => ({ ...previous, dropLocation: place.label }))} className={`${field} !bg-white/[0.04] !text-white`} />
         </span>
       </div>
 

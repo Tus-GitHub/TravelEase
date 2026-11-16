@@ -3,10 +3,10 @@ import type { NavLink, SocialLink } from "@/types";
 /** Primary navbar links. */
 export const navLinks: NavLink[] = [
   { label: "Home", href: "/" },
+  { label: "Vehicles", href: "/vehicles" },
   { label: "Packages", href: "/packages" },
   { label: "Weekend Trips", href: "/weekend-trips" },
   { label: "Build Your Trip", href: "/booking?mode=custom" },
-  { label: "Vehicles", href: "/vehicles" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];

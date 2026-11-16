@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import type { RoutePoint } from "@/lib/booking-route";
 type Place = RoutePoint & { label: string };
 
-export default function PlaceAutocomplete({ id, label, point, value, onChoose }: {
-  id: string; label: string; point: RoutePoint | null; value?: string;
+export default function PlaceAutocomplete({ id, label, point, value, onChoose, enabled = true }: {
+  enabled?: boolean; id: string; label: string; point: RoutePoint | null; value?: string;
   onChoose: (point: RoutePoint | null, label?: string) => void;
 }) {
   const [query, setQuery] = useState(point ? value ?? "Selected map point" : "");
@@ -15,7 +15,8 @@ export default function PlaceAutocomplete({ id, label, point, value, onChoose }:
   useEffect(() => { if (point) setQuery(value || "Selected map point"); }, [point, value]);
   useEffect(() => {
     setError(""); setPlaces([]); setActive(0); setBusy(false);
-    if (point || query.trim().length < 3) { setBusy(false); return; }
+    if (!enabled) setOpen(false);
+    if (!enabled || point || query.trim().length < 3) { setBusy(false); return; }
     const controller = new AbortController(), key = query.trim().toLowerCase();
     let retry: ReturnType<typeof setTimeout> | undefined;
     async function search(retried = false) {
@@ -36,14 +37,14 @@ export default function PlaceAutocomplete({ id, label, point, value, onChoose }:
     }
     const timer = setTimeout(() => void search(), 1200);
     return () => { clearTimeout(timer); if (retry) clearTimeout(retry); controller.abort(); };
-  }, [query, point]);
-  function choose(place: Place) { setQuery(place.label); setOpen(false); setPlaces([]); onChoose(place, place.label); }
+  }, [query, point, enabled]);
+  function choose(place: Place) { if (!enabled) return; setQuery(place.label); setOpen(false); setPlaces([]); onChoose(place, place.label); }
   return <div className="relative min-w-0">
     <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-fg">{label}</label>
     <input id={id} role="combobox" aria-autocomplete="list" aria-expanded={open && places.length > 0} aria-controls={`${id}-options`} aria-activedescendant={open && places.length ? `${id}-option-${active}` : undefined}
       autoComplete="off" maxLength={150} placeholder="Start typing a city, area or landmark" value={query}
       className="min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-3 text-base text-fg"
-      onChange={e => { setQuery(e.target.value); setOpen(true); onChoose(null); }} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}
+      onChange={e => { setQuery(e.target.value); setOpen(true); onChoose(null); }} onFocus={() => setOpen(enabled)} onBlur={() => setOpen(false)}
       onKeyDown={e => {
         if (e.key === "Escape") setOpen(false);
         if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); setOpen(true); setActive(v => Math.max(0, Math.min(places.length - 1, v + (e.key === "ArrowDown" ? 1 : -1)))); }

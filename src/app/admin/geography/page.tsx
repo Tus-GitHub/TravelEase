@@ -4,13 +4,15 @@ import Select from "@/components/controls/Select";
 
 import dynamic from "next/dynamic";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import FormField, { fieldBase } from "@/components/forms/FormField";
 import AdminTabs from "@/components/admin/AdminTabs";
 import RowActions from "@/components/admin/RowActions";
 import AdminEditor from "@/components/admin/AdminEditor";
+import LocationSearchInput, { locationName, locationPoint, sameLocationName, type LocationSuggestion } from "@/components/forms/LocationSearchInput";
+import type { LatLng, ResolvedPlace } from "@/components/forms/LocationPicker";
 import type { ImageKind } from "@/lib/image-upload";
 import Toggle from "@/components/admin/Toggle";
 import { ErrorNote, EmptyRow, LoadingRow } from "@/components/admin/tableBits";
@@ -47,6 +49,23 @@ interface TouristSpot {
   description: string;
 }
 
+function GeoMap({ value, onChange, onResolve }: { value: LatLng | null; onChange: (point: LatLng | null) => void; onResolve: (place: ResolvedPlace) => void }) {
+  const [open, setOpen] = useState(false);
+  return <details className="min-w-0 rounded-xl border border-line p-4 sm:col-span-2" onToggle={event => setOpen(event.currentTarget.open)}><summary className="cursor-pointer text-sm font-semibold text-fg">Choose on map (optional)</summary>{open && <div className="mt-4"><LocationPicker value={value} onChange={onChange} onResolve={onResolve} /></div>}</details>;
+}
+function regionForPlace(regions: Region[], place: LocationSuggestion, current: string) {
+  const exact = regions.filter(region => sameLocationName(region.name, place.city || locationName(place)) && (!place.state || sameLocationName(region.state, place.state)));
+  if (exact.length === 1) return String(exact[0].id);
+  const selected = regions.find(region => String(region.id) === current);
+  if (!place.state || (selected && sameLocationName(selected.state, place.state))) return current;
+  const state = regions.filter(region => sameLocationName(region.state, place.state || ""));
+  return state.length === 1 ? String(state[0].id) : "";
+}
+function draftPoint(latitude: string, longitude: string): LatLng | null {
+  if (!latitude.trim() || !longitude.trim()) return null;
+  return locationPoint({ label: "", lat: Number(latitude), lng: Number(longitude) });
+}
+
 type Tab = "regions" | "cities" | "spots";
 
 function RegionsTab() {
@@ -56,6 +75,11 @@ function RegionsTab() {
     onCreate: (d) => r.create(d),
     onUpdate: (id, d) => r.update(id, d),
   });
+
+  const [point, setPoint] = useState<LatLng | null>(null);
+  useEffect(() => setPoint(null), [form.open, form.editingId]);
+  const choose = (place: LocationSuggestion) => { const selectedPoint = locationPoint(place); if (selectedPoint) setPoint(selectedPoint); form.patch({ name: locationName(place).slice(0,100), state: (place.state || form.draft.state).slice(0,100) }); };
+  const states = Array.from(new Set(r.items.map(region => region.state))).map(state => ({ label: state, name: state, state }));
 
   return (
     <div>
@@ -71,11 +95,12 @@ function RegionsTab() {
       {form.open && (
         <FormCard title={form.editingId == null ? "Add region" : `Edit ${form.draft.name}`} image={form.editingId == null ? undefined : { kind: "regions", id: form.editingId, name: form.draft.name }} onSubmit={form.submit} error={form.error} saving={form.saving} editing={form.editingId != null} onCancel={form.cancel}>
           <FormField label="Name" icon="map-pin">
-            <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Coorg" />
+            <LocationSearchInput required value={form.draft.name} onValueChange={name => form.patch({ name })} onChoose={choose} maxLength={100} placeholder="Type a region or place" className={fieldBase} />
           </FormField>
           <FormField label="State" icon="location">
-            <input required value={form.draft.state} onChange={(e) => form.patch({ state: e.target.value })} className={fieldBase} placeholder="e.g. Karnataka" />
+            <LocationSearchInput required mode="state" localOptions={states} value={form.draft.state} onValueChange={state => form.patch({ state })} onChoose={place => form.patch({ state: (place.state || locationName(place)).slice(0,100) })} maxLength={100} className={fieldBase} placeholder="Type a state or union territory" />
           </FormField>
+          <GeoMap value={point} onChange={setPoint} onResolve={choose} />
         </FormCard>
       )}
 
@@ -118,6 +143,10 @@ function CitiesTab() {
     onUpdate: (id, d) => r.update(id, toCityBody(d)),
   });
 
+  const choose = (place: LocationSuggestion) => {
+    const point = locationPoint(place);
+    form.patch({ name: (place.city || locationName(place)).slice(0,100), regionId: regionForPlace(regions.items, place, form.draft.regionId), ...(point ? { latitude: String(point.lat), longitude: String(point.lng) } : {}) });
+  };
   const regionName = useMemo(() => {
     const map = new Map(regions.items.map((x) => [x.id, x.name]));
     return (id: number) => map.get(id) ?? "—";
@@ -145,7 +174,7 @@ function CitiesTab() {
             </Select>
           </FormField>
           <FormField label="City name" icon="location">
-            <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Madikeri" />
+            <LocationSearchInput required mode="city" value={form.draft.name} onValueChange={name => form.patch({ name })} onChoose={choose} maxLength={100} className={fieldBase} placeholder="Type a city; select a suggestion to fill coordinates" />
           </FormField>
           <FormField label="Latitude" icon="map-pin">
             <input value={form.draft.latitude} onChange={(e) => form.patch({ latitude: e.target.value })} className={fieldBase} inputMode="decimal" placeholder="12.4244" />
@@ -153,6 +182,8 @@ function CitiesTab() {
           <FormField label="Longitude" icon="map-pin">
             <input value={form.draft.longitude} onChange={(e) => form.patch({ longitude: e.target.value })} className={fieldBase} inputMode="decimal" placeholder="75.7382" />
           </FormField>
+          <GeoMap value={draftPoint(form.draft.latitude, form.draft.longitude)} onChange={point => form.patch({ latitude: point ? String(point.lat) : "", longitude: point ? String(point.lng) : "" })} onResolve={choose} />
+          <p className="text-xs text-muted sm:col-span-2">Choosing a city fills its coordinates and a matching region. If no region matches, select or add the correct region before saving.</p>
           <label className="flex items-center gap-2 text-sm text-muted">
             <input type="checkbox" checked={form.draft.isPickupPoint} onChange={(e) => form.patch({ isPickupPoint: e.target.checked })} className="h-4 w-4 accent-primary-600" />
             Pickup point
@@ -209,9 +240,15 @@ function SpotsTab() {
     onUpdate: (id, d) => r.update(id, { ...d, cityId: Number(d.cityId), latitude: d.latitude.trim() === "" ? null : Number(d.latitude), longitude: d.longitude.trim() === "" ? null : Number(d.longitude) }),
   });
 
+  const choose = (place: LocationSuggestion) => {
+    const point = locationPoint(place);
+    const found = cities.items.filter(city => sameLocationName(city.name, place.city || locationName(place)));
+    form.patch({ name: locationName(place).slice(0,100), ...(place.city ? { cityId: found.length === 1 ? String(found[0].id) : "" } : {}), ...(point ? { latitude: String(point.lat), longitude: String(point.lng) } : {}) });
+  };
+
   const cityName = useMemo(() => {
     const map = new Map(cities.items.map((x) => [x.id, x.name]));
-    return (id: number) => map.get(id) ?? "—";
+  return (id: number) => map.get(id) ?? "—";
   }, [cities.items]);
 
   return (
@@ -236,7 +273,7 @@ function SpotsTab() {
             </Select>
           </FormField>
           <FormField label="Spot name" icon="star">
-            <input required value={form.draft.name} onChange={(e) => form.patch({ name: e.target.value })} className={fieldBase} placeholder="e.g. Abbey Falls" />
+            <LocationSearchInput required value={form.draft.name} onValueChange={name => form.patch({ name })} onChoose={choose} maxLength={100} className={fieldBase} placeholder="Type a destination or landmark" />
           </FormField>
           <FormField label="Tag" icon="tag">
             <input value={form.draft.tag} onChange={(e) => form.patch({ tag: e.target.value })} className={fieldBase} placeholder="e.g. Waterfall" />
@@ -246,7 +283,8 @@ function SpotsTab() {
           </FormField>
           <FormField label="Latitude" icon="map-pin"><input type="number" min={-90} max={90} step="any" value={form.draft.latitude} onChange={e => form.patch({ latitude: e.target.value })} className={fieldBase} /></FormField>
           <FormField label="Longitude" icon="map-pin"><input type="number" min={-180} max={180} step="any" value={form.draft.longitude} onChange={e => form.patch({ longitude: e.target.value })} className={fieldBase} /></FormField>
-          <div className="min-w-0 sm:col-span-2"><p className="mb-3 text-sm text-muted">Pin the spot&apos;s road-accessible entrance for route suggestions. Leave both coordinates empty if it is not verified yet.</p><LocationPicker value={form.draft.latitude !== "" && form.draft.longitude !== "" && Number.isFinite(Number(form.draft.latitude)) && Number.isFinite(Number(form.draft.longitude)) && Math.abs(Number(form.draft.latitude)) <= 90 && Math.abs(Number(form.draft.longitude)) <= 180 ? { lat: Number(form.draft.latitude), lng: Number(form.draft.longitude) } : null} onChange={point => form.patch({ latitude: point ? String(point.lat) : "", longitude: point ? String(point.lng) : "" })} /></div>
+          <GeoMap value={draftPoint(form.draft.latitude, form.draft.longitude)} onChange={point => form.patch({ latitude: point ? String(point.lat) : "", longitude: point ? String(point.lng) : "" })} onResolve={choose} />
+          <p className="text-xs text-muted sm:col-span-2">Select a suggestion or map point to fill the name and coordinates. Choose its existing catalogue city before saving; no city is created automatically.</p>
         </FormCard>
       )}
 

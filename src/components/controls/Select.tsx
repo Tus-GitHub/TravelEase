@@ -20,8 +20,8 @@ function readOptions(children: ReactNode, group?: string, disabled = false): Opt
 }
 
 /** Native form values/events, with an accessible, searchable custom listbox. */
-const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(function Select({
-  children, value, defaultValue, className = "", onChange, id: suppliedId, disabled, required,
+const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement> & { searchable?: boolean }>(function Select({
+  children, value, defaultValue, className = "", onChange, id: suppliedId, disabled, required, searchable: forceSearch,
   "aria-label": label, "aria-labelledby": labelledBy, "aria-describedby": describedBy, "aria-invalid": invalid, ...props
 }, forwardedRef) {
   const generated = useId(), id = suppliedId || `select-${generated}`, listId = `${id}-options`;
@@ -34,7 +34,7 @@ const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElem
   const caption = useControlLabel(root, id, label, labelledBy);
   const filtered = options.filter(option => `${option.label} ${option.group ?? ""}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   const selected = options.find(option => option.value === current);
-  const searchable = options.length > 8;
+  const searchable = forceSearch ?? (options.length > 8 || /region|state|city|destination|pickup|drop|spot|hotel|location/i.test(caption));
   useEffect(() => {
     const resetValue=String(value??defaultValue??options[0]?.value??"");
     if(native.current)for(const option of Array.from(native.current.options))option.defaultSelected=option.value===resetValue;

@@ -1,5 +1,5 @@
 import { getPool } from "./db";
-import type { BookingTypeCode, PricingRuleInput } from "./pricing";
+import { PER_PERSON_PACKAGE_RULE, type BookingTypeCode, type PricingRuleInput } from "./pricing";
 import { bookingTimeValue } from "../booking-datetime";
 
 /**
@@ -63,4 +63,13 @@ export async function resolvePricingRule(
     minHours: row.min_hours != null ? Number(row.min_hours) : null,
     minKm: row.min_km != null ? Number(row.min_km) : null,
   };
+}
+
+/** A self-built itinerary can use the selected car’s existing admin-set day rate.
+ * Configured package rules and curated per-person package prices take precedence. */
+export async function resolveVehicleDailyRule(vehicleId: number): Promise<PricingRuleInput | null> {
+  const row = (await getPool().query(`SELECT v.base_price_per_day FROM vehicles v JOIN vehicle_types t USING(vehicle_type_id)
+    WHERE v.vehicle_id=$1 AND v.is_active AND NOT v.is_deleted AND v.is_available AND t.is_active AND NOT t.is_deleted`, [vehicleId])).rows[0];
+  const amount = Number(row?.base_price_per_day);
+  return Number.isFinite(amount) && amount > 0 ? { ...PER_PERSON_PACKAGE_RULE, perDayRate: amount } : null;
 }
