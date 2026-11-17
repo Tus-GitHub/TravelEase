@@ -15,8 +15,11 @@ import { adminNavigation, adminNavActive, type AdminNavGroup } from "@/lib/admin
 
 function AdminNavList({ groups, pathname, onNavigate }: { groups: AdminNavGroup[]; pathname: string; onNavigate?: () => void }) {
   return <div className="space-y-5">{groups.map(group => <section key={group.label} aria-label={group.label}>
-    <h2 className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">{group.label}</h2>
-    <ul className="flex flex-col gap-1">{group.items.map(item => <li key={item.href}><AdminNavigationLink href={item.href} onClick={onNavigate} aria-current={adminNavActive(pathname, item) ? "page" : undefined} className={"flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 " + (adminNavActive(pathname, item) ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white")}><Icon name={item.icon} className="h-5 w-5 shrink-0" /><span>{item.label}</span></AdminNavigationLink></li>)}</ul>
+    <h2 className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-300/60">{group.label}</h2>
+    <ul className="flex flex-col gap-1">{group.items.map(item => {
+      const active = adminNavActive(pathname, item);
+      return <li key={item.href}><AdminNavigationLink href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={"flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 " + (active ? "border border-amber-400/25 bg-amber-400/10 text-amber-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]" : "border border-transparent text-white/70 hover:bg-white/[0.05] hover:text-white")}><Icon name={item.icon} className={`h-5 w-5 shrink-0 ${active ? "text-amber-400" : ""}`} /><span>{item.label}</span></AdminNavigationLink></li>;
+    })}</ul>
   </section>)}</div>;
 }
 
@@ -46,7 +49,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="flex items-center justify-between border-b border-primary-800 bg-primary-900 px-4 py-3 lg:hidden">
+      <div className="flex items-center justify-between border-b border-amber-400/15 bg-[#060912] px-4 py-3 lg:hidden">
         <Logo inverted />
         <div className="flex items-center gap-1">
           <ThemeToggle tone="light" />
@@ -67,7 +70,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
       <div
         id="admin-mobile-menu"
         aria-hidden={!isMobileOpen}
-        className={`admin-sidebar-scroll bg-primary-900 transition-[max-height] duration-300 lg:hidden ${
+        className={`admin-sidebar-scroll border-b border-amber-400/15 bg-[#060912] transition-[max-height] duration-300 lg:hidden ${
           isMobileOpen ? "visible max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain" : "invisible max-h-0 overflow-hidden"
         }`}
       >
@@ -95,11 +98,11 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
       </div>
 
       {/* Desktop fixed sidebar */}
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col overflow-hidden bg-primary-900 px-4 py-6 lg:flex">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col overflow-hidden border-r border-amber-400/15 bg-[#060912] px-4 py-6 lg:flex">
         <div className="mb-8 shrink-0 px-2">
           <Logo inverted />
-          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-white/40">
-            Admin Panel
+          <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-300/70">
+            Admin Concierge
           </p>
         </div>
 

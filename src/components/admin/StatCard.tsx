@@ -11,12 +11,12 @@ export interface StatCardProps {
 export default function StatCard({ icon, label, value }: StatCardProps) {
   return (
     <Card padded hover={false} className="flex items-start gap-4">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-900 dark:bg-primary-950 dark:text-primary-300">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-400/25 bg-amber-400/10 text-amber-500 dark:text-amber-300">
         <Icon name={icon} className="h-5 w-5" />
       </span>
       <div>
-        <p className="text-2xl font-bold text-fg">{value}</p>
-        <p className="text-sm text-muted">{label}</p>
+        <p className="font-display text-2xl font-bold tracking-tight text-fg">{value}</p>
+        <p className="mt-0.5 text-sm text-muted">{label}</p>
       </div>
     </Card>
   );
