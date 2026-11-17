@@ -70,7 +70,7 @@ export default function Navbar({ cmsNavigation, header, previewPath }: { cmsNavi
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-[transform,background-color,box-shadow,backdrop-filter] duration-300 ${
         hidden && !isOpen ? "-translate-y-full" : "translate-y-0"
-      } ${header?.appearance === "dark" ? "bg-primary-950 shadow-sm" : solid ? "glass border-x-0 border-t-0 shadow-sm" : "bg-transparent"}`}
+      } ${header?.appearance === "dark" ? "border-b border-white/10 bg-[#070b14]/85 backdrop-blur-2xl shadow-[0_12px_40px_-15px_rgba(0,0,0,0.7)]" : solid ? "glass border-x-0 border-t-0 shadow-sm" : "bg-transparent"}`}
       style={{ paddingTop: "env(safe-area-inset-top)", paddingLeft: "env(safe-area-inset-left)", paddingRight: "env(safe-area-inset-right)" }}
     >
       <nav

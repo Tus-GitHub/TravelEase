@@ -58,6 +58,7 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
         display: ["var(--font-poppins)", "var(--font-inter)", "sans-serif"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
       },
       fontSize: {
         // Editorial display scale — fluid, tight tracking, baked-in weight/leading.

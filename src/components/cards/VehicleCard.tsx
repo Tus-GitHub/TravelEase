@@ -19,7 +19,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
     <Card className="flex h-full flex-col transition-shadow duration-300 group-hover:shadow-[0_20px_50px_-12px_rgba(37,99,235,0.35)] group-hover:ring-1 group-hover:ring-primary-400/40">
       <Link
         href={`/vehicles/${vehicle.id}`}
-        className="relative block aspect-[8/5] w-full overflow-hidden bg-primary-950"
+        className="relative block aspect-[8/5] w-full overflow-hidden bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.12),rgba(7,10,18,0.98))]"
       >
         <Spotlight className="h-full w-full">
           <Image
@@ -43,29 +43,38 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
 
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-display text-lg font-semibold text-fg">
-            <Link href={`/vehicles/${vehicle.id}`} className="hover:text-primary-700">
+          <h3 className="font-display text-lg font-semibold capitalize text-fg">
+            <Link href={`/vehicles/${vehicle.id}`} className="hover:text-amber-400 transition-colors">
               {vehicle.name}
             </Link>
           </h3>
-          <StarRating rating={vehicle.rating} showValue />
+          {vehicle.rating > 0 ? (
+            <StarRating rating={vehicle.rating} showValue />
+          ) : (
+            <span className="shrink-0 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-300">
+              Verified
+            </span>
+          )}
         </div>
 
         <div className="mt-2 flex items-center gap-1.5 text-sm text-muted">
-          <Icon name="seat" className="h-4 w-4" />
+          <Icon name="seat" className="h-4 w-4 text-amber-500/80" />
           {vehicle.seatingCapacity} Seater
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {vehicle.features.map((feature) => (
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {vehicle.features.slice(0, 4).map((feature) => (
             <Badge key={feature}>{feature}</Badge>
           ))}
+          {vehicle.features.length > 4 && (
+            <Badge>+{vehicle.features.length - 4}</Badge>
+          )}
         </div>
 
-        <div className="mt-5 flex flex-wrap items-end justify-between gap-3 border-t border-line-subtle pt-4">
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-3 border-t border-line-subtle pt-4">
           <div>
             <p className="mb-1 text-xs text-muted">Vehicle hire from</p>
-            <span className="font-display text-lg font-bold text-primary-900 dark:text-primary-300 ">
+            <span className="font-display text-lg font-bold text-primary-900 dark:text-amber-300">
               ₹{vehicle.pricePerDay.toLocaleString("en-IN")}
             </span>
             <span className="text-sm text-muted"> / day</span>

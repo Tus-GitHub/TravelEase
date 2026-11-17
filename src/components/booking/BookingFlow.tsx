@@ -50,7 +50,11 @@ export default function BookingFlow({ enabled = true }: { enabled?: boolean } = 
   const router = useRouter();
   const { user, isLoading } = useAuth();
   const [contactPhone, setContactPhone] = useState("");
-  useEffect(() => { if (user?.phone) setContactPhone(previous => previous || user.phone); }, [user?.phone]);
+  useEffect(() => {
+    if (user?.phone && !/^0+$/.test(user.phone.trim())) {
+      setContactPhone(previous => previous || user.phone);
+    }
+  }, [user?.phone]);
 
   const packageSlug = params.get("package");
   const guidedPathParam = params.get("path");

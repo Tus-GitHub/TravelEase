@@ -57,9 +57,11 @@ export default function SectionHeading({
       {eyebrow && (
         <p
           data-sh-fade
-          className={`text-eyebrow ${inverted ? "text-accent-400" : "text-accent-500"}`}
+          className={`inline-flex items-center gap-2.5 text-eyebrow ${inverted ? "text-amber-300" : "text-accent-500"}`}
         >
+          <span className="h-px w-5 bg-current opacity-60" aria-hidden />
           {eyebrow}
+          {align === "center" && <span className="h-px w-5 bg-current opacity-60" aria-hidden />}
         </p>
       )}
       <h2

@@ -38,12 +38,13 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
         <div>
           <p
             data-hero="brand"
-            className={`text-xs font-semibold uppercase tracking-[0.4em] ${muted}`}
+            className={`inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.35em] ${muted}`}
           >
+            <span className="h-1.5 w-1.5 rounded-full bg-accent-400 shadow-[0_0_10px_rgba(245,158,11,0.8)]" aria-hidden />
             {cmsText(cms, "brand", "Jagdamba Travellers")}
           </p>
 
-          <h1 className="mt-5 break-words font-display text-[clamp(2.125rem,5vw,4rem)] font-bold leading-[1.05] tracking-[-0.035em]">
+          <h1 className="mt-5 break-words font-display text-[clamp(2.25rem,5.2vw,4.25rem)] font-bold leading-[1.03] tracking-[-0.03em]">
             <span className="block overflow-hidden">
               <span data-hero="title-line" className="block">
                 {cmsText(cms, "title", "Less planning.")}
@@ -52,18 +53,18 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
             <span className="block overflow-hidden">
               <span
                 data-hero="title-line"
-                className="block bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent"
+                className="block font-serif text-[1.12em] font-semibold italic tracking-[-0.015em] bg-gradient-to-r from-amber-200 via-accent-400 to-amber-500 bg-clip-text text-transparent"
               >
                 {cmsText(cms, "highlight", "More memories.")}
               </span>
             </span>
           </h1>
 
-          <p data-hero="sub" className={`mt-6 max-w-md text-lg ${muted}`}>
+          <p data-hero="sub" className={`mt-6 max-w-md text-lg leading-relaxed ${muted}`}>
             {cmsText(cms, "subtitle", "Ready-made getaways, weekend groups and trips shaped around you. Explore the itinerary, see what is included and make room for the memories.")}
           </p>
 
-          <div data-hero="cta" className="mt-8 flex flex-wrap gap-3">
+          <div data-hero="cta" className="mt-8 flex flex-wrap gap-3.5">
             <Button href={cmsText(cms, "primaryHref", "/packages")} variant="accent" size="lg" iconRight="arrow-right">
               {cmsText(cms, "primaryLabel", "Explore packages")}
             </Button>
@@ -74,12 +75,12 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
 
           <dl
             data-hero="stats"
-            className={`mt-10 grid max-w-lg gap-3 border-t pt-6 ${heroStats.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"} ${light ? "border-line" : "border-white/10"}`}
+            className={`mt-10 grid max-w-lg gap-4 border-t pt-6 ${heroStats.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"} ${light ? "border-line" : "border-amber-300/15"}`}
           >
             {heroStats.map((s, i) => (
-              <div key={i} className="min-w-0 break-words">
+              <div key={i} className={`min-w-0 break-words ${i > 0 ? (light ? "border-l border-line pl-4" : "border-l border-white/10 pl-4") : ""}`}>
                 <dt className="font-display text-base font-semibold sm:text-xl">{s.value}</dt>
-                <dd className={`mt-1 text-xs uppercase tracking-wide ${muted}`}>{s.label}</dd>
+                <dd className={`mt-1 text-[11px] uppercase tracking-[0.18em] ${muted}`}>{s.label}</dd>
               </div>
             ))}
           </dl>
@@ -87,7 +88,13 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
 
         {/* ── vehicle ── */}
         <div className={showVehicle ? "relative" : "hidden"}>
-          {showVehicle ? imageUrl ? <div data-hero="vehicle" className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border border-white/15 shadow-2xl"><Image src={imageUrl} alt={cmsText(cms, "imageAlt")} fill priority sizes="(max-width:1024px) 100vw,50vw" className="object-cover" /></div> : <TripChoices /> : <div data-hero="vehicle" />}
+          {showVehicle && (
+            <div
+              className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] bg-[radial-gradient(ellipse_at_center,rgba(245,158,11,0.14),rgba(56,189,248,0.06)_55%,transparent_75%)] blur-2xl"
+              aria-hidden
+            />
+          )}
+          {showVehicle ? imageUrl ? <div data-hero="vehicle" className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border border-amber-300/20 shadow-[0_32px_90px_-20px_rgba(0,0,0,0.85)]"><Image src={imageUrl} alt={cmsText(cms, "imageAlt")} fill priority sizes="(max-width:1024px) 100vw,50vw" className="object-cover" /></div> : <TripChoices /> : <div data-hero="vehicle" />}
         </div>
 
         {/* ── search (spans) ── */}

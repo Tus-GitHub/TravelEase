@@ -14,7 +14,7 @@ import type { CmsNavItem } from "@/lib/server/cms";
 
 export default function Footer({ cmsNavigation, chrome }: { cmsNavigation?: CmsNavItem[]; chrome?: CmsChrome } = {}) {
   const settings = chrome?.footer, dark = settings?.appearance !== "light";
-  const colors = { "--footer-background": dark ? "#172554" : "#f8fafc", "--footer-muted": dark ? "rgb(255 255 255 / .65)" : "#475569", "--footer-strong": dark ? "#ffffff" : "#0f172a", "--footer-border": dark ? "rgb(255 255 255 / .2)" : "#cbd5e1", "--footer-panel": dark ? "rgb(255 255 255 / .05)" : "#e2e8f0" } as CSSProperties;
+  const colors = { "--footer-background": dark ? "#060912" : "#faf8f4", "--footer-muted": dark ? "rgb(255 255 255 / .65)" : "#475569", "--footer-strong": dark ? "#ffffff" : "#0f172a", "--footer-border": dark ? "rgb(245 158 11 / .18)" : "#e2dcd0", "--footer-panel": dark ? "rgb(255 255 255 / .05)" : "#ece7dd" } as CSSProperties;
   const groups = settings ? chromeFooterGroups(settings.groups, cmsNavigation) : footerLinkGroups.map((group, index) => index === 0 ? { ...group, links: cmsNavigationLinks(group.links, cmsNavigation, "footer") } : group);
   const socials = settings?.socials ?? socialLinks;
   const contact = useSiteContact();
@@ -25,7 +25,7 @@ export default function Footer({ cmsNavigation, chrome }: { cmsNavigation?: CmsN
   ];
 
   return (
-    <footer style={colors} className="bg-[var(--footer-background)] text-[var(--footer-muted)]">
+    <footer style={colors} className="border-t border-[var(--footer-border)] bg-[var(--footer-background)] text-[var(--footer-muted)]">
       <div className="section-container py-16">
         <div className="grid grid-cols-2 gap-10 md:grid-cols-3 lg:grid-cols-5">
           {/* Brand + socials */}

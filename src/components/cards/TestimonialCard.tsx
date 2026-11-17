@@ -11,10 +11,12 @@ export interface TestimonialCardProps {
 /** Customer review card with rating, quote and author. */
 export default function TestimonialCard({ testimonial }: TestimonialCardProps) {
   return (
-    <Card hover={false} className="flex h-full flex-col p-6">
-      <Icon name="quote" className="h-9 w-9 text-accent-400" />
-      <StarRating rating={testimonial.rating} className="mt-4" />
-      <p className="mt-4 flex-1 leading-relaxed text-muted">
+    <Card hover={false} className="relative flex h-full flex-col p-7">
+      <div className="flex items-center justify-between">
+        <Icon name="quote" className="h-8 w-8 text-amber-400/75" />
+        <StarRating rating={testimonial.rating} />
+      </div>
+      <p className="mt-5 flex-1 font-serif text-lg italic leading-relaxed text-fg/90">
         “{testimonial.quote}”
       </p>
       <div className="mt-6 flex items-center gap-3 border-t border-line-subtle pt-5">

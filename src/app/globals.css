@@ -7,15 +7,15 @@
      <alpha-value> works (e.g. bg-surface/60). Light theme is the default;
      .dark on <html> swaps them. */
   :root {
-    --c-canvas: 255 255 255;
+    --c-canvas: 251 249 245; /* warm editorial ivory */
     --c-surface: 255 255 255;
-    --c-surface-muted: 248 250 252; /* slate-50 */
-    --c-surface-hover: 241 245 249; /* slate-100 */
+    --c-surface-muted: 244 240 232; /* warm stone */
+    --c-surface-hover: 236 231 221;
     --c-fg: 15 23 42; /* slate-900 */
     --c-muted: 71 85 105; /* slate-600 */
-    --c-faint: 148 163 184; /* slate-400 */
-    --c-line: 226 232 240; /* slate-200 */
-    --c-line-subtle: 241 245 249; /* slate-100 */
+    --c-faint: 130 140 156;
+    --c-line: 226 220 208;
+    --c-line-subtle: 238 233 224;
 
     --color-primary: #1e3a8a;
     --color-accent: #f59e0b;
@@ -25,15 +25,15 @@
   }
 
   .dark {
-    --c-canvas: 9 12 20;
-    --c-surface: 17 24 39; /* ~slate-900 */
-    --c-surface-muted: 13 18 30;
-    --c-surface-hover: 30 41 59; /* slate-800 */
-    --c-fg: 237 242 249;
-    --c-muted: 148 163 184; /* slate-400 */
-    --c-faint: 100 116 139; /* slate-500 */
-    --c-line: 39 48 66;
-    --c-line-subtle: 28 35 51;
+    --c-canvas: 6 9 16; /* deep obsidian */
+    --c-surface: 13 19 32; /* midnight slate */
+    --c-surface-muted: 9 14 24;
+    --c-surface-hover: 24 34 54;
+    --c-fg: 241 245 252;
+    --c-muted: 162 175 196;
+    --c-faint: 108 122 146;
+    --c-line: 36 47 68;
+    --c-line-subtle: 25 34 51;
     --c-tech: 56 189 248; /* sky-400 — glows on the dark base */
 
     color-scheme: dark;
@@ -164,16 +164,20 @@
     .site-page-content > .route-enter > section:first-of-type { padding-top: 8rem; }
   }
   .cms-dark {
-    --c-canvas: 9 12 20;
-    --c-surface: 17 24 39;
-    --c-surface-muted: 13 18 30;
-    --c-surface-hover: 30 41 59;
-    --c-fg: 237 242 249;
-    --c-muted: 203 213 225;
-    --c-faint: 148 163 184;
-    --c-line: 51 65 85;
-    --c-line-subtle: 39 48 66;
+    --c-canvas: 6 9 16;
+    --c-surface: 13 19 32;
+    --c-surface-muted: 9 14 24;
+    --c-surface-hover: 24 34 54;
+    --c-fg: 241 245 252;
+    --c-muted: 190 202 222;
+    --c-faint: 136 150 176;
+    --c-line: 36 47 68;
+    --c-line-subtle: 25 34 51;
     color-scheme: dark;
+  }
+  .luxury-hairline {
+    background: linear-gradient(90deg, transparent, rgb(245 158 11 / 0.45), transparent);
+    height: 1px;
   }
   .cms-dark dt { color: rgb(var(--c-fg)); }
   .admin-dialog::backdrop {
