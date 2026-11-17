@@ -5,7 +5,7 @@ import { layoutRoutePreview, ROUTE_CARD } from "@/lib/route-preview";
 import Button from "@/components/common/Button";
 import styles from "./RouteTreePreview.module.css";
 
-export default function RouteTreePreview({ tree, names }: { tree: RouteTree; names: Map<number, string> }) {
+export default function RouteTreePreview({ tree, names, suggestionsOnly = false }: { tree: RouteTree; names: Map<number, string>; suggestionsOnly?: boolean }) {
   const marker = useId().replace(/[^a-zA-Z0-9]/g, "") + "-route-arrow";
   const viewport = useRef<HTMLDivElement>(null);
   const fitted = useRef(false);
@@ -49,7 +49,7 @@ export default function RouteTreePreview({ tree, names }: { tree: RouteTree; nam
             </svg>
             <ul className={styles.nodes}>{layout.nodes.map(({ id, node, x, y, parents }) => <li key={id} data-route-node={id} style={{ left: x, top: y, width: ROUTE_CARD.width, height: ROUTE_CARD.height }} className={styles.node}>
               <button type="button" data-ui-action="" aria-label={`Inspect connections for ${label(id)}`} aria-pressed={selectedId === id} onClick={() => setSelectedId(current => current === id ? null : id)} className={`h-full w-full rounded-2xl border p-3 text-left shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${tree.roots.includes(id) ? "border-primary-900 bg-primary-900 text-white" : "border-line bg-surface text-fg"} ${selectedId === id ? "ring-2 ring-accent-500" : ""}`}>
-                <span className="line-clamp-2 block font-semibold">{label(id)}</span><span className="mt-1 block text-xs opacity-80">{node.nights} {node.nights === 1 ? "night" : "nights"} · +₹{node.extraPricePerPerson.toLocaleString("en-IN")}</span>{parents.length > 1 && <span className="mt-1 block text-xs font-semibold">{parents.length} routes join here</span>}{node.canFinish && <span className="mt-1 block text-xs opacity-80">Can finish here</span>}
+                <span className="line-clamp-2 block font-semibold">{label(id)}</span><span className="mt-1 block text-xs opacity-80">{suggestionsOnly ? `${node.next.length} suggested next ${node.next.length === 1 ? "stop" : "stops"}` : <>{node.nights} {node.nights === 1 ? "night" : "nights"} · +₹{node.extraPricePerPerson.toLocaleString("en-IN")}</>}</span>{parents.length > 1 && <span className="mt-1 block text-xs font-semibold">{parents.length} routes join here</span>}{node.canFinish && <span className="mt-1 block text-xs opacity-80">Can finish here</span>}
               </button>
             </li>)}</ul>
           </div>

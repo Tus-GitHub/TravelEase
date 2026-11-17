@@ -41,7 +41,7 @@ export async function assertCatalogueParents(db: Db, table: string, input: Recor
 }
 
 const children: Record<string, readonly (readonly [string, string, string])[]> = {
-  regions: [["states", "region_id", "states"], ["cities", "region_id", "cities"], ["packages", "region_id", "packages"]],
+  regions: [["states", "region_id", "states"], ["cities", "region_id", "cities"], ["packages", "region_id", "packages"], ["route_templates", "region_id", "route templates"]],
   states: [["cities", "state_id", "cities"]],
   cities: [["tourist_spots", "city_id", "tourist spots"]],
   tourist_spots: [["package_stops", "tourist_spot_id", "package stops"]],

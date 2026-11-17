@@ -8,7 +8,7 @@ import Icon from "@/components/common/Icon";
 import DestinationPhoto from "@/components/common/DestinationPhoto";
 import AnimateInView from "@/components/common/AnimateInView";
 import PackageCard from "@/components/cards/PackageCard";
-import GuidedPackageChooser from "@/components/packages/GuidedPackageChooser";
+import CustomerRoutePlanner from "@/components/packages/CustomerRoutePlanner";
 import type { Region, TravelPackage } from "@/types";
 import { cmsHeading, type CmsSection } from "@/lib/cms";
 const BookingFlow = dynamic(() => import("@/components/booking/BookingFlow"), { loading: () => <p role="status" className="text-center text-sm text-muted">Loading transfer booking…</p> });
@@ -47,7 +47,7 @@ function ChoosePackage({
 }) {
   return (
     <div>
-      {packages.length === 0 && <div className="rounded-2xl border border-line bg-surface p-6 text-center"><h3 className="text-lg font-semibold text-fg">No ready-made packages published{vehicleId ? " for this vehicle" : ""} yet</h3><p className="mt-2 text-sm text-muted">Check the guided trips you can customise, or explore another region.</p><Button onClick={onBuildOwn} variant="accent" className="mt-4">Create your package</Button></div>}
+      {packages.length === 0 && <div className="rounded-2xl border border-line bg-surface p-6 text-center"><h3 className="text-lg font-semibold text-fg">No ready-made packages published{vehicleId ? " for this vehicle" : ""} yet</h3><p className="mt-2 text-sm text-muted">Build your own route and send a booking request, or explore another region.</p><Button onClick={onBuildOwn} variant="accent" className="mt-4">Create your package</Button></div>}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {packages.map((pkg, i) => (
           <AnimateInView key={pkg.id} delay={i * 0.08}>
@@ -159,8 +159,8 @@ export default function PackageBuilder({ regions, packages, cms, initialMode = "
       <div id={tabId + "-panel"} role="tabpanel" aria-labelledby={tabId + "-" + mode} tabIndex={0} className="min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500">
         {mode === "packages" && <ChoosePackage packages={packages} vehicleId={selectedVehicle?.id} onBuildOwn={() => setMode("custom")} />}
         {mode === "custom" && <div className="space-y-6">
-          <div><p className="text-xs font-semibold uppercase tracking-wider text-muted">Create your package</p><h2 className="mt-2 text-xl font-bold text-fg">{region ? "Choose your journey" : "Where would you like to go?"}</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">Pick a region, then follow a trip’s suggested connections. Choose each next stop as you go and review what is included.</p></div>
-          {region ? <><div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface-muted p-4"><div><p className="font-semibold text-fg">{region.name}</p><p className="mt-1 line-clamp-2 text-xs text-muted">{region.state}</p></div><Button variant="outline" onClick={() => { setRegion(null); setSpotId(undefined); }}>Change region</Button></div><GuidedPackageChooser key={region.id + ":" + (spotId ?? "")} region={region} regions={regions} packages={packages} initialSpotId={spotId} vehicleId={selectedVehicle?.id} onClearPlace={() => setSpotId(undefined)} onBrowsePackages={() => setMode("packages")} /></> : <RegionPicker regions={regions} selected={null} onSelect={next => { setRegion(next); setSpotId(undefined); }} />}
+          <div><p className="text-xs font-semibold uppercase tracking-wider text-muted">Create your package</p><h2 className="mt-2 text-xl font-bold text-fg">{region ? "Choose your journey" : "Where would you like to go?"}</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">Pick a region and choose your next stops. Send your route with your email and phone number; our team will discuss your booking and price. Hotels are arranged by you.</p></div>
+          {region ? <><div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface-muted p-4"><div><p className="font-semibold text-fg">{region.name}</p><p className="mt-1 line-clamp-2 text-xs text-muted">{region.state}</p></div><Button variant="outline" onClick={() => { setRegion(null); setSpotId(undefined); }}>Change region</Button></div><CustomerRoutePlanner key={region.id + ":" + (spotId ?? "")} region={region} initialSpotId={spotId} vehicleId={selectedVehicle?.id} onClearPlace={() => setSpotId(undefined)} /></> : <RegionPicker regions={regions} selected={null} onSelect={next => { setRegion(next); setSpotId(undefined); }} />}
         </div>}
         {showTransfer && transferVisited && <div hidden={mode !== "transfer"} className="space-y-6"><p className="mx-auto max-w-3xl text-center text-sm leading-relaxed text-muted">Just need a pickup and drop? Select the two locations below. Road distance and fare update automatically; any configured empty-return charge is itemised before you book.</p><Suspense fallback={<p role="status" className="text-center text-sm text-muted">Loading transfer booking…</p>}><BookingFlow enabled={mode === "transfer"} /></Suspense></div>}
       </div>

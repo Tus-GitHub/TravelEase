@@ -1,13 +1,16 @@
 {
   "format": 1,
   "kind": "schema-only-migration-replay",
-  "method": "schema verification of isolated production-branch clone; migration replay includes preserved existing rows",
   "verified": true,
-  "verifiedAt": "2026-11-16T16:02:51.752Z",
   "cleanupComplete": true,
-  "temporaryBranch": "br-holy-union-b3xpi0l5",
+  "verifiedAt": "2026-11-17T00:26:27.815Z",
+  "productionEndpoint": "d4f04c6e23dd43772644a017f5ef85618d9d1ac8dbd7433e41ddfa2a0679f8cb",
+  "developmentEndpoint": "10a9099f2708f3526d559753b82b1454eaef7bb94f7db3ba714808e0657d724a",
+  "productionSchema": "337c8fd51f2b864a51917121b630782008a89e8ee616b9660298e7521e206366",
+  "developmentSchema": "a331123be5a40c25f1ed5214d3c78116cccf05be607fbbaf08d929e5819b1cf2",
+  "replayedSchema": "a331123be5a40c25f1ed5214d3c78116cccf05be607fbbaf08d929e5819b1cf2",
   "pending": [
-    "033_normalise_geography_states.sql"
+    "034_route_templates.sql"
   ],
   "migrationHashes": {
     "001_create_auth_tables.sql": "49af6321b9ca6fd6d8671b1276a178e29eff488812dfbb90b3b97bbf0adf89d1",
@@ -42,11 +45,9 @@
     "030_car_pricing_and_map_services.sql": "c18d8ba1a68738c6c0c586f1b7db72bf7c0d98bff2b0923ce87bbc47ecc63f01",
     "031_photon_autocomplete.sql": "5d863c12dabb6c0e86634cdbd9158d116ababe27b2e8df901b3b393a6f74bf86",
     "032_trip_pricing_and_package_content.sql": "457eb272eeddf5ce8f96ba84aadd44b90cde1f825b17a0c621ecf488ac314f3d",
-    "033_normalise_geography_states.sql": "6e7eead0492f39ee9c56e3cc658b18a622066f96e928bb5639d02bae0eb97913"
+    "033_normalise_geography_states.sql": "6e7eead0492f39ee9c56e3cc658b18a622066f96e928bb5639d02bae0eb97913",
+    "034_route_templates.sql": "0e8ba772fad6a99ebbc88e05289d58fdb36f889aa088dae86537a01fc3d09623"
   },
-  "productionEndpoint": "d4f04c6e23dd43772644a017f5ef85618d9d1ac8dbd7433e41ddfa2a0679f8cb",
-  "developmentEndpoint": "10a9099f2708f3526d559753b82b1454eaef7bb94f7db3ba714808e0657d724a",
-  "productionSchema": "3f0f5335e4bfb8438e90294be34ca258ed2dd595e65b5489ea26b482c8ed1b4b",
-  "developmentSchema": "337c8fd51f2b864a51917121b630782008a89e8ee616b9660298e7521e206366",
-  "replayedSchema": "337c8fd51f2b864a51917121b630782008a89e8ee616b9660298e7521e206366"
+  "temporaryBranch": "br-late-sunset-b3skbkzo",
+  "note": "Schema-only migration034 replayed on an isolated production-copy branch; full application tests also used owned rows there. Cleanup approval is required before finalizing proof."
 }

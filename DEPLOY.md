@@ -1,5 +1,61 @@
 # Deploying TravelEase (free)
 
+## Customer route suggestions and booking requests — 17 November 2026
+
+Operator packages and customer plans are separate:
+
+- **Admin → Trips & Packages → Our Packages** owns fixed-price trips, hotels,
+  nights, meals, inclusions and shared-departure templates. Its new-package
+  editor no longer offers the customer-route checkbox. Existing legacy priced
+  guided packages remain compatible; their booking/pricing logic is unchanged.
+- **Admin → Trips & Packages → Customer Route Planner** owns route-only next-stop
+  suggestions in the approved `route_templates` table (migration034). Add a
+  starting point, select a stop, add its next choices, and preview the tree.
+  Existing destinations can join multiple branches; cycles are blocked.
+  Save incomplete private drafts, then use the explicit **Publish route** button.
+  Published edits say **Save & publish changes**; **Unpublish route** hides the
+  suggestions while retaining them. Undo and unsaved-change confirmation guard
+  against accidental loss. The existing32-node/8-root/8-next-choice bounds apply.
+- Customers choose stops and may finish at any selected point. Their final form
+  requires email and phone, with traveller count, optional date and stopping
+  preferences. They arrange their own accommodation. No hotel, included meal,
+  fixed price, availability reservation or confirmed booking is generated.
+  Existing sign-in protects request ownership/tracking; the selected route and
+  form survive sign-in in the same browser tab.
+- **Requests & Support → Trip requests** receives a real booking-category support
+  ticket containing the server-validated route snapshot, both contact fields and
+  preferences. Admin has Call/Email links to those supplied contact details;
+  the existing thread/reply/status workflow remains available. `bookings` and
+  its pricing/confirmation pipeline are untouched. Contact fields do not change
+  the customer's login/recovery address. New requests use the existing Support
+  inbox; this release does not add a separate email-delivery promise.
+
+`GET /api/route-templates` exposes only published, active suggestions. Inactive
+parent/destination branches are pruned while joined paths remain supported.
+Admin writes require the admin role, valid origin and optimistic version;
+request writes require the signed-in owner and revalidate the chosen path,
+email, phone, vehicle preference and bounded form fields. Commercial fields
+are stripped from route suggestions. A route fetch uses a bounded list plus a
+single shared destination query, avoiding one database query per tree.
+
+`db/restore-delhi-route.mjs` reconstructs only the reviewed Delhi32/37 topology
+using existing parented master IDs. Default is rehearsal/rollback; explicit
+`--production --apply` restores a missing legacy tree without changing its
+other fields. After migration034 and code are live, add
+`--publish-suggestions` to create the approved route-only template and softly
+retire its old, inactive package record. This preserves historical references;
+it does not create master duplicates or publish a zero-price commercial offer.
+Repeated conversion preserves later owner edits. `ROUTE_RECOVERY_BACKUP` may
+name a task-only untracked backup; never commit private backups or env files.
+
+Run `db/tests/route-templates.test.ts` with the existing TS loader. The real SQL
+`route-templates-db.mjs --test` requires an explicitly separate
+`DATABASE_URL_TEST` and rolls back owned fixtures. Browser-test identities may
+be created only on that isolated branch using `route-browser-fixtures.mjs`;
+remove the branch after approved cleanup. Production migration remains the
+normal Vercel predeploy action; never migrate production by hand.
+
+
 ## CMS visual editing and package drafts — 17 November 2026
 
 Open **Admin → CMS pages → Header** or **Footer** to edit site-wide branding,

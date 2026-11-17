@@ -1,7 +1,7 @@
 {
   "format": 1,
-  "recordedAt": "2026-11-16T16:02:51.763Z",
-  "note": "Observed development baseline; historical applied SQL bytes cannot be proven retroactively. Approved migration028 added on development; prior baseline archived; old definitions/checksums unchanged. Approved development migration029; prior28 baseline archived. Four tables/six columns verified. Approved development030 reviewed: two map tables, nine map columns, one pricing vehicle FK column, four indexes; original29 definitions/checksums retained. Reviewed031: only two existing provider CHECK constraints additionally accept photon; all30 previous hashes and other definitions retained. Reviewed032: exactly three user-approved pricing/package columns and four validation/NOT NULL constraints; all31 previous hashes and all other definitions/grants retained. Approved033: State master and city State FK, normalized name indexes, city/state compatibility derivation and active hierarchy. Full isolated production-clone replay matches development; old32 hashes/definitions validated first.",
+  "recordedAt": "2026-11-17T00:26:27.826Z",
+  "note": "Reviewed append-only034 additions only; prior schema/hash baseline unchanged after excluding the new route template objects, and replay matches the production-copy branch.",
   "hashes": {
     "001_create_auth_tables.sql": "49af6321b9ca6fd6d8671b1276a178e29eff488812dfbb90b3b97bbf0adf89d1",
     "002_create_vehicle_tables.sql": "93af44cafc8f775574671563122c99abe27f6d8c7347d70da589cf15aedbd92a",
@@ -35,7 +35,8 @@
     "030_car_pricing_and_map_services.sql": "c18d8ba1a68738c6c0c586f1b7db72bf7c0d98bff2b0923ce87bbc47ecc63f01",
     "031_photon_autocomplete.sql": "5d863c12dabb6c0e86634cdbd9158d116ababe27b2e8df901b3b393a6f74bf86",
     "032_trip_pricing_and_package_content.sql": "457eb272eeddf5ce8f96ba84aadd44b90cde1f825b17a0c621ecf488ac314f3d",
-    "033_normalise_geography_states.sql": "6e7eead0492f39ee9c56e3cc658b18a622066f96e928bb5639d02bae0eb97913"
+    "033_normalise_geography_states.sql": "6e7eead0492f39ee9c56e3cc658b18a622066f96e928bb5639d02bae0eb97913",
+    "034_route_templates.sql": "0e8ba772fad6a99ebbc88e05289d58fdb36f889aa088dae86537a01fc3d09623"
   },
   "snapshot": {
     "migrations": [
@@ -71,7 +72,8 @@
       "030_car_pricing_and_map_services.sql",
       "031_photon_autocomplete.sql",
       "032_trip_pricing_and_package_content.sql",
-      "033_normalise_geography_states.sql"
+      "033_normalise_geography_states.sql",
+      "034_route_templates.sql"
     ],
     "tables": [
       {
@@ -319,6 +321,15 @@
       },
       {
         "key": "roles",
+        "definition": {
+          "kind": "r",
+          "rls": false,
+          "forceRls": false,
+          "replicaIdentity": "d"
+        }
+      },
+      {
+        "key": "route_templates",
         "definition": {
           "kind": "r",
           "rls": false,
@@ -4056,6 +4067,138 @@
           "type": "integer",
           "notNull": true,
           "default": "nextval('public.roles_role_id_seq'::regclass)",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "route_templates.created_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "route_templates.created_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "route_templates.is_active",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "false",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "route_templates.is_deleted",
+        "definition": {
+          "type": "boolean",
+          "notNull": true,
+          "default": "false",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "route_templates.name",
+        "definition": {
+          "type": "character varying(160)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "route_templates.region_id",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "route_templates.route_template_id",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "nextval('public.route_templates_route_template_id_seq'::regclass)",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "route_templates.route_tree",
+        "definition": {
+          "type": "jsonb",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "route_templates.slug",
+        "definition": {
+          "type": "character varying(180)",
+          "notNull": true,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": "\"default\""
+        }
+      },
+      {
+        "key": "route_templates.updated_at",
+        "definition": {
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": "now()",
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "route_templates.updated_by",
+        "definition": {
+          "type": "uuid",
+          "notNull": false,
+          "default": null,
+          "identity": "",
+          "generated": "",
+          "collation": null
+        }
+      },
+      {
+        "key": "route_templates.version",
+        "definition": {
+          "type": "integer",
+          "notNull": true,
+          "default": "1",
           "identity": "",
           "generated": "",
           "collation": null
@@ -9300,6 +9443,132 @@
         }
       },
       {
+        "key": "route_templates.route_templates_created_at_not_null",
+        "definition": {
+          "definition": "NOT NULL created_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_created_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (created_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_is_active_not_null",
+        "definition": {
+          "definition": "NOT NULL is_active",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_is_deleted_not_null",
+        "definition": {
+          "definition": "NOT NULL is_deleted",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_name_check",
+        "definition": {
+          "definition": "CHECK (length(btrim(name::text)) >= 2 AND length(btrim(name::text)) <= 160)",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_name_not_null",
+        "definition": {
+          "definition": "NOT NULL name",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_pkey",
+        "definition": {
+          "definition": "PRIMARY KEY (route_template_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_region_id_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (region_id) REFERENCES public.regions(region_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_region_id_not_null",
+        "definition": {
+          "definition": "NOT NULL region_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_route_template_id_not_null",
+        "definition": {
+          "definition": "NOT NULL route_template_id",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_route_tree_check",
+        "definition": {
+          "definition": "CHECK (jsonb_typeof(route_tree) = 'object'::text)",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_route_tree_not_null",
+        "definition": {
+          "definition": "NOT NULL route_tree",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_slug_key",
+        "definition": {
+          "definition": "UNIQUE (slug)",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_slug_not_null",
+        "definition": {
+          "definition": "NOT NULL slug",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_updated_at_not_null",
+        "definition": {
+          "definition": "NOT NULL updated_at",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_updated_by_fkey",
+        "definition": {
+          "definition": "FOREIGN KEY (updated_by) REFERENCES public.users(user_id)",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_version_check",
+        "definition": {
+          "definition": "CHECK (version > 0)",
+          "validated": true
+        }
+      },
+      {
+        "key": "route_templates.route_templates_version_not_null",
+        "definition": {
+          "definition": "NOT NULL version",
+          "validated": true
+        }
+      },
+      {
         "key": "saved_itineraries.saved_itineraries_created_at_not_null",
         "definition": {
           "definition": "NOT NULL created_at",
@@ -11788,6 +12057,14 @@
         }
       },
       {
+        "key": "idx_route_templates_region",
+        "definition": {
+          "definition": "CREATE INDEX idx_route_templates_region ON public.route_templates USING btree (region_id) WHERE (NOT is_deleted)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
         "key": "idx_saved_itineraries_user",
         "definition": {
           "definition": "CREATE INDEX idx_saved_itineraries_user ON public.saved_itineraries USING btree (user_id, is_deleted)",
@@ -12063,6 +12340,22 @@
         "key": "roles_pkey",
         "definition": {
           "definition": "CREATE UNIQUE INDEX roles_pkey ON public.roles USING btree (role_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "route_templates_pkey",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX route_templates_pkey ON public.route_templates USING btree (route_template_id)",
+          "valid": true,
+          "ready": true
+        }
+      },
+      {
+        "key": "route_templates_slug_key",
+        "definition": {
+          "definition": "CREATE UNIQUE INDEX route_templates_slug_key ON public.route_templates USING btree (slug)",
           "valid": true,
           "ready": true
         }
@@ -12480,6 +12773,13 @@
         "key": "role_permissions.trg_role_permissions_updated_at",
         "definition": {
           "definition": "CREATE TRIGGER trg_role_permissions_updated_at BEFORE UPDATE ON public.role_permissions FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()",
+          "enabled": "O"
+        }
+      },
+      {
+        "key": "route_templates.trg_route_templates_updated_at",
+        "definition": {
+          "definition": "CREATE TRIGGER trg_route_templates_updated_at BEFORE UPDATE ON public.route_templates FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()",
           "enabled": "O"
         }
       },
@@ -13069,6 +13369,18 @@
         }
       },
       {
+        "key": "route_templates_route_template_id_seq",
+        "definition": {
+          "type": "integer",
+          "start": 1,
+          "min": 1,
+          "max": 2147483647,
+          "increment": 1,
+          "cycle": false,
+          "cache": 1
+        }
+      },
+      {
         "key": "seasonal_pricing_seasonal_pricing_id_seq",
         "definition": {
           "type": "integer",
@@ -13498,6 +13810,20 @@
       },
       {
         "key": "roles_role_id_seq:neondb_owner",
+        "definition": [
+          "neondb_owner=rwU/neondb_owner",
+          "travel_app_dev=rU/neondb_owner"
+        ]
+      },
+      {
+        "key": "route_templates:neondb_owner",
+        "definition": [
+          "neondb_owner=arwdDxtm/neondb_owner",
+          "travel_app_dev=arwd/neondb_owner"
+        ]
+      },
+      {
+        "key": "route_templates_route_template_id_seq:neondb_owner",
         "definition": [
           "neondb_owner=rwU/neondb_owner",
           "travel_app_dev=rU/neondb_owner"

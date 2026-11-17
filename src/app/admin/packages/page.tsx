@@ -1,5 +1,6 @@
 "use client";
 import Select from "@/components/controls/Select";
+import AdminTripTabs from "@/components/admin/AdminTripTabs";
 
 
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -124,10 +125,11 @@ export default function AdminPackagesPage() {
 
   return (
     <div>
+      <AdminTripTabs active="packages" />
       <AdminPageHeader className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Packages</h1>
-          <p className="text-sm text-muted">{r.items.length} packages · Drafts stay private until you make them live.</p>
+          <h1 className="text-2xl font-bold text-fg">Our Packages</h1>
+          <p className="text-sm text-muted">{r.items.length} packages · Your prices, hotels, stays, meals and inclusions. Customer route suggestions are managed separately.</p>
         </div>
         <Button
           variant="accent"
@@ -193,7 +195,7 @@ export default function AdminPackagesPage() {
             </FormField>
             <div className="space-y-4 sm:col-span-2 lg:col-span-4">
               <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={Boolean(form.draft.tripContent)} onChange={e=>{const count=Math.max(1,Math.min(14,Number(form.draft.durationDays)||1));form.patch({tripContent:e.target.checked?{...blankPackageContent(),itinerary:Array.from({length:count},(_,i)=>({day:i+1,title:`Day ${i+1}`,description:"",meals:[]}))}:null,durationDays:String(count)});}}/>Include a reusable itinerary, meals, hotels and guide details</label>
-              {form.draft.tripContent&&<PackagePlanEditor spots={spots.items} value={form.draft.tripContent} onChange={tripContent=>{let durationDays=form.draft.durationDays;const bookingMode=tripContent.routeTree?"private":form.draft.bookingMode;try{if(tripContent.routeTree)validateRouteTree(tripContent.routeTree);durationDays=String(packagePlanDays(tripContent,bookingMode,Number(form.draft.pricePerPerson),Number(durationDays)));}catch{/* show setup guidance and keep the last valid duration */}form.patch({tripContent,bookingMode,durationDays});}}/>}
+              {form.draft.tripContent&&<PackagePlanEditor allowRouteTree={false} spots={spots.items} value={form.draft.tripContent} onChange={tripContent=>{let durationDays=form.draft.durationDays;const bookingMode=tripContent.routeTree?"private":form.draft.bookingMode;try{if(tripContent.routeTree)validateRouteTree(tripContent.routeTree);durationDays=String(packagePlanDays(tripContent,bookingMode,Number(form.draft.pricePerPerson),Number(durationDays)));}catch{/* show setup guidance and keep the last valid duration */}form.patch({tripContent,bookingMode,durationDays});}}/>}
               {form.draft.tripContent&&<p className="text-xs text-muted">Duration follows the plan. For a guided tree it shows the shortest allowed trip; checkout uses the selected branch. The base per-person price plus selected destination extras is priced by the existing engine; configured package tax still applies.</p>}
             </div>
             {form.error && <div className="sm:col-span-2 lg:col-span-4"><ErrorNote message={form.error} /></div>}

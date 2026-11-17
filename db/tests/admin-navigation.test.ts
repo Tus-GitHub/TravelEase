@@ -5,13 +5,13 @@ import { adminNavigation, adminNavActive } from "../../src/lib/admin-navigation.
 test("admin workflow keeps daily work first, related setup/pricing together and administration last", () => {
   const groups = adminNavigation("admin", () => true);
   const paths = groups.flatMap(group => group.items.map(item => item.href));
-  assert.equal(paths.length, 19); assert.equal(new Set(paths).size, 19);
+  assert.equal(paths.length, 20); assert.equal(new Set(paths).size, 20);
   assert.deepEqual(groups[0].items.map(item => item.href), ["/admin", "/admin/bookings", "/admin/support"]);
   assert.deepEqual(groups.find(group => group.label === "Masters & Resources")!.items.map(item => item.href), ["/admin/geography", "/admin/vehicles", "/admin/drivers", "/admin/vendors"]);
   assert.equal(groups.find(group => group.label === "Masters & Resources")!.items[1].label, "Vehicle");
   assert.deepEqual(groups.find(group => group.label === "Pricing & Offers")!.items.map(item => item.href), ["/admin/pricing", "/admin/seasonal-pricing", "/admin/coupons"]);
   assert.deepEqual(groups.at(-1)!.items.map(item => item.href), ["/admin/analytics", "/admin/permissions", "/admin/activity"]);
-  assert.deepEqual(groups.find(group => group.label === "Trips & Packages")!.items.map(item => item.href), ["/admin/packages", "/admin/weekend-trips"]);
+  assert.deepEqual(groups.find(group => group.label === "Trips & Packages")!.items.map(item => item.href), ["/admin/packages", "/admin/routes", "/admin/weekend-trips"]);
 });
 test("limited staff see only their existing grants and no empty headings or admin-only tools", () => {
   const groups = adminNavigation("agent", (_role, section) => ["vehicles", "packages"].includes(section));

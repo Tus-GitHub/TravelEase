@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {writeFileSync} from 'node:fs';
+import pg from 'pg';
+import {runtimeDatabaseConfig} from '../../src/lib/server/db-config.ts';
+import {listRouteTemplates,saveRouteTemplate,sendRouteEnquiry} from '../../src/lib/server/route-templates.ts';
+assert(process.argv.includes('--test')&&!process.env.VERCEL);
+const url=process.env.DATABASE_URL_TEST;assert(url&&new URL(url).hostname.replace('-pooler.','.')!==new URL(process.env.DATABASE_URL_PRODUCTION).hostname.replace('-pooler.','.'));
+const db=new pg.Client(runtimeDatabaseConfig(url)),actor=randomUUID(),title='Owned route '+randomUUID();const oldPool=globalThis.__pgPool;let began=false,count=0;
+await db.connect();try{await db.query('BEGIN');began=true;globalThis.__pgPool={query:(...args)=>db.query(...args),connect:async()=>{const point='route_test_'+(++count);return{query:async(sql,params)=>{const command=typeof sql==='string'?sql.trim().toUpperCase():'';if(command==='BEGIN')return db.query('SAVEPOINT '+point);if(command==='COMMIT')return db.query('RELEASE SAVEPOINT '+point);if(command==='ROLLBACK'){await db.query('ROLLBACK TO SAVEPOINT '+point);return db.query('RELEASE SAVEPOINT '+point);}return db.query(sql,params);},release(){}};}};
+const publicBefore=await listRouteTemplates(true);const delhi=publicBefore.find(r=>r.slug==='delhi-explorer-build-your-route');assert(delhi&&delhi.tree.nodes.length===32);assert.equal(delhi.tree.nodes.reduce((n,node)=>n+node.next.length,0),37);if(process.env.ROUTE_TEST_OUTPUT)writeFileSync(process.env.ROUTE_TEST_OUTPUT,JSON.stringify(delhi));
+const user={id:actor,name:'Owned route customer',email:actor+'@example.invalid',phone:'',role:'customer',emailVerified:true,createdAt:''};await db.query("INSERT INTO users(user_id,name,email,phone,password_hash,email_verified_at,role_id) VALUES($1,$2,$3,'','unusable',now(),(SELECT role_id FROM roles WHERE name='admin'))",[actor,user.name,user.email]);
+const region=delhi.regionId,state=(await db.query('SELECT state_id FROM states WHERE region_id=$1 AND is_active AND NOT is_deleted LIMIT 1',[region])).rows[0].state_id;
+const city=(await db.query('INSERT INTO cities(state_id,name,is_pickup_point) VALUES($1,$2,false) RETURNING city_id',[state,title])).rows[0].city_id;
+const spots=(await db.query('INSERT INTO tourist_spots(city_id,name) SELECT $1,unnest($2::text[]) RETURNING tourist_spot_id',[city,['Start','Branch A','Branch B','Shared stop']])).rows.map(row=>row.tourist_spot_id),[a,b,c,d]=spots;
+const tree={roots:[a],nodes:[{spotId:a,next:[b,c],canFinish:true},{spotId:b,next:[d],canFinish:true},{spotId:c,next:[d],canFinish:true},{spotId:d,next:[],canFinish:true}]};
+let route=await saveRouteTemplate({name:title,regionId:region,tree:{roots:[],nodes:[]},isActive:false},actor);assert(!(await listRouteTemplates(true)).some(r=>r.id===route.id));
+await assert.rejects(()=>saveRouteTemplate({...route,isActive:true},actor),/starting point/i);
+route=await saveRouteTemplate({...route,tree,isActive:true},actor);assert((await listRouteTemplates(true)).some(r=>r.id===route.id));
+await assert.rejects(()=>saveRouteTemplate({...route,version:route.version-1,isActive:true},actor),/another editor/);
+const input={templateId:route.id,path:[a,b,d],email:'requested-contact@example.invalid',phone:'+919876543210',travellers:4,notes:'Stop for lunch; we arrange our own stay.'};
+for(const bad of [{phone:''},{email:'bad'},{path:[a,d]},{vehicleId:'bad'},{date:'2026-02-30'}])await assert.rejects(()=>sendRouteEnquiry(user,{...input,...bad}));
+const bookingsBefore=(await db.query('SELECT count(*)::int AS n FROM bookings')).rows[0].n;
+const request=await sendRouteEnquiry(user,input);assert(request.ok);assert.equal(request.ticket.bookingId,null);assert.equal(request.ticket.category,'booking');const body=request.ticket.messages[0].body;for(const text of ['BOOKING REQUEST','requested-contact@example.invalid','+919876543210','Start → Branch A → Shared stop','customer arranges their own stays','No booking, price, hotel'])assert(body.includes(text),text);assert.equal((await db.query('SELECT count(*)::int AS n FROM bookings')).rows[0].n,bookingsBefore);
+await db.query('UPDATE tourist_spots SET is_active=false WHERE tourist_spot_id=$1',[b]);const available=(await listRouteTemplates(true)).find(r=>r.id===route.id);assert(!available.tree.nodes.some(n=>n.spotId===b));assert(available.tree.nodes.some(n=>n.spotId===d));await assert.rejects(()=>sendRouteEnquiry(user,input));
+route=await saveRouteTemplate({...route,isActive:false},actor);await assert.rejects(()=>sendRouteEnquiry(user,input),/published/);
+console.log('PASS actual branch SQL draft/publish/stale guard, joined branches, active pruning, forged-path/contact/date rejection, booking request with both contact fields, zero bookings.');
+}finally{if(oldPool===undefined)delete globalThis.__pgPool;else globalThis.__pgPool=oldPool;if(began)await db.query('ROLLBACK');assert.equal((await db.query('SELECT count(*)::int AS n FROM users WHERE user_id=$1',[actor])).rows[0].n,0);assert.equal((await db.query('SELECT count(*)::int AS n FROM route_templates WHERE name=$1',[title])).rows[0].n,0);await db.end();console.log('PASS every owned customer/route/request/master fixture rolled back.');}

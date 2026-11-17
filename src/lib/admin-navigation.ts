@@ -7,7 +7,7 @@ const groups: AdminNavGroup[] = [
   { label: "Daily operations", items: [
     { href: "/admin", label: "Dashboard", icon: "grid" },
     { href: "/admin/bookings", label: "Bookings", icon: "calendar", section: "bookings" },
-    { href: "/admin/support", label: "Support", icon: "chat", section: "support" },
+    { href: "/admin/support", label: "Requests & Support", icon: "chat", section: "support" },
   ] },
   { label: "Masters & Resources", items: [
     { href: "/admin/geography", label: "Geography", icon: "map-pin", section: "geography" },
@@ -21,7 +21,8 @@ const groups: AdminNavGroup[] = [
     { href: "/admin/coupons", label: "Coupons", icon: "tag", section: "coupons" },
   ] },
   { label: "Trips & Packages", items: [
-    { href: "/admin/packages", label: "Packages & Routes", icon: "tag", section: "packages" },
+    { href: "/admin/packages", label: "Our Packages", icon: "tag", section: "packages" },
+    { href: "/admin/routes", label: "Customer Route Planner", icon: "map-pin", adminOnly: true },
     { href: "/admin/weekend-trips", label: "Weekend Trips", icon: "calendar", adminOnly: true, activePaths: ["/admin/tour-guides"] },
   ] },
   { label: "Customers", items: [

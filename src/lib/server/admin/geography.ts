@@ -238,6 +238,8 @@ export interface TouristSpot {
   tag: string;
   description: string;
   displayOrder: number;
+  regionId: number;
+  isActive: boolean;
 }
 
 interface TouristSpotRow {
@@ -252,10 +254,14 @@ interface TouristSpotRow {
   tag: string | null;
   description: string | null;
   display_order: number;
+  region_id: number;
+  is_active: boolean;
 }
 
 function toTouristSpot(r: TouristSpotRow): TouristSpot {
   return {
+    regionId: r.region_id,
+    isActive: r.is_active,
     latitude: r.latitude,
     longitude: r.longitude,
     id: r.tourist_spot_id,
@@ -271,7 +277,7 @@ function toTouristSpot(r: TouristSpotRow): TouristSpot {
 }
 
 const TS_SELECT = `
-  SELECT ts.tourist_spot_id, ts.city_id, c.name AS city_name, s.name AS state_name, r.name AS region_name, ts.name, ts.tag,
+  SELECT ts.tourist_spot_id, ts.city_id, c.region_id, ts.is_active, c.name AS city_name, s.name AS state_name, r.name AS region_name, ts.name, ts.tag,
          ts.description, ts.display_order, ts.latitude, ts.longitude
   FROM tourist_spots ts
   JOIN cities c ON c.city_id = ts.city_id
