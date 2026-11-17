@@ -1,6 +1,6 @@
 import type { RouteTree } from "./package-content";
 
-export const ROUTE_CARD = { width: 184, height: 136, columnGap: 72, rowGap: 28, padding: 28 };
+export const ROUTE_CARD = { width: 210, height: 148, columnGap: 28, rowGap: 76, padding: 32 };
 function roundedConnection(points: { x: number; y: number }[]) {
   let path = `M${points[0].x},${points[0].y}`;
   for (let i = 1; i < points.length - 1; i++) {
@@ -32,33 +32,32 @@ export function layoutRoutePreview(tree: RouteTree) {
   const layers = new Map<number, number[]>();
   for (const [id, level] of Array.from(levels)) layers.set(level, [...(layers.get(level) ?? []), id]);
   const { width: cardWidth, height: cardHeight, columnGap, rowGap, padding } = ROUTE_CARD;
-  const height = Math.max(1, ...Array.from(layers.values()).map(layer => layer.length)) * (cardHeight + rowGap) - rowGap + padding * 2;
-  const width = Math.max(1, ...Array.from(layers.keys()).map(level => level + 1)) * (cardWidth + columnGap) - columnGap + padding * 2;
+  const width = Math.max(1, ...Array.from(layers.values()).map(layer => layer.length)) * (cardWidth + columnGap) - columnGap + padding * 2;
+  const height = Math.max(1, ...Array.from(layers.keys()).map(level => level + 1)) * (cardHeight + rowGap) - rowGap + padding * 2;
   const positions = new Map<number, { x: number; y: number }>();
   for (const [level, original] of Array.from(layers).sort(([a], [b]) => a - b)) {
     const score = (id: number) => {
-      const known = Array.from(parents.get(id)!).flatMap(parent => positions.has(parent) ? [positions.get(parent)!.y] : []);
-      return known.length ? known.reduce((a, b) => a + b, 0) / known.length : original.indexOf(id) * (cardHeight + rowGap);
+      const known = Array.from(parents.get(id)!).flatMap(parent => positions.has(parent) ? [positions.get(parent)!.x] : []);
+      return known.length ? known.reduce((a, b) => a + b, 0) / known.length : original.indexOf(id) * (cardWidth + columnGap);
     };
     const layer = [...original].sort((a, b) => score(a) - score(b));
-    const offset = (height - (layer.length * (cardHeight + rowGap) - rowGap)) / 2;
-    layer.forEach((id, i) => positions.set(id, { x: padding + level * (cardWidth + columnGap), y: offset + i * (cardHeight + rowGap) }));
+    const offset = (width - (layer.length * (cardWidth + columnGap) - columnGap)) / 2;
+    layer.forEach((id, i) => positions.set(id, { x: offset + i * (cardWidth + columnGap), y: padding + level * (cardHeight + rowGap) }));
   }
   const connections = Array.from(children).flatMap(([from, next]) => next.map(to => ({ from, to })));
-  const skipsColumn = (edge: { from: number; to: number }) => positions.get(edge.to)!.x - positions.get(edge.from)!.x !== cardWidth + columnGap;
-  const overhead = connections.filter(skipsColumn).length * 10 + (connections.some(skipsColumn) ? 20 : 0);
-  for (const position of Array.from(positions.values())) position.y += overhead;
+  const skipsRow = (edge: { from: number; to: number }) => positions.get(edge.to)!.y - positions.get(edge.from)!.y !== cardHeight + rowGap;
+  const sideSpace = connections.filter(skipsRow).length * 10 + (connections.some(skipsRow) ? 24 : 0);
   let lane = 0;
   const edges = connections.map(edge => {
     const from = positions.get(edge.from)!, to = positions.get(edge.to)!;
-    const sx = from.x + cardWidth, sy = from.y + cardHeight / 2, tx = to.x - 4, ty = to.y + cardHeight / 2;
-    if (!skipsColumn(edge)) return { ...edge, path: `M${sx},${sy} C${sx + 34},${sy} ${tx - 34},${ty} ${tx},${ty}`, points: undefined };
-    const y = 12 + lane++ * 10;
-    const points = [{ x: sx, y: sy }, { x: sx + 18, y: sy }, { x: sx + 18, y }, { x: tx - 14, y }, { x: tx - 14, y: ty }, { x: tx, y: ty }];
+    const sx = from.x + cardWidth / 2, sy = from.y + cardHeight, tx = to.x + cardWidth / 2, ty = to.y - 4;
+    if (!skipsRow(edge)) return { ...edge, path: `M${sx},${sy} C${sx},${sy + 36} ${tx},${ty - 36} ${tx},${ty}`, points: undefined };
+    const x = width + 8 + lane++ * 10;
+    const points = [{ x: sx, y: sy }, { x: sx, y: sy + 18 }, { x, y: sy + 18 }, { x, y: ty - 16 }, { x: tx, y: ty - 16 }, { x: tx, y: ty }];
     return { ...edge, path: roundedConnection(points), points };
   });
   return {
-    width, height: height + overhead, hasCycle: queue.length !== byId.size,
+    width: width + sideSpace, height, hasCycle: queue.length !== byId.size,
     nodes: Array.from(byId).map(([id, node]) => ({ id, node, ...positions.get(id)!, parents: Array.from(parents.get(id)!) })),
     edges,
   };

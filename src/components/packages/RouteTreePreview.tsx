@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
 import type { RouteTree } from "@/lib/package-content";
 import { layoutRoutePreview, ROUTE_CARD } from "@/lib/route-preview";
 import Button from "@/components/common/Button";
@@ -18,7 +18,6 @@ export default function RouteTreePreview({
 }) {
   const marker = useId().replace(/[^a-zA-Z0-9]/g, "") + "-route-arrow";
   const viewport = useRef<HTMLDivElement>(null);
-  const fitted = useRef(false);
   const [zoom, setZoom] = useState(1);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const layout = useMemo(() => layoutRoutePreview(tree), [tree]);
@@ -27,14 +26,9 @@ export default function RouteTreePreview({
   const label = (id: number) => names.get(id) ?? "Unavailable destination";
   const fit = useCallback(() => {
     if (!viewport.current) return;
-    setZoom(Math.max(.25, Math.min(1, (viewport.current.clientWidth - 24) / layout.width, (viewport.current.clientHeight - 24) / layout.height)));
+    setZoom(Math.max(.35, Math.min(1, (viewport.current.clientWidth - 24) / layout.width, (viewport.current.clientHeight - 24) / layout.height)));
     viewport.current.scrollTo({ left: 0, top: 0 });
   }, [layout.width, layout.height]);
-  useEffect(() => {
-    if (fitted.current || !tree.nodes.length) return;
-    fitted.current = true;
-    if (tree.nodes.length > 12) fit();
-  }, [fit, tree.nodes.length]);
   return <div className="min-w-0 rounded-3xl border border-amber-400/20 bg-surface-muted p-4 sm:p-5">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -59,11 +53,11 @@ export default function RouteTreePreview({
         aria-label="Route tree preview"
         role="region"
         style={{
-          height: Math.min(580, layout.height * zoom + 20),
+          height: Math.min(680, Math.max(420, layout.height * zoom + 24)),
           backgroundImage: "radial-gradient(rgb(245 158 11 / 0.14) 1px, transparent 1px)",
           backgroundSize: "22px 22px",
         }}
-        className="mt-4 max-h-[65vh] max-w-full overflow-auto rounded-2xl border border-amber-400/20 bg-[#070b14] p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+        className="mt-4 max-h-[72vh] max-w-full overflow-auto overscroll-contain rounded-2xl border border-amber-400/20 bg-[#070b14] p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
       >
         <div className={styles.scaled} style={{ width: layout.width * zoom, height: layout.height * zoom }}>
           <div className={styles.canvas} style={{ width: layout.width, height: layout.height, transform: `scale(${zoom})` }}>
