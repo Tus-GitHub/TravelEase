@@ -12,6 +12,7 @@ interface Place {
   cityName?: string;
   regionId?: number;
   isActive?: boolean;
+  imageUrl?: string | null;
 }
 
 export default function SuggestionTreeEditor({
@@ -32,6 +33,10 @@ export default function SuggestionTreeEditor({
   const history = useRef<SuggestedTree[]>([]);
 
   const names = useMemo(() => new Map(spots.map((spot) => [spot.id, spot.name])), [spots]);
+  const images = useMemo(
+    () => new Map(spots.filter((s) => s.imageUrl).map((spot) => [spot.id, spot.imageUrl as string])),
+    [spots],
+  );
   const spotMap = useMemo(() => new Map(spots.map((spot) => [spot.id, spot])), [spots]);
   const current = !addingRoot ? (value.nodes.find((node) => node.spotId === selected) ?? value.nodes[0]) : undefined;
 
@@ -180,7 +185,7 @@ export default function SuggestionTreeEditor({
       )}
 
       {mode === "preview" ? (
-        <RouteTreePreview suggestionsOnly tree={expandedSuggestionTree(value)} names={names} />
+        <RouteTreePreview suggestionsOnly tree={expandedSuggestionTree(value)} names={names} images={images} />
       ) : (
         <div className="grid min-w-0 gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
           {/* Left Rail: All Stops in Route */}

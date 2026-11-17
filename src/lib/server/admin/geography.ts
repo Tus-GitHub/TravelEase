@@ -240,6 +240,7 @@ export interface TouristSpot {
   displayOrder: number;
   regionId: number;
   isActive: boolean;
+  imageUrl: string | null;
 }
 
 interface TouristSpotRow {
@@ -256,6 +257,7 @@ interface TouristSpotRow {
   display_order: number;
   region_id: number;
   is_active: boolean;
+  image_url: string | null;
 }
 
 function toTouristSpot(r: TouristSpotRow): TouristSpot {
@@ -273,12 +275,19 @@ function toTouristSpot(r: TouristSpotRow): TouristSpot {
     tag: r.tag ?? "",
     description: r.description ?? "",
     displayOrder: r.display_order,
+    imageUrl: r.image_url ?? null,
   };
 }
 
 const TS_SELECT = `
   SELECT ts.tourist_spot_id, ts.city_id, c.region_id, ts.is_active, c.name AS city_name, s.name AS state_name, r.name AS region_name, ts.name, ts.tag,
-         ts.description, ts.display_order, ts.latitude, ts.longitude
+         ts.description, ts.display_order, ts.latitude, ts.longitude,
+         COALESCE(
+           NULLIF(ts.image_url, ''),
+           (SELECT ts2.image_url FROM tourist_spots ts2
+            WHERE ts2.city_id = ts.city_id AND ts2.is_deleted = false AND ts2.image_url IS NOT NULL AND ts2.image_url <> ''
+            ORDER BY ts2.display_order, ts2.tourist_spot_id LIMIT 1)
+         ) AS image_url
   FROM tourist_spots ts
   JOIN cities c ON c.city_id = ts.city_id
   JOIN states s ON s.state_id=c.state_id
