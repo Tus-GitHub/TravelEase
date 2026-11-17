@@ -615,7 +615,21 @@ export default function BookingFlow({ enabled = true }: { enabled?: boolean } = 
           <p className="mt-4 text-xs text-faint">
             The final price is confirmed by Jagdamba Travellers when your booking is reviewed.
           </p>
-          <p className="mt-3 text-xs text-faint">
+          <ul className="mt-4 space-y-2 border-t border-line pt-4 text-xs text-muted">
+            <li className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden />
+              Verified chauffeur &amp; well-maintained vehicle
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden />
+              Transparent private-vehicle pricing
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden />
+              Book now, pay offline — no card needed
+            </li>
+          </ul>
+          <p className="mt-4 text-xs text-faint">
             <Link href="/policy/cancellation" className="hover-underline">
               Cancellation policy
             </Link>

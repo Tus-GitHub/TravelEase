@@ -298,9 +298,13 @@ export default function SuggestionTreeEditor({
                         type="button"
                         disabled={value.roots.length >= 8 || value.nodes.length >= 32}
                         onClick={() => add(spot.id)}
-                        className="group flex items-center justify-between gap-2 rounded-xl border border-line bg-surface-muted/70 px-3.5 py-2.5 text-left transition-all hover:border-amber-400 hover:bg-amber-400/10 disabled:opacity-40"
+                        className="group flex items-center gap-2.5 rounded-xl border border-line bg-surface-muted/70 px-3 py-2 text-left transition-all hover:border-amber-400 hover:bg-amber-400/10 disabled:opacity-40"
                       >
-                        <span className="min-w-0">
+                        {spot.imageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={spot.imageUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+                        )}
+                        <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-semibold text-fg">{spot.name}</span>
                           {spot.cityName && spot.cityName !== spot.name && (
                             <span className="block truncate text-xs text-muted">{spot.cityName}</span>
@@ -430,9 +434,13 @@ export default function SuggestionTreeEditor({
                             key={spot.id}
                             type="button"
                             onClick={() => add(spot.id, current.spotId)}
-                            className="group flex items-center justify-between gap-2 rounded-xl border border-line bg-surface-muted/60 px-3 py-2.5 text-left transition-all hover:border-amber-400 hover:bg-amber-400/10"
+                            className="group flex items-center gap-2.5 rounded-xl border border-line bg-surface-muted/60 px-3 py-2 text-left transition-all hover:border-amber-400 hover:bg-amber-400/10"
                           >
-                            <span className="min-w-0">
+                            {spot.imageUrl && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={spot.imageUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+                            )}
+                            <span className="min-w-0 flex-1">
                               <span className="block truncate text-sm font-semibold text-fg">{spot.name}</span>
                               <span className="block truncate text-[11px] text-muted">
                                 {spot.cityName && spot.cityName !== spot.name ? spot.cityName : ""}

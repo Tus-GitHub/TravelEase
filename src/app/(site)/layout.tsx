@@ -1,5 +1,6 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import WhatsAppConcierge from "@/components/layout/WhatsAppConcierge";
 import ScrollProgress from "@/components/motion/ScrollProgress";
 import { getCmsNavigation, getPublishedCmsPage } from "@/lib/server/published-cms";
 
@@ -19,6 +20,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         {children}
         <Footer cmsNavigation={cmsNavigation} chrome={home?.chrome} />
       </div>
+      <WhatsAppConcierge />
     </>
   );
 }

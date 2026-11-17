@@ -6,6 +6,7 @@ import DestinationPhoto from "@/components/common/DestinationPhoto";
 import Icon from "@/components/common/Icon";
 import DateInput from "@/components/controls/DateInput";
 import { useAuth } from "@/context/AuthContext";
+import { useSiteContact } from "@/context/SiteContactContext";
 import { suggestionPath, type RouteTemplate } from "@/lib/route-templates";
 import type { Region } from "@/types";
 
@@ -43,6 +44,7 @@ function StepBar({ step }: { step: 2 | 3 }) {
 
 function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: number }) {
   const { user, isLoading } = useAuth();
+  const contact = useSiteContact();
   const [path, setPath] = useState<number[]>(
     route.tree.roots.length === 1 ? [route.tree.roots[0]] : []
   );
@@ -52,6 +54,8 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
   const [phone, setPhone] = useState("");
   const [date, setDate] = useState("");
   const [travellers, setTravellers] = useState("2");
+  const [vehicleTier, setVehicleTier] = useState("");
+  const [callbackWindow, setCallbackWindow] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -133,6 +137,11 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
     setBusy(true);
     setError("");
     try {
+      const extraPrefs = [
+        vehicleTier ? `Vehicle preference: ${vehicleTier}` : "",
+        callbackWindow ? `Best callback time: ${callbackWindow}` : "",
+      ].filter(Boolean);
+      const combinedNotes = [...extraPrefs, notes.trim()].filter(Boolean).join("\n");
       const response = await fetch("/api/route-enquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -143,7 +152,7 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
           phone,
           date,
           travellers: Number(travellers),
-          notes,
+          notes: combinedNotes,
           ...(vehicleId ? { vehicleId } : {}),
         }),
       });
@@ -425,6 +434,32 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
                 className={field}
               />
             </label>
+            <label className="min-w-0 text-sm font-semibold text-fg">
+              Preferred vehicle (optional)
+              <select
+                value={vehicleTier}
+                onChange={(e) => setVehicleTier(e.target.value)}
+                className={field}
+              >
+                <option value="">Any suitable vehicle</option>
+                <option value="Sedan (up to 4 seats)">Sedan (up to 4 seats)</option>
+                <option value="SUV / Innova (up to 7 seats)">SUV / Innova (up to 7 seats)</option>
+                <option value="Tempo Traveller (12–32 seats)">Tempo Traveller (12–32 seats)</option>
+              </select>
+            </label>
+            <label className="min-w-0 text-sm font-semibold text-fg">
+              Best time to call (optional)
+              <select
+                value={callbackWindow}
+                onChange={(e) => setCallbackWindow(e.target.value)}
+                className={field}
+              >
+                <option value="">Anytime</option>
+                <option value="Morning (9am–12pm)">Morning (9am–12pm)</option>
+                <option value="Afternoon (12pm–5pm)">Afternoon (12pm–5pm)</option>
+                <option value="Evening (5pm–9pm)">Evening (5pm–9pm)</option>
+              </select>
+            </label>
           </div>
           <label className="block text-sm font-semibold text-fg">
             Stopping preferences and other details (optional)
@@ -475,6 +510,24 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
                 Sign in to send request
               </Button>
             )}
+            {(() => {
+              const digits = (contact.phone || "").replace(/\D/g, "");
+              const wa = digits.length === 10 ? `91${digits}` : digits;
+              if (!wa) return null;
+              const routeNames = path.map((id) => places.get(id)?.name).filter(Boolean).join(" → ");
+              const msg = `Hi Jagdamba Travellers, I'd like a quote for this custom route: ${routeNames}${vehicleTier ? ` (${vehicleTier})` : ""}`;
+              return (
+                <a
+                  href={`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-5 py-2.5 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-500/20 dark:text-emerald-300"
+                >
+                  <Icon name="chat" className="h-4 w-4" />
+                  Share on WhatsApp
+                </a>
+              );
+            })()}
           </div>
           {!user && (
             <p className="text-xs text-muted">
