@@ -187,7 +187,7 @@ export default function AdminPackagesPage() {
             <FormField label="Max persons" icon="users">
               <input type="number" min={1} required value={form.draft.maxPersons} onChange={(e) => form.patch({ maxPersons: e.target.value })} className={fieldBase} placeholder="6" />
             </FormField>
-            <FormField label="Price / person (₹)" icon="tag">
+            <FormField label="Price / vehicle (₹)" icon="tag">
               <input type="number" min={form.draft.isActive && form.draft.tripContent ? 0.01 : 0} step="0.01" required value={form.draft.pricePerPerson} onChange={(e) => form.patch({ pricePerPerson: e.target.value })} className={fieldBase} placeholder="Set your price" />
             </FormField>
             <FormField label="Rating (0–5)" icon="star">
@@ -220,7 +220,7 @@ export default function AdminPackagesPage() {
                 <th className="px-5 py-3">Region</th>
                 <th className="px-5 py-3">Vehicle Type</th>
                 <th className="px-5 py-3">Days</th>
-                <th className="px-5 py-3">₹/person</th>
+                <th className="px-5 py-3">₹/vehicle</th>
                 <th className="px-5 py-3">Stops</th>
                 <th className="px-5 py-3 text-right">Actions</th>
               </tr>

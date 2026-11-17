@@ -83,15 +83,15 @@ function trip(over: Partial<TripInput> & { bookingType: TripInput["bookingType"]
   eq("package: total", r.totalAmount, 27510);
 }
 
-// ── 3. Package sold per person ──────────────────────────────────────────────
+// ── 3. Package sold per vehicle (flat regardless of passenger count) ─────────
 {
   const r = calculatePrice(
     trip({ bookingType: "package", passengers: 4, packagePricePerPerson: 8999, days: 5 }),
     rule({ perDayRate: 4500, driverAllowancePerDay: 500, taxPercent: 5 }),
   );
-  eq("per-person: packageAmount (8999×4)", r.packageAmount, 35996);
-  check("per-person: no per-day vehicle charge", r.vehicleAmount === 0 && r.driverAllowance === 0);
-  eq("per-person: total", r.totalAmount, 37795.8);
+  eq("whole-vehicle: packageAmount (8999 regardless of 4 passengers)", r.packageAmount, 8999);
+  check("whole-vehicle: no per-day vehicle charge", r.vehicleAmount === 0 && r.driverAllowance === 0);
+  eq("whole-vehicle: total", r.totalAmount, 9448.95);
 }
 
 // ── 4. Airport transfer — flat ─────────────────────────────────────────────

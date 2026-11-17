@@ -156,7 +156,7 @@ export function calculatePrice(
     }
     case "package": {
       if (num(trip.packagePricePerPerson) > 0) {
-        packageAmount = (trip.packagePricePerPerson as number) * passengers;
+        packageAmount = trip.packagePricePerPerson as number;
       } else {
         vehicleAmount = rule.perDayRate * days;
         driverAllowance = rule.driverAllowancePerDay * days;

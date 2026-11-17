@@ -121,7 +121,7 @@ export default function PackageCard({ pkg, vehicleId }: PackageCardProps) {
           </span>
           <span className="flex items-center gap-1.5">
             <Icon name="users" className="h-4 w-4 text-primary-600" />
-            Up to {pkg.maxPersons}
+            Up to {pkg.maxPersons} seats
           </span>
         </div>
 
@@ -141,7 +141,7 @@ export default function PackageCard({ pkg, vehicleId }: PackageCardProps) {
               <span className="font-display text-xl font-extrabold text-primary-900 dark:text-primary-300 ">
                 {pkg.isGuided?"From ":""}{formatPrice(pkg.pricePerPerson)}
               </span>
-              <span className="ml-1 text-xs text-faint">/person</span>
+              <span className="ml-1 text-xs text-faint">/ vehicle</span>
             </p>
           </div>
         </div>

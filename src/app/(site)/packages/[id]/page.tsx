@@ -99,7 +99,7 @@ export default async function PackageDetailPage({
               {nights > 0 ? ` · ${nights} nights` : ""}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <Icon name="users" className="h-4 w-4" /> up to {pkg.maxPersons}
+              <Icon name="users" className="h-4 w-4" /> up to {pkg.maxPersons} seats
             </span>
           </div>
 
@@ -107,7 +107,7 @@ export default async function PackageDetailPage({
             <span className="font-display text-3xl font-bold text-primary-900 dark:text-primary-300 ">
               {pkg.isGuided?"From ":""}{priceLabel}
             </span>
-            <span className="pb-1 text-sm text-muted">/ person</span>
+            <span className="pb-1 text-sm text-muted">/ vehicle</span>
           </div>
 
           <div className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted">
