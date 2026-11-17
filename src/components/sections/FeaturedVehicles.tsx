@@ -1,5 +1,4 @@
 import Section from "@/components/common/Section";
-import Grid from "@/components/common/Grid";
 import AnimateInView from "@/components/common/AnimateInView";
 import Button from "@/components/common/Button";
 import TiltCard from "@/components/motion/TiltCard";
@@ -23,7 +22,17 @@ export default async function FeaturedVehicles({ cms, vehicles }: { cms?: CmsSec
       subtitle="Chauffeur-driven, immaculately kept, priced up front — pick the one that fits the trip."
       {...cmsHeading(cms)}
     >
-      <Grid cols={{ base: 1, sm: 2, lg: 4 }}>
+      <div
+        className={
+          featured.length === 1
+            ? "mx-auto max-w-md"
+            : featured.length === 2
+              ? "mx-auto grid max-w-4xl gap-8 sm:grid-cols-2"
+              : featured.length === 3
+                ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                : "grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        }
+      >
         {featured.map((vehicle, i) => (
           <AnimateInView key={vehicle.id} delay={i * 0.08}>
             <TiltCard className="h-full">
@@ -31,7 +40,7 @@ export default async function FeaturedVehicles({ cms, vehicles }: { cms?: CmsSec
             </TiltCard>
           </AnimateInView>
         ))}
-      </Grid>
+      </div>
 
       <div className="mt-12 text-center">
         <Button href={cmsText(cms, "buttonHref", "/vehicles")} variant="outline" size="lg" iconRight="arrow-right">

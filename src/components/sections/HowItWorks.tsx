@@ -68,43 +68,29 @@ export default function HowItWorks({ cms }: { cms?: CmsSection } = {}) {
       subtitle="From first idea to arrival — planned around you, driven for you."
       {...cmsHeading(cms)}
     >
-      <div ref={root} className="relative mx-auto max-w-3xl">
-        {/* connecting line */}
-        <svg
-          className="pointer-events-none absolute left-[27px] top-4 h-[calc(100%-2rem)] w-2 sm:left-[31px]"
-          viewBox="0 0 4 100"
-          preserveAspectRatio="none"
-          aria-hidden
-        >
-          <path d="M2 0 V100" stroke="rgb(var(--c-line))" strokeWidth="2" />
-          <path
-            data-hiw="line"
-            d="M2 0 V100"
-            stroke="#f59e0b"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-
-        <ol className="space-y-10">
-          {entries.map((s, i) => (
-            <li key={i} data-hiw="step" className="relative flex gap-6 pl-0">
+      <div ref={root} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {entries.map((s, i) => (
+          <div
+            key={i}
+            data-hiw="step"
+            className="group relative overflow-hidden rounded-3xl border border-line/80 bg-surface p-6 shadow-[0_14px_40px_-18px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300 hover:-translate-y-1.5 hover:border-amber-400/40 hover:shadow-[0_24px_60px_-16px_rgba(245,158,11,0.16)]"
+          >
+            <div className="luxury-hairline pointer-events-none absolute inset-x-8 top-0 opacity-60" aria-hidden />
+            <div className="flex items-start justify-between">
               <div
                 data-hiw="dot"
-                className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-800 to-primary-950 text-white ring-1 ring-white/10 dark:from-primary-700 dark:to-primary-900"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-400/10 text-amber-400 transition-colors group-hover:bg-accent-500 group-hover:text-slate-950"
               >
-                <Icon name={s.icon} className="h-5 w-5 text-accent-300" />
-                <span className="absolute -right-2 -top-2 rounded-full bg-accent-500 px-1.5 text-[10px] font-bold text-white">
-                  {s.n}
-                </span>
+                <Icon name={s.icon} className="h-5 w-5" />
               </div>
-              <div className="pt-1.5">
-                <h3 className="font-display text-xl font-bold text-fg">{s.title}</h3>
-                <p className="mt-1 max-w-md text-sm leading-relaxed text-muted">{s.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
+              <span className="font-serif text-4xl font-semibold italic leading-none text-amber-400/25 transition-colors group-hover:text-amber-400/45">
+                {s.n}
+              </span>
+            </div>
+            <h3 className="mt-6 font-display text-xl font-bold text-fg">{s.title}</h3>
+            <p className="mt-2.5 text-sm leading-relaxed text-muted">{s.body}</p>
+          </div>
+        ))}
       </div>
     </Section>
   );
