@@ -23,7 +23,7 @@ function StepBar({ step }: { step: 2 | 3 }) {
       {steps.map((s, i) => (
         <div key={s.num} className="flex items-center gap-2">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
               s.active
                 ? "bg-accent-500 text-slate-950 shadow-sm"
                 : s.done
@@ -169,11 +169,11 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
         className="rounded-3xl border border-emerald-500/30 bg-emerald-500/5 p-6 sm:p-8"
       >
         <div className="flex items-start gap-4">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
             <Icon name="check" className="h-6 w-6" />
           </span>
           <div>
-            <h3 className="font-display text-xl font-bold text-fg">Booking request received</h3>
+            <h3 className="font-display text-2xl font-bold text-fg">Booking request received</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted">
               Reference <span className="font-mono font-semibold text-fg">{ticket.reference}</span>. Your route and contact details are saved. Our team will discuss your trip and price by phone before a booking is confirmed.
             </p>
@@ -197,34 +197,34 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
     >
       <StepBar step={review ? 3 : 2} />
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-accent-600 dark:text-accent-400">
-            {review ? "Final step · booking request" : "Choose stops · your route"}
-          </p>
-          <h3 className="mt-1.5 font-display text-2xl font-bold text-fg">{route.name}</h3>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-            Choose where to go and stop. You arrange your own hotels; our team discusses the travel price and final details with you by phone.
-          </p>
-        </div>
+      <div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-600 dark:text-accent-400">
+          <Icon name="map-pin" className="h-3 w-3" />
+          {review ? "Final step · booking request" : "Choose stops · your route"}
+        </span>
+        <h3 className="mt-2.5 font-display text-2xl font-bold text-fg sm:text-3xl">{route.name}</h3>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+          Choose where to go and stop. You arrange your own hotels; our team discusses the travel price and final details with you by phone.
+        </p>
       </div>
 
-      {/* Selected Journey Timeline */}
+      {/* Connected Route Journey Bar */}
       {path.length > 0 && (
-        <div className="rounded-2xl border border-line-subtle bg-surface-muted/60 p-4">
-          <div className="mb-2.5 flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-              Your route ({path.length} {path.length === 1 ? "stop" : "stops"})
+        <div className="rounded-2xl border border-line-subtle bg-surface-muted/70 p-4 sm:p-5">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted">
+              Your Journey ({path.length} {path.length === 1 ? "stop" : "stops"})
             </span>
             {path.length > 1 && !review && (
-              <span className="text-xs text-faint">Tap any stop to rewind</span>
+              <span className="text-xs text-faint">Click any stop to rewind</span>
             )}
           </div>
-          <ol aria-label="Your selected route" className="flex flex-wrap items-center gap-2">
+          <ol aria-label="Your selected route" className="flex flex-wrap items-center gap-2.5">
             {path.map((id, index) => {
               const place = places.get(id);
+              const hasPhoto = Boolean(place?.imageUrl);
               return (
-                <li key={id} className="flex items-center gap-2">
+                <li key={id} className="flex items-center gap-2.5">
                   <button
                     type="button"
                     disabled={busy}
@@ -233,27 +233,41 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
                       setPath(path.slice(0, index + 1));
                       setReview(false);
                     }}
-                    className="group flex min-h-11 items-center gap-2.5 rounded-2xl border border-line bg-surface py-1.5 pl-1.5 pr-3.5 text-left text-sm font-semibold text-fg shadow-sm transition-colors hover:border-accent-500"
+                    className="group flex min-h-12 items-center gap-2.5 rounded-2xl border border-line bg-surface py-1.5 pl-1.5 pr-4 text-left shadow-sm transition-all hover:border-accent-500 hover:shadow"
                   >
-                    <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-xl bg-surface-muted">
-                      <DestinationPhoto
-                        imageUrl={place?.imageUrl ?? ""}
-                        alt=""
-                        decorative
-                        sizes="32px"
-                      />
+                    <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary-900 text-xs font-bold text-white">
+                      {hasPhoto ? (
+                        <DestinationPhoto
+                          imageUrl={place!.imageUrl}
+                          alt=""
+                          decorative
+                          sizes="36px"
+                        />
+                      ) : (
+                        <span>{index + 1}</span>
+                      )}
                     </span>
-                    <span>
-                      <span className="mr-1.5 text-xs font-bold text-accent-600 dark:text-accent-400">
-                        {index === 0 ? "Start" : `${index + 1}.`}
+                    <span className="leading-tight">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-accent-600 dark:text-accent-400">
+                        {index === 0 ? "Start" : `Stop ${index + 1}`}
                       </span>
-                      {index > 0 ? "→ " : ""}
-                      {place?.name}
+                      <span className="block text-sm font-bold text-fg">
+                        {index > 0 ? "→ " : ""}
+                        {place?.name}
+                      </span>
                     </span>
                   </button>
                 </li>
               );
             })}
+            {!review && choices.length > 0 && (
+              <li aria-hidden="true" className="flex items-center">
+                <span className="inline-flex min-h-12 items-center gap-1.5 rounded-2xl border border-dashed border-line px-3.5 text-xs font-medium text-muted">
+                  <Icon name="arrow-right" className="h-3.5 w-3.5 text-accent-500" />
+                  Pick next stop
+                </span>
+              </li>
+            )}
           </ol>
         </div>
       )}
@@ -261,12 +275,21 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
       {!review ? (
         <>
           <fieldset>
-            <legend className="mb-4 font-display text-lg font-bold text-fg">
-              {last ? `Where next after ${places.get(last.spotId)?.name}?` : "Choose a starting point"}
-            </legend>
-            <div className="grid gap-3.5 sm:grid-cols-2">
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+              <legend className="font-display text-lg font-bold text-fg sm:text-xl">
+                {last ? `Where next after ${places.get(last.spotId)?.name}?` : "Choose a starting point"}
+              </legend>
+              {choices.length > 0 && (
+                <span className="text-xs font-medium text-muted">
+                  {choices.length} {choices.length === 1 ? "destination" : "destinations"} available
+                </span>
+              )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {choices.map((id) => {
                 const place = places.get(id);
+                const hasPhoto = Boolean(place?.imageUrl);
                 const subtitle =
                   place?.cityName && place.cityName !== place.name
                     ? place.cityName
@@ -280,44 +303,59 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
                       setPath([...path, id]);
                       setError("");
                     }}
-                    className="group flex min-h-24 items-center gap-3.5 rounded-2xl border border-line bg-surface p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-500 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+                    className="group relative flex h-48 flex-col justify-between overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-slate-900 via-primary-950 to-slate-900 p-4 text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-accent-400 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
                   >
-                    <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl bg-surface-muted">
+                    {hasPhoto && (
                       <DestinationPhoto
-                        imageUrl={place?.imageUrl ?? ""}
+                        imageUrl={place!.imageUrl}
                         alt={place?.name ?? "Destination"}
-                        sizes="96px"
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
                       />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <span className="block truncate font-display text-base font-bold text-fg group-hover:text-accent-600 dark:group-hover:text-accent-400">
-                        {place?.name} →
+                    )}
+                    <div
+                      className={`absolute inset-0 transition-opacity duration-300 ${
+                        hasPhoto
+                          ? "bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-slate-950/20 group-hover:via-slate-950/25"
+                          : "bg-gradient-to-t from-slate-950/80 via-primary-900/40 to-transparent"
+                      }`}
+                    />
+
+                    <div className="relative z-10 flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-slate-950/55 px-2.5 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
+                        <Icon name="map-pin" className="h-3 w-3 text-accent-400" />
+                        {subtitle}
                       </span>
-                      <span className="mt-0.5 block truncate text-xs text-muted">{subtitle}</span>
-                      <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-accent-600 dark:text-accent-400">
-                        Add to route
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm transition-colors group-hover:bg-accent-500 group-hover:text-slate-950">
+                        + Add
+                      </span>
+                    </div>
+
+                    <div className="relative z-10">
+                      <span className="block font-display text-xl font-bold tracking-tight text-white">
+                        {place?.name} →
                       </span>
                     </div>
                   </button>
                 );
               })}
             </div>
+
             {last && !choices.length && (
-              <p className="mt-4 rounded-xl bg-surface-muted p-3.5 text-sm text-muted">
+              <p className="mt-4 rounded-2xl border border-line bg-surface-muted p-4 text-sm text-muted">
                 You have reached the end of this branch. Continue to request your booking, or change an earlier stop.
               </p>
             )}
           </fieldset>
 
           {path.length === 1 && choices.length > 0 && (
-            <div className="flex items-center gap-2.5 rounded-xl border border-accent-500/25 bg-accent-500/5 px-4 py-3 text-sm text-fg">
+            <div className="flex items-center gap-2.5 rounded-2xl border border-accent-500/30 bg-accent-500/10 px-4 py-3 text-sm font-medium text-fg">
               <Icon name="map-pin" className="h-4 w-4 shrink-0 text-accent-500" />
               <span>Select at least one destination above to choose where you want to go.</span>
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-3 pt-1">
+          <div className="flex flex-wrap items-center gap-3 border-t border-line-subtle pt-4">
             {canReview && (
               <Button variant="accent" size="lg" iconRight="arrow-right" onClick={() => setReview(true)}>
                 Review &amp; request booking
@@ -563,7 +601,7 @@ export default function CustomerRoutePlanner({
           )}
         </>
       ) : (
-        <div className="grid gap-3.5 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           {matching.map((route) => (
             <button
               type="button"
