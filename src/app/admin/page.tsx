@@ -6,7 +6,18 @@ import Link from "next/link";
 import Card from "@/components/common/Card";
 import StatCard from "@/components/admin/StatCard";
 import RoleBadge from "@/components/admin/RoleBadge";
+import Icon from "@/components/common/Icon";
 import type { AdminRole } from "@/lib/admin/types";
+import type { IconName } from "@/types";
+
+const QUICK_ACTIONS: { href: string; title: string; subtitle: string; icon: IconName }[] = [
+  { href: "/admin/bookings", title: "Bookings Queue", subtitle: "Confirm trips, assign drivers & settle refunds", icon: "calendar" },
+  { href: "/admin/support?view=trip-requests", title: "Custom Trip Requests", subtitle: "Review custom routes & call/WhatsApp customers", icon: "map-pin" },
+  { href: "/admin/routes", title: "Visual Route Builder", subtitle: "Create & preview photo-powered destination trees", icon: "location" },
+  { href: "/admin/packages", title: "Our Packages", subtitle: "Manage fixed-price per-vehicle getaways", icon: "tag" },
+  { href: "/admin/vehicles", title: "Fleet & Vehicles", subtitle: "Update vehicle availability, seats & rates", icon: "car" },
+  { href: "/admin/coupons", title: "Coupons & Pricing", subtitle: "Manage promo codes & seasonal rates", icon: "star" },
+];
 
 interface Overview {
   counts: {
@@ -60,6 +71,32 @@ export default function AdminDashboardPage() {
           label="New Signups (7d)"
           value={data ? String(data.counts.newSignups7d) : "—"}
         />
+      </div>
+
+      <div className="mt-8">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold text-fg">Quick Actions</h2>
+          <span className="text-xs text-muted">Jump straight into daily operations</span>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {QUICK_ACTIONS.map((action) => (
+            <Link
+              key={action.href}
+              href={action.href}
+              className="group flex items-start gap-4 rounded-3xl border border-line/80 bg-surface p-5 shadow-[0_14px_40px_-18px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1 hover:border-amber-400/50 hover:shadow-[0_24px_60px_-18px_rgba(245,158,11,0.18)]"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-amber-400/25 bg-amber-400/10 text-amber-500 transition-colors group-hover:bg-accent-500 group-hover:text-slate-950 dark:text-amber-300">
+                <Icon name={action.icon} className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-base font-bold text-fg transition-colors group-hover:text-amber-400">
+                  {action.title}
+                </span>
+                <span className="mt-1 block text-xs leading-relaxed text-muted">{action.subtitle}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
       </div>
 
       <div className="mt-8">

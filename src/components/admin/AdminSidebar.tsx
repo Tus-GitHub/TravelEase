@@ -29,6 +29,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
   const { canAccess } = useAdminPermissions();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [interactive, setInteractive] = useState(false);
+  const [menuQuery, setMenuQuery] = useState("");
 
   useEffect(() => { setInteractive(true); }, []);
   useEffect(() => { setIsMobileOpen(false); }, [pathname]);
@@ -45,6 +46,15 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
   }, [isMobileOpen]);
 
   const groups = adminNavigation(user.role, canAccess);
+  const q = menuQuery.trim().toLowerCase();
+  const filteredGroups = q
+    ? groups
+        .map((g) => ({
+          ...g,
+          items: g.items.filter((i) => i.label.toLowerCase().includes(q)),
+        }))
+        .filter((g) => g.items.length > 0)
+    : groups;
 
   return (
     <>
@@ -99,15 +109,26 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
 
       {/* Desktop fixed sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col overflow-hidden border-r border-amber-400/15 bg-[#060912] px-4 py-6 lg:flex">
-        <div className="mb-8 shrink-0 px-2">
+        <div className="mb-4 shrink-0 px-2">
           <Logo inverted />
           <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-300/70">
             Admin Concierge
           </p>
         </div>
 
+        <div className="mb-4 shrink-0 px-1">
+          <input
+            type="search"
+            value={menuQuery}
+            onChange={(e) => setMenuQuery(e.target.value)}
+            placeholder="Quick jump…"
+            aria-label="Filter admin menu"
+            className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white placeholder:text-white/40 outline-none focus:border-amber-400/50"
+          />
+        </div>
+
         <nav aria-label="Admin navigation" className="admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
-          <AdminNavList groups={groups} pathname={pathname} />
+          <AdminNavList groups={filteredGroups} pathname={pathname} />
         </nav>
 
         <div className="shrink-0 border-t border-white/10 pt-4">

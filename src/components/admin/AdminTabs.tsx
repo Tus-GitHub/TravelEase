@@ -14,10 +14,10 @@ export default function AdminTabs<T extends string>({ tabs, active, onChange }: 
           type="button"
           aria-pressed={active === tab.id}
           onClick={() => onChange(tab.id)}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
             active === tab.id
-              ? "bg-primary-950 text-accent-300 shadow-sm"
-              : "text-muted hover:text-fg"
+              ? "border border-amber-400/35 bg-amber-400/15 text-amber-600 shadow-sm dark:text-amber-300"
+              : "border border-transparent text-muted hover:text-fg"
           }`}
         >
           {tab.label}

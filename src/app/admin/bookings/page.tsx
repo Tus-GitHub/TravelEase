@@ -79,6 +79,7 @@ export default function AdminBookingsPage() {
 
   const [transition, setTransition] = useState<{ booking: AdminBooking; to: BookingStatus } | null>(null);
   const [filter, setFilter] = useState<BookingStatus | "All">("All");
+  const [search, setSearch] = useState("");
   const [agents, setAgents] = useState<AdminUser[]>([]);
   const [drivers, setDrivers] = useState<AdminDriver[]>([]);
   const [rowError, setRowError] = useState<string | null>(null);
@@ -101,10 +102,19 @@ export default function AdminBookingsPage() {
       .catch(() => setDrivers([]));
   }, [allowed]);
 
-  const rows = useMemo(
-    () => (filter === "All" ? items : items.filter((b) => b.status === filter)),
-    [items, filter],
-  );
+  const rows = useMemo(() => {
+    const byStatus = filter === "All" ? items : items.filter((b) => b.status === filter);
+    const q = search.trim().toLowerCase();
+    if (!q) return byStatus;
+    return byStatus.filter(
+      (b) =>
+        b.reference.toLowerCase().includes(q) ||
+        b.customerName.toLowerCase().includes(q) ||
+        b.customerEmail.toLowerCase().includes(q) ||
+        (b.customerPhone ?? "").toLowerCase().includes(q) ||
+        (b.packageName ?? "").toLowerCase().includes(q),
+    );
+  }, [items, filter, search]);
 
   const act = async (id: string, body: Record<string, unknown>) => {
     setRowError(null);
@@ -150,21 +160,34 @@ export default function AdminBookingsPage() {
         <p className="text-sm text-muted">{items.length} total</p>
       </AdminPageHeader>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {STATUS_FILTERS.map((s) => (
-          <button data-ui-action=""
-            key={s}
-            type="button"
-            onClick={() => setFilter(s)}
-            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-              filter === s
-                ? "border-primary-600 bg-primary-600 text-white"
-                : "border-line bg-surface text-muted hover:border-faint"
-            }`}
-          >
-            {s === "PendingPayment" ? "Pending payment" : s}
-          </button>
-        ))}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {STATUS_FILTERS.map((s) => {
+            const count = s === "All" ? items.length : items.filter((b) => b.status === s).length;
+            return (
+              <button data-ui-action=""
+                key={s}
+                type="button"
+                onClick={() => setFilter(s)}
+                className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                  filter === s
+                    ? "border-amber-400/50 bg-amber-400/15 text-amber-600 shadow-sm dark:text-amber-300"
+                    : "border-line bg-surface text-muted hover:border-amber-400/40 hover:text-fg"
+                }`}
+              >
+                {s === "PendingPayment" ? "Pending payment" : s} ({count})
+              </button>
+            );
+          })}
+        </div>
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search ref, customer, phone, package…"
+          aria-label="Search bookings"
+          className="min-h-10 w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-sm text-fg outline-none focus:border-amber-400 sm:w-72"
+        />
       </div>
 
       {error && (

@@ -48,7 +48,10 @@ function RequestContact({ticket}:{ticket:TicketDetail}){
  if(!isTripRequest(ticket))return null;
  const body=ticket.messages.find(message=>message.authorRole==='customer')?.body??'';
  const email=/^Contact email: ([^\r\n]+)/m.exec(body)?.[1]?.trim()??'',phone=/^Phone: ([^\r\n]+)/m.exec(body)?.[1]?.trim()??'';
- return <aside aria-label="Booking request contact" className="mt-4 rounded-2xl border border-accent-500/30 bg-accent-500/5 p-4"><h3 className="font-semibold">Booking request · quote pending</h3><p className="mt-2 text-sm text-muted">Review the selected stops below and discuss the price by phone. Accommodation is arranged by the customer.</p><div className="mt-3 flex flex-wrap gap-3">{isValidPhone(phone)&&<a href={'tel:'+normalizePhone(phone)} className="inline-flex min-h-11 max-w-full items-center break-all rounded-xl border border-line bg-surface px-3 py-2 text-sm font-semibold">Call {phone}</a>}{isValidEmail(email)&&<a href={'mailto:'+email} className="inline-flex min-h-11 max-w-full items-center break-all rounded-xl border border-line bg-surface px-3 py-2 text-sm font-semibold">Email {email}</a>}</div></aside>;
+ const digits=phone.replace(/\D/g,'');
+ const waDigits=digits.length===10?`91${digits}`:digits;
+ const waHref=waDigits?`https://wa.me/${waDigits}?text=${encodeURIComponent(`Hi ${ticket.customerName}, regarding your Jagdamba Travellers custom trip request (${ticket.reference}): `)}`:'';
+ return <aside aria-label="Booking request contact" className="mt-4 rounded-2xl border border-amber-400/35 bg-amber-400/5 p-4"><h3 className="font-display font-semibold text-fg">Booking request · quote pending</h3><p className="mt-1.5 text-sm text-muted">Review the selected stops below and discuss the price by phone or WhatsApp. Accommodation is arranged by the customer.</p><div className="mt-3 flex flex-wrap gap-2.5">{isValidPhone(phone)&&<a href={'tel:'+normalizePhone(phone)} className="inline-flex min-h-10 max-w-full items-center break-all rounded-xl border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-fg hover:border-amber-400/50">Call {phone}</a>}{waHref&&<a href={waHref} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center rounded-xl border border-emerald-500/35 bg-emerald-500/15 px-3.5 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-500/25 dark:text-emerald-300">WhatsApp customer</a>}{isValidEmail(email)&&<a href={'mailto:'+email} className="inline-flex min-h-10 max-w-full items-center break-all rounded-xl border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-fg hover:border-amber-400/50">Email {email}</a>}</div></aside>;
 }
 export default function AdminSupportPage() {
   const { isLoading, allowed } = useAdminSectionGuard("support");
@@ -56,9 +59,17 @@ export default function AdminSupportPage() {
   const [editingStatus, setEditingStatus] = useState(false);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
   const [onlyRequests,setOnlyRequests]=useState(false);
+  const [search, setSearch] = useState("");
   useEffect(()=>{setOnlyRequests(new URLSearchParams(location.search).get('view')==='trip-requests');},[]);
   const [items, setItems] = useState<TicketSummary[]>([]);
-  const visibleItems=onlyRequests?items.filter(isTripRequest):items;
+  const q = search.trim().toLowerCase();
+  const visibleItems=(onlyRequests?items.filter(isTripRequest):items).filter((t) =>
+    !q ||
+    t.reference.toLowerCase().includes(q) ||
+    t.customerName.toLowerCase().includes(q) ||
+    t.subject.toLowerCase().includes(q) ||
+    (t.bookingReference ?? "").toLowerCase().includes(q)
+  );
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<TicketDetail | null>(null);
@@ -134,17 +145,30 @@ export default function AdminSupportPage() {
         </p>
       </AdminPageHeader>
 
-      <div role="group" aria-label="Inbox type" className="mb-4 flex flex-wrap gap-2"><Button variant={onlyRequests?"outline":"primary"} onClick={()=>{setOnlyRequests(false);setSelectedId(null);setDetail(null);}}>All support</Button><Button variant={onlyRequests?"primary":"outline"} onClick={()=>{setOnlyRequests(true);setSelectedId(null);setDetail(null);}}>Trip requests</Button></div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div role="group" aria-label="Inbox type" className="inline-flex rounded-2xl border border-line bg-surface p-1">
+          <button type="button" onClick={()=>{setOnlyRequests(false);setSelectedId(null);setDetail(null);}} className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${!onlyRequests?"border border-amber-400/35 bg-amber-400/15 text-amber-600 dark:text-amber-300":"text-muted hover:text-fg"}`}>All support</button>
+          <button type="button" onClick={()=>{setOnlyRequests(true);setSelectedId(null);setDetail(null);}} className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${onlyRequests?"border border-amber-400/35 bg-amber-400/15 text-amber-600 dark:text-amber-300":"text-muted hover:text-fg"}`}>Trip requests</button>
+        </div>
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search ref, customer, subject…"
+          aria-label="Search tickets"
+          className="min-h-10 w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-sm text-fg outline-none focus:border-amber-400 sm:w-72"
+        />
+      </div>
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button data-ui-action=""
             key={f}
             type="button"
             onClick={() => setFilter(f)}
-            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+            className={`rounded-full border px-3.5 py-1 text-xs font-semibold capitalize transition-all ${
               filter === f
-                ? "bg-primary-900 text-white dark:bg-primary-600"
-                : "bg-surface-hover text-muted hover:text-fg"
+                ? "border-amber-400/50 bg-amber-400/15 text-amber-600 dark:text-amber-300"
+                : "border-line bg-surface text-muted hover:border-amber-400/40 hover:text-fg"
             }`}
           >
             {f}
