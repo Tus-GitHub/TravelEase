@@ -6,6 +6,8 @@ import { isValidEmail } from "@/lib/validation";
 import { readAuthBody } from "@/lib/server/auth-request";
 import { getPool } from "@/lib/server/db";
 import { accountMailbox, resolveLoginIdentifier } from "@/lib/server/login-identifier";
+import { clientIp } from "@/lib/server/activity-log";
+import { checkRateLimit } from "@/lib/server/rate-limit";
 
 /**
  * Start a password reset (plan.md §24). Always responds { ok: true } for a
@@ -16,6 +18,10 @@ export async function POST(request: Request) {
   const input = await readAuthBody(request);
   if (!input.ok) return input.response;
   const { body } = input;
+
+  const ip = clientIp(request) ?? "unknown";
+  const rl = checkRateLimit(`forgot:${ip}`, 5, 15 * 60 * 1000);
+  if (!rl.ok) return rl.response;
 
   const email = body.email?.trim() ?? "";
   if (!isValidEmail(email)) {

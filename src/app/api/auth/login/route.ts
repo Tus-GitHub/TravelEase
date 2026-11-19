@@ -3,6 +3,7 @@ import { passwordLogin } from "@/lib/server/password-login";
 import { SESSION_COOKIE } from "@/lib/server/session";
 import { logActivity, clientIp } from "@/lib/server/activity-log";
 import { readAuthBody } from "@/lib/server/auth-request";
+import { checkRateLimit } from "@/lib/server/rate-limit";
 
 export async function POST(request: Request) {
   const input = await readAuthBody(request);
@@ -12,6 +13,10 @@ export async function POST(request: Request) {
   const email = body.email?.trim() ?? "";
   const password = body.password ?? "";
   const rememberMe = body.rememberMe === true;
+
+  const ip = clientIp(request) ?? "unknown";
+  const rl = checkRateLimit(`login:${ip}:${email.toLowerCase()}`, 10, 10 * 60 * 1000);
+  if (!rl.ok) return rl.response;
 
   if (!email || !password) {
     return NextResponse.json(

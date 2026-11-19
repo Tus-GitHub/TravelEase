@@ -8,11 +8,16 @@ import { isValidEmail, isValidPhone, PASSWORD_MIN_LENGTH } from "@/lib/validatio
 import { readAuthBody } from "@/lib/server/auth-request";
 import { getPool } from "@/lib/server/db";
 import { resolveLoginIdentifier } from "@/lib/server/login-identifier";
+import { checkRateLimit } from "@/lib/server/rate-limit";
 
 export async function POST(request: Request) {
   const input = await readAuthBody(request);
   if (!input.ok) return input.response;
   const { body } = input;
+
+  const ip = clientIp(request) ?? "unknown";
+  const rl = checkRateLimit(`signup:${ip}`, 5, 15 * 60 * 1000);
+  if (!rl.ok) return rl.response;
 
   const name = body.name?.trim() ?? "";
   const email = body.email?.trim() ?? "";
