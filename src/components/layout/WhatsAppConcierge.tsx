@@ -34,7 +34,7 @@ export default function WhatsAppConcierge() {
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-300">
-                24/7 Concierge
+                24/7 Travel Support
               </p>
               <p className="mt-0.5 font-serif text-base italic text-white">
                 How can we help?
@@ -95,7 +95,7 @@ export default function WhatsAppConcierge() {
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-400/20 text-amber-300">
           <Icon name={open ? "close" : "chat"} className="h-4 w-4" />
         </span>
-        <span className="hidden sm:inline">Concierge</span>
+        <span className="hidden sm:inline">Help &amp; Chat</span>
       </button>
     </div>
   );
