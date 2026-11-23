@@ -1,4 +1,4 @@
-.section.section {
+:global(.dark) .section.section {
   background: radial-gradient(ellipse at 14% 45%, rgb(24 68 100 / .5), transparent 60%), linear-gradient(130deg, #0d1c31, #080f1d);
 }
 .mapCard {
