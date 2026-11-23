@@ -16,8 +16,9 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
   const heroStats = cmsItems(cms) ?? stats;
   const imageUrl = cmsText(cms, "imageUrl");
   const appearance = cms?.appearance;
+  const hasPhotoBg = appearance?.background === "image";
   const light = appearance?.background === "light" || appearance?.background === "muted";
-  const muted = light ? "text-muted" : "text-white/70";
+  const muted = hasPhotoBg ? "text-white/75" : light ? "text-muted" : "text-muted dark:text-white/70";
   const showVehicle = cms?.content.showVehicle !== false;
   const showSearch = cms?.content.showSearch === true;
 
@@ -25,7 +26,9 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
     <section
       id={cms ? `section-${cms.id}` : undefined}
       data-cms-section={cms?.id}
-      className={`relative flex min-h-[100svh] items-center overflow-hidden pb-16 pt-28 lg:pt-32 ${light ? "text-fg" : "text-white"}`}
+      className={`relative flex min-h-[100svh] items-center overflow-hidden pb-16 pt-28 lg:pt-32 ${
+        hasPhotoBg ? "text-white" : light ? "text-fg" : "text-fg dark:text-white"
+      }`}
     >
       {appearance?.background === "image" ? <div data-hero-layer="1" className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `linear-gradient(rgba(4,7,15,${appearance.overlay / 100}),rgba(4,7,15,${appearance.overlay / 100})),url(${JSON.stringify(appearance.imageUrl)})` }} />
         : light ? <div data-hero-layer="1" className={`absolute inset-0 ${appearance?.background === "muted" ? "bg-surface-muted" : "bg-canvas"}`} /> : <HeroBackdrop />}
@@ -53,7 +56,7 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
             <span className="block overflow-hidden">
               <span
                 data-hero="title-line"
-                className="block font-serif text-[1.12em] font-semibold italic tracking-[-0.015em] bg-gradient-to-r from-amber-200 via-accent-400 to-amber-500 bg-clip-text text-transparent"
+                className="block font-serif text-[1.12em] font-semibold italic tracking-[-0.015em] bg-gradient-to-r from-amber-700 via-amber-600 to-amber-500 dark:from-amber-200 dark:via-accent-400 dark:to-amber-500 bg-clip-text text-transparent"
               >
                 {cmsText(cms, "highlight", "More memories.")}
               </span>
@@ -68,17 +71,22 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
             <Button href={cmsText(cms, "primaryHref", "/packages")} variant="accent" size="lg" iconRight="arrow-right">
               {cmsText(cms, "primaryLabel", "Explore packages")}
             </Button>
-            <Button href={cmsText(cms, "secondaryHref", "/weekend-trips")} variant={light ? "outline" : "glass"} size="lg">
+            <Button
+              href={cmsText(cms, "secondaryHref", "/weekend-trips")}
+              variant={hasPhotoBg ? "glass" : "outline"}
+              size="lg"
+              className={hasPhotoBg ? "" : "dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"}
+            >
               {cmsText(cms, "secondaryLabel", "Weekend group trips")}
             </Button>
           </div>
 
           <dl
             data-hero="stats"
-            className={`mt-10 grid max-w-lg gap-4 border-t pt-6 ${heroStats.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"} ${light ? "border-line" : "border-amber-300/15"}`}
+            className={`mt-10 grid max-w-lg gap-4 border-t pt-6 ${heroStats.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"} ${hasPhotoBg ? "border-amber-300/15" : "border-line dark:border-amber-300/15"}`}
           >
             {heroStats.map((s, i) => (
-              <div key={i} className={`min-w-0 break-words ${i > 0 ? (light ? "border-l border-line pl-4" : "border-l border-white/10 pl-4") : ""}`}>
+              <div key={i} className={`min-w-0 break-words ${i > 0 ? (hasPhotoBg ? "border-l border-white/10 pl-4" : "border-l border-line pl-4 dark:border-white/10") : ""}`}>
                 <dt className="font-display text-base font-semibold sm:text-xl">{s.value}</dt>
                 <dd className={`mt-1 text-[11px] uppercase tracking-[0.18em] ${muted}`}>{s.label}</dd>
               </div>

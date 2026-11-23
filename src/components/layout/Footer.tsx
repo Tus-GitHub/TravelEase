@@ -7,13 +7,15 @@ import Logo from "@/components/common/Logo";
 import Icon from "@/components/common/Icon";
 import { site } from "@/data/site";
 import { useSiteContact } from "@/context/SiteContactContext";
+import { useTheme } from "@/context/ThemeContext";
 import { footerLinkGroups, socialLinks } from "@/data/navigation";
 import type { IconName } from "@/types";
 import { cmsNavigationLinks } from "@/lib/cms-navigation";
 import type { CmsNavItem } from "@/lib/server/cms";
 
 export default function Footer({ cmsNavigation, chrome }: { cmsNavigation?: CmsNavItem[]; chrome?: CmsChrome } = {}) {
-  const settings = chrome?.footer, dark = settings?.appearance !== "light";
+  const { resolvedTheme } = useTheme();
+  const settings = chrome?.footer, dark = settings?.appearance === "light" ? false : resolvedTheme === "dark";
   const colors = { "--footer-background": dark ? "#060912" : "#faf8f4", "--footer-muted": dark ? "rgb(255 255 255 / .65)" : "#475569", "--footer-strong": dark ? "#ffffff" : "#0f172a", "--footer-border": dark ? "rgb(245 158 11 / .18)" : "#e2dcd0", "--footer-panel": dark ? "rgb(255 255 255 / .05)" : "#ece7dd" } as CSSProperties;
   const groups = settings ? chromeFooterGroups(settings.groups, cmsNavigation) : footerLinkGroups.map((group, index) => index === 0 ? { ...group, links: cmsNavigationLinks(group.links, cmsNavigation, "footer") } : group);
   const socials = settings?.socials ?? socialLinks;

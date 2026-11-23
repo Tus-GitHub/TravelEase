@@ -11,6 +11,7 @@ import ThemeToggle from "@/components/common/ThemeToggle";
 import UserMenu from "@/components/layout/UserMenu";
 import { navLinks } from "@/data/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { cmsNavigationLinks } from "@/lib/cms-navigation";
 import type { CmsNavItem } from "@/lib/server/cms";
 import { chromeNavigationLinks, type CmsChrome } from "@/lib/cms-chrome";
@@ -26,6 +27,7 @@ export default function Navbar({ cmsNavigation, header, previewPath }: { cmsNavi
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { user, isLoading, logout } = useAuth();
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     let last = window.scrollY;
@@ -62,7 +64,7 @@ export default function Navbar({ cmsNavigation, header, previewPath }: { cmsNavi
   const routePath = previewPath ?? pathname;
   const overDarkHero = (cmsNavigation ? cmsNavigation.some(page => page.href === routePath && page.darkHero) : routePath === "/");
   const solid = isScrolled || isOpen || !overDarkHero || Boolean(header && header.appearance !== "adaptive");
-  const darkSurface = !solid || header?.appearance === "dark";
+  const darkSurface = header?.appearance === "dark" || (!solid && resolvedTheme === "dark");
   const isActive = (href: string) =>
     href === "/" ? routePath === "/" : routePath === href || routePath.startsWith(href + "/");
 

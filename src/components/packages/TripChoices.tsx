@@ -12,7 +12,7 @@ export default function TripChoices() {
   return (
     <nav
       aria-label="Find your next trip"
-      className="relative overflow-hidden rounded-[2rem] border border-amber-300/25 bg-slate-950/80 backdrop-blur-2xl shadow-[0_36px_100px_-20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.14)]"
+      className="relative overflow-hidden rounded-[2rem] border border-amber-500/25 bg-white/95 backdrop-blur-2xl shadow-[0_28px_80px_-20px_rgba(15,23,42,0.16)] dark:border-amber-300/25 dark:bg-slate-950/80 dark:shadow-[0_36px_100px_-20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.14)]"
     >
       <div className="luxury-hairline pointer-events-none absolute inset-x-10 top-0 z-20" aria-hidden />
 
@@ -48,19 +48,19 @@ export default function TripChoices() {
           <Link
             key={choice.href}
             href={choice.href}
-            className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 text-white transition-all duration-300 hover:border-amber-400/55 hover:bg-white/[0.09] hover:shadow-[0_12px_32px_-12px_rgba(245,158,11,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 sm:p-4"
+            className="group flex items-center gap-4 rounded-2xl border border-line bg-surface-muted/70 p-3.5 text-fg transition-all duration-300 hover:border-amber-500/60 hover:bg-amber-50/70 hover:shadow-[0_12px_32px_-12px_rgba(245,158,11,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:hover:border-amber-400/55 dark:hover:bg-white/[0.09] sm:p-4"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-400/30 bg-amber-400/10 text-amber-300 transition-colors group-hover:border-amber-400/60 group-hover:bg-amber-400/20">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 transition-colors group-hover:border-amber-500/60 group-hover:bg-amber-500/20 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-300">
               <Icon name={choice.icon} className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
-                <span className="font-serif text-xs italic text-amber-300/80">0{idx + 1}</span>
+                <span className="font-serif text-xs italic text-amber-600 dark:text-amber-300/80">0{idx + 1}</span>
                 <span className="font-display text-base font-semibold tracking-tight sm:text-lg">{choice.title}</span>
               </span>
-              <span className="mt-0.5 block text-xs leading-relaxed text-white/70 sm:text-sm">{choice.text}</span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-muted dark:text-white/70 sm:text-sm">{choice.text}</span>
             </span>
-            <Icon name="arrow-right" className="h-4 w-4 shrink-0 text-amber-300 transition-transform duration-300 group-hover:translate-x-1" />
+            <Icon name="arrow-right" className="h-4 w-4 shrink-0 text-amber-600 transition-transform duration-300 group-hover:translate-x-1 dark:text-amber-300" />
           </Link>
         ))}
       </div>

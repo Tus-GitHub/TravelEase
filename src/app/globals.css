@@ -163,7 +163,7 @@
     .site-page-content > section:first-of-type,
     .site-page-content > .route-enter > section:first-of-type { padding-top: 8rem; }
   }
-  .cms-dark {
+  .dark .cms-dark {
     --c-canvas: 6 9 16;
     --c-surface: 13 19 32;
     --c-surface-muted: 9 14 24;

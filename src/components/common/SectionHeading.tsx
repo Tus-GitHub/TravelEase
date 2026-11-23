@@ -66,7 +66,7 @@ export default function SectionHeading({
       )}
       <h2
         className={`mt-3 font-display text-display-sm text-balance ${
-          inverted ? "text-white" : "text-fg"
+          inverted ? "text-fg dark:text-white" : "text-fg"
         }`}
       >
         <RevealText text={title} />
@@ -75,7 +75,7 @@ export default function SectionHeading({
         <p
           data-sh-fade
           className={`mt-4 text-lg text-pretty ${
-            inverted ? "text-primary-100" : "text-muted"
+            inverted ? "text-muted dark:text-primary-100" : "text-muted"
           }`}
         >
           {subtitle}

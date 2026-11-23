@@ -7,7 +7,7 @@ const backgrounds: Record<Bg, string> = {
   white: "bg-canvas",
   gray: "bg-surface-muted",
   primary:
-    "bg-gradient-to-b from-[#070b14] via-[#0c1324] to-[#070b14] border-y border-white/[0.06]",
+    "bg-surface-muted border-y border-line dark:bg-gradient-to-b dark:from-[#070b14] dark:via-[#0c1324] dark:to-[#070b14] dark:border-white/[0.06]",
 };
 
 export interface SectionProps {
