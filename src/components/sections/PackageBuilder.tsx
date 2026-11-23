@@ -8,7 +8,7 @@ import Icon from "@/components/common/Icon";
 import DestinationPhoto from "@/components/common/DestinationPhoto";
 import AnimateInView from "@/components/common/AnimateInView";
 import PackageCard from "@/components/cards/PackageCard";
-import CustomerRoutePlanner from "@/components/packages/CustomerRoutePlanner";
+import CustomerRoutePlanner, { type VehicleRateHint } from "@/components/packages/CustomerRoutePlanner";
 import type { Region, TravelPackage } from "@/types";
 import { cmsHeading, type CmsSection } from "@/lib/cms";
 const BookingFlow = dynamic(() => import("@/components/booking/BookingFlow"), { loading: () => <p role="status" className="text-center text-sm text-muted">Loading transfer booking…</p> });
@@ -16,6 +16,7 @@ interface PackageBuilderProps {
   cms?: CmsSection; regions: Region[]; packages: TravelPackage[]; initialMode?: Mode;
   initialRegionId?: string; initialSpotId?: string; showTransfer?: boolean; compact?: boolean;
   selectedVehicle?: { id: number; name: string; typeSlug: string; typeTitle: string; pricePerDay?: number };
+  vehicleRates?: VehicleRateHint[];
 }
 type Mode = "packages" | "custom" | "transfer";
 
@@ -145,7 +146,7 @@ function RegionPicker({
 }
 
 
-export default function PackageBuilder({ regions, packages, cms, initialMode = "packages", initialRegionId, initialSpotId, selectedVehicle, showTransfer = false, compact = false }: PackageBuilderProps) {
+export default function PackageBuilder({ regions, packages, cms, initialMode = "packages", initialRegionId, initialSpotId, selectedVehicle, vehicleRates, showTransfer = false, compact = false }: PackageBuilderProps) {
   const tabId = useId();
   const [interactive, setInteractive] = useState(false);
   useEffect(() => setInteractive(true), []);
@@ -160,7 +161,7 @@ export default function PackageBuilder({ regions, packages, cms, initialMode = "
         {mode === "packages" && <ChoosePackage packages={packages} vehicleId={selectedVehicle?.id} onBuildOwn={() => setMode("custom")} />}
         {mode === "custom" && <div className="space-y-6">
           <div><p className="text-xs font-semibold uppercase tracking-wider text-muted">Create your package</p><h2 className="mt-2 text-xl font-bold text-fg">{region ? "Choose your journey" : "Where would you like to go?"}</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">Pick a region and choose your next stops. Send your route with your email and phone number; our team will discuss your booking and price. Hotels are arranged by you.</p></div>
-          {region ? <><div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface-muted p-4"><div><p className="font-semibold text-fg">{region.name}</p><p className="mt-1 line-clamp-2 text-xs text-muted">{region.state}</p></div><Button variant="outline" onClick={() => { setRegion(null); setSpotId(undefined); }}>Change region</Button></div><CustomerRoutePlanner key={region.id + ":" + (spotId ?? "")} region={region} initialSpotId={spotId} vehicleId={selectedVehicle?.id} onClearPlace={() => setSpotId(undefined)} /></> : <RegionPicker regions={regions} selected={null} onSelect={next => { setRegion(next); setSpotId(undefined); }} />}
+          {region ? <><div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface-muted p-4"><div><p className="font-semibold text-fg">{region.name}</p><p className="mt-1 line-clamp-2 text-xs text-muted">{region.state}</p></div><Button variant="outline" onClick={() => { setRegion(null); setSpotId(undefined); }}>Change region</Button></div><CustomerRoutePlanner key={region.id + ":" + (spotId ?? "")} region={region} initialSpotId={spotId} vehicleId={selectedVehicle?.id} vehicleRates={vehicleRates} onClearPlace={() => setSpotId(undefined)} /></> : <RegionPicker regions={regions} selected={null} onSelect={next => { setRegion(next); setSpotId(undefined); }} />}
         </div>}
         {showTransfer && transferVisited && <div hidden={mode !== "transfer"} className="space-y-6"><p className="mx-auto max-w-3xl text-center text-sm leading-relaxed text-muted">Just need a pickup and drop? Select the two locations below. Road distance and fare update automatically; any configured empty-return charge is itemised before you book.</p><Suspense fallback={<p role="status" className="text-center text-sm text-muted">Loading transfer booking…</p>}><BookingFlow enabled={mode === "transfer"} /></Suspense></div>}
       </div>

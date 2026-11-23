@@ -83,7 +83,7 @@ export default function Navbar({ cmsNavigation, header, previewPath }: { cmsNavi
         <Logo inverted={darkSurface} label={header?.brandName} icon={header?.brandIcon} />
 
         {/* Desktop links */}
-        <ul className="hidden min-w-0 items-center gap-5 overflow-x-auto whitespace-nowrap xl:flex 2xl:gap-6">
+        <ul className="hidden min-w-0 items-center gap-4 overflow-x-auto whitespace-nowrap lg:flex xl:gap-6">
           {links.map((link) => {
             const active = isActive(link.href);
             return (
@@ -108,7 +108,7 @@ export default function Navbar({ cmsNavigation, header, previewPath }: { cmsNavi
           })}
         </ul>
 
-        <div className="hidden shrink-0 items-center gap-2 xl:flex">
+        <div className="hidden shrink-0 items-center gap-2 lg:flex">
           {header?.buttonLabel && <Button href={header.buttonHref} variant="accent" size="sm">{header.buttonLabel}</Button>}
           <ThemeToggle tone={darkSurface ? "light" : "default"} />
           {isLoading ? null : user ? (
@@ -121,7 +121,7 @@ export default function Navbar({ cmsNavigation, header, previewPath }: { cmsNavi
         </div>
 
         {/* Mobile actions */}
-        <div className="flex shrink-0 items-center gap-1 xl:hidden">
+        <div className="flex shrink-0 items-center gap-1 lg:hidden">
           <ThemeToggle tone={darkSurface ? "light" : "default"} />
           <button data-ui-action=""
             id="site-mobile-menu-trigger"
@@ -141,7 +141,7 @@ export default function Navbar({ cmsNavigation, header, previewPath }: { cmsNavi
       <div
         id="site-mobile-menu"
         aria-hidden={!isOpen}
-        className={`overflow-x-hidden border-t border-line-subtle bg-canvas transition-[max-height] duration-300 xl:hidden ${
+        className={`overflow-x-hidden border-t border-line-subtle bg-canvas transition-[max-height] duration-300 lg:hidden ${
           isOpen ? "visible max-h-[75dvh] overflow-y-auto" : "invisible max-h-0 overflow-y-hidden border-transparent"
         }`}
       >

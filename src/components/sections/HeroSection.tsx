@@ -68,16 +68,16 @@ export default function HeroSection({ cms }: { cms?: CmsSection } = {}) {
           </p>
 
           <div data-hero="cta" className="mt-8 flex flex-wrap gap-3.5">
-            <Button href={cmsText(cms, "primaryHref", "/packages")} variant="accent" size="lg" iconRight="arrow-right">
-              {cmsText(cms, "primaryLabel", "Explore packages")}
+            <Button href={cmsText(cms, "primaryHref", "/booking")} variant="accent" size="lg" iconRight="arrow-right">
+              {cmsText(cms, "primaryLabel", "Plan your trip")}
             </Button>
             <Button
-              href={cmsText(cms, "secondaryHref", "/weekend-trips")}
+              href={cmsText(cms, "secondaryHref", "/vehicles")}
               variant={hasPhotoBg ? "glass" : "outline"}
               size="lg"
               className={hasPhotoBg ? "" : "dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"}
             >
-              {cmsText(cms, "secondaryLabel", "Weekend group trips")}
+              {cmsText(cms, "secondaryLabel", "Browse our fleet")}
             </Button>
           </div>
 

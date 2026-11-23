@@ -42,14 +42,21 @@ function StepBar({ step }: { step: 2 | 3 }) {
   );
 }
 
-function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: number }) {
-  const { user, isLoading } = useAuth();
+export interface VehicleRateHint {
+  label: string;
+  minPricePerDay: number;
+  maxSeats: number;
+}
+
+function RouteRequest({ route, vehicleId, vehicleRates }: { route: RouteTemplate; vehicleId?: number; vehicleRates?: VehicleRateHint[] }) {
+  const { user } = useAuth();
   const contact = useSiteContact();
   const [path, setPath] = useState<number[]>(
     route.tree.roots.length === 1 ? [route.tree.roots[0]] : []
   );
   const [review, setReview] = useState(false);
   const [storageReady, setStorageReady] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [date, setDate] = useState("");
@@ -80,6 +87,7 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
         if (saved.expires > Date.now()) {
           suggestionPath(route.tree, saved.path);
           setPath(saved.path);
+          setName(saved.name || "");
           setEmail(saved.email || "");
           setPhone(saved.phone || "");
           setDate(saved.date || "");
@@ -104,6 +112,7 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
           key,
           JSON.stringify({
             path,
+            name,
             email,
             phone,
             date,
@@ -117,10 +126,11 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
         /* The route still works without browser storage. */
       }
     }
-  }, [key, path, email, phone, date, travellers, notes, review, ticket, storageReady]);
+  }, [key, path, name, email, phone, date, travellers, notes, review, ticket, storageReady]);
 
   useEffect(() => {
     if (user) {
+      setName((current) => current || user.name);
       setEmail((current) => current || user.email);
       setPhone((current) => current || user.phone);
     }
@@ -132,7 +142,7 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
 
   async function send(event: React.FormEvent) {
     event.preventDefault();
-    if (!user || inFlight.current) return;
+    if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
     setError("");
@@ -148,6 +158,7 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
         body: JSON.stringify({
           templateId: route.id,
           path,
+          name: name.trim(),
           email,
           phone,
           date,
@@ -184,15 +195,36 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
           <div>
             <h3 className="font-display text-2xl font-bold text-fg">Booking request received</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              Reference <span className="font-mono font-semibold text-fg">{ticket.reference}</span>. Your route and contact details are saved. Our team will discuss your trip and price by phone before a booking is confirmed.
+              Reference <span className="font-mono font-semibold text-fg">{ticket.reference}</span>. Your route and contact details are saved. Our team will call or WhatsApp you shortly to discuss your trip and price before a booking is confirmed.
             </p>
-            <Link
-              href={"/profile/support/" + ticket.id}
-              className="mt-4 inline-flex min-h-11 items-center gap-1.5 font-semibold text-accent-600 underline underline-offset-4 dark:text-accent-400"
-            >
-              View your booking request
-              <Icon name="arrow-right" className="h-4 w-4" />
-            </Link>
+            <div className="mt-4 flex flex-wrap items-center gap-4">
+              {user ? (
+                <Link
+                  href={"/profile/support/" + ticket.id}
+                  className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-accent-600 underline underline-offset-4 dark:text-accent-400"
+                >
+                  View your booking request
+                  <Icon name="arrow-right" className="h-4 w-4" />
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-accent-600 underline underline-offset-4 dark:text-accent-400"
+                >
+                  Sign in or create an account to track replies
+                </Link>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setTicket(null);
+                  setReview(false);
+                }}
+              >
+                Plan another route
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -215,6 +247,20 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
           Choose where to go and stop. You arrange your own hotels; our team discusses the travel price and final details with you by phone.
         </p>
+        {vehicleRates && vehicleRates.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-line-subtle bg-surface-muted/70 px-3.5 py-2.5 text-xs">
+            <span className="font-semibold text-fg">Indicative vehicle rates:</span>
+            {vehicleRates.map((rate) => (
+              <span
+                key={rate.label}
+                className="inline-flex items-center gap-1 rounded-full border border-line bg-surface px-2.5 py-1 font-medium text-muted"
+              >
+                <span className="text-fg">{rate.label}</span>
+                <span>from ₹{rate.minPricePerDay.toLocaleString("en-IN")}/day</span>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Connected Route Journey Bar */}
@@ -386,6 +432,19 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
+            <label className="min-w-0 text-sm font-semibold text-fg sm:col-span-2">
+              Your name
+              <input
+                type="text"
+                autoComplete="name"
+                required
+                maxLength={120}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your full name"
+                className={field}
+              />
+            </label>
             <label className="min-w-0 text-sm font-semibold text-fg">
               Email
               <input
@@ -489,27 +548,9 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
             >
               Edit my route
             </Button>
-            {user ? (
-              <Button variant="accent" size="lg" type="submit" loading={busy}>
-                Send booking request
-              </Button>
-            ) : (
-              <Button
-                variant="accent"
-                size="lg"
-                disabled={isLoading}
-                href={
-                  "/login?redirect=" +
-                  encodeURIComponent(
-                    `/booking?mode=custom&region=${route.regionId}${
-                      vehicleId ? "&vehicle=" + vehicleId : ""
-                    }`
-                  )
-                }
-              >
-                Sign in to send request
-              </Button>
-            )}
+            <Button variant="accent" size="lg" type="submit" loading={busy}>
+              Send booking request
+            </Button>
             {(() => {
               const digits = (contact.phone || "").replace(/\D/g, "");
               const wa = digits.length === 10 ? `91${digits}` : digits;
@@ -531,7 +572,11 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
           </div>
           {!user && (
             <p className="text-xs text-muted">
-              Sign in to keep your booking request private and track replies. Your selected route and form details stay in this browser tab.
+              No account needed to request a quote. Want to track replies in one place?{" "}
+              <Link href="/login" className="font-semibold text-accent-600 underline underline-offset-2 dark:text-accent-400">
+                Sign in
+              </Link>{" "}
+              anytime.
             </p>
           )}
         </form>
@@ -544,11 +589,13 @@ export default function CustomerRoutePlanner({
   region,
   initialSpotId,
   vehicleId,
+  vehicleRates,
   onClearPlace,
 }: {
   region: Region;
   initialSpotId?: string;
   vehicleId?: number;
+  vehicleRates?: VehicleRateHint[];
   onClearPlace: () => void;
 }) {
   const [routes, setRoutes] = useState<RouteTemplate[]>([]);
@@ -638,7 +685,7 @@ export default function CustomerRoutePlanner({
         </div>
       ) : active ? (
         <>
-          <RouteRequest key={active.id} route={active} vehicleId={vehicleId} />
+          <RouteRequest key={active.id} route={active} vehicleId={vehicleId} vehicleRates={vehicleRates} />
           {matching.length > 1 && (
             <Button
               variant="outline"

@@ -1,7 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
 import {getPool} from './db';
-import {createTicket} from './support-tickets';
+import {createGuestTripTicket,createTicket} from './support-tickets';
 import type {PublicUser} from './users';
 import {isValidPhone,normalizePhone,isValidEmail} from '../validation';
 import {TripError} from '../weekend-trips';
@@ -35,16 +35,20 @@ export async function saveRouteTemplate(input:Record<string,unknown>,actor:strin
  }catch(e){await db.query('ROLLBACK');throw e;}finally{db.release();}
  return (await listRouteTemplates()).find(route=>route.id===routeId)!;
 }
-export async function sendRouteEnquiry(user:PublicUser,input:Record<string,unknown>){
+export async function sendRouteEnquiry(user:PublicUser|null,input:Record<string,unknown>){
  const template=(await listRouteTemplates(true)).find(route=>route.id===Number(input.templateId));if(!template)throw new TripError('This route is no longer published. Choose another route.',404);
  const path=suggestionPath(template.tree,input.path),phone=typeof input.phone==='string'?normalizePhone(input.phone):'',email=typeof input.email==='string'?input.email.trim().toLowerCase():'',travellers=Number(input.travellers),date=typeof input.date==='string'?input.date:'',notes=typeof input.notes==='string'?input.notes.trim():'';
+ const guestName=typeof input.name==='string'?input.name.trim():'';
+ if(!user&&(guestName.length<2||guestName.length>120))throw new TripError('Enter your name so our team knows who to ask for.');
  if(!isValidPhone(phone)||phone.length>30)throw new TripError('Enter a valid phone number so we can discuss your trip.');
  if(!isValidEmail(email)||email.length>254)throw new TripError('Enter a valid contact email for your booking request.');
  const parsedDate=date?new Date(date+'T00:00:00Z'):null;
  if(!Number.isSafeInteger(travellers)||travellers<1||travellers>100||notes.length>1000||date&&(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(parsedDate!.getTime())||parsedDate!.toISOString().slice(0,10)!==date))throw new TripError('Check your traveller count, date and notes.');
  const names=new Map(template.places.map(place=>[place.id,place.name]));let vehicle='Not selected';
  if(input.vehicleId!==undefined){const id=Number(input.vehicleId);if(!Number.isSafeInteger(id)||id<1||id>2147483647)throw new TripError('Choose an available vehicle.');const row=(await getPool().query('SELECT name FROM vehicles WHERE vehicle_id=$1 AND is_active AND NOT is_deleted',[id])).rows[0];if(!row)throw new TripError('Choose an available vehicle.');vehicle=row.name;}
- const lines=['CUSTOM TRIP BOOKING REQUEST — CALL TO DISCUSS','Request only. No booking, price, hotel or meal inclusion is confirmed.','Contact email: '+email,'Phone: '+phone,'Travellers: '+travellers,'Preferred start: '+(date||'Discuss on call'),'Vehicle: '+vehicle,'Route plan: '+template.name,'Stop IDs: '+path.map(n=>n.spotId).join(','),'Stops: '+path.map(node=>names.get(node.spotId)?.slice(0,60)).join(' → '),'Accommodation: customer arranges their own stays.',...(notes?['Customer notes: '+notes]:[])];
+ const customerName=guestName||user?.name||'Guest';
+ const lines=['CUSTOM TRIP BOOKING REQUEST — CALL TO DISCUSS','Request only. No booking, price, hotel or meal inclusion is confirmed.',...(guestName||!user?['Customer name: '+customerName]:[]),'Contact email: '+email,'Phone: '+phone,'Travellers: '+travellers,'Preferred start: '+(date||'Discuss on call'),'Vehicle: '+vehicle,'Route plan: '+template.name,'Stop IDs: '+path.map(n=>n.spotId).join(','),'Stops: '+path.map(node=>names.get(node.spotId)?.slice(0,60)).join(' → '),'Accommodation: customer arranges their own stays.',...(notes?['Customer notes: '+notes]:[])];
  if(lines.join('\n').length>4000)throw new TripError('Please shorten your notes before sending this route.');
- return createTicket(user,{subject:'Trip request: '+template.name.slice(0,140),category:'booking',message:lines.join('\n')});
+ const subject='Trip request: '+template.name.slice(0,140);
+ return user?createTicket(user,{subject,category:'booking',message:lines.join('\n')}):createGuestTripTicket({subject,message:lines.join('\n')});
 }

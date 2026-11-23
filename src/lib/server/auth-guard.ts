@@ -15,16 +15,21 @@ export type Guard =
   | { ok: true; user: PublicUser }
   | { ok: false; response: NextResponse };
 
-export async function requireUser(): Promise<Guard> {
+export async function optionalUser(): Promise<PublicUser | null> {
   const userId = await getUserIdForToken(cookies().get(SESSION_COOKIE)?.value);
   const row = userId ? await findUserById(userId) : undefined;
-  if (!row) {
+  return row ? toPublicUser(row) : null;
+}
+
+export async function requireUser(): Promise<Guard> {
+  const user = await optionalUser();
+  if (!user) {
     return {
       ok: false,
       response: NextResponse.json({ error: "Not authenticated." }, { status: 401 }),
     };
   }
-  return { ok: true, user: toPublicUser(row) };
+  return { ok: true, user };
 }
 
 export async function requireRole(role: PublicUser["role"]): Promise<Guard> {

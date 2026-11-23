@@ -51,7 +51,7 @@ export const themeInitScript = `
 (function(){
   try {
     var s = localStorage.getItem('${STORAGE_KEY}');
-    var dark = s === 'dark' || ((s === null || s === 'system') &&
+    var dark = s === 'dark' || (s === 'system' &&
       window.matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.classList.toggle('dark', dark);
   } catch (e) {}
@@ -59,12 +59,12 @@ export const themeInitScript = `
 `;
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemePreference>("system");
+  const [theme, setThemeState] = useState<ThemePreference>("light");
   const [resolvedTheme, setResolvedTheme] = useState<Resolved>("light");
 
   // Hydrate from storage on mount.
   useEffect(() => {
-    let stored: ThemePreference = "system";
+    let stored: ThemePreference = "light";
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw === "light" || raw === "dark" || raw === "system") stored = raw;

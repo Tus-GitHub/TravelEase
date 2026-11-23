@@ -232,6 +232,66 @@ export async function createTicket(
   return { ok: true, ticket: (await getTicketDetail(ticketId, user))! };
 }
 
+const GUEST_ENQUIRY_EMAIL = "guest-enquiries@travelease.internal";
+
+export type CreateGuestTicketResult =
+  | { ok: true; ticket: { id: string; reference: string } }
+  | { ok: false; status: number; message: string };
+
+/** Store a guest custom-route enquiry without requiring signup/login. */
+export async function createGuestTripTicket(input: {
+  subject: string;
+  message: string;
+}): Promise<CreateGuestTicketResult> {
+  const subject = (input.subject ?? "").trim().slice(0, 160);
+  const body = (input.message ?? "").trim().slice(0, 4000);
+  if (subject.length < 3) return { ok: false, status: 400, message: "Add a short subject." };
+  if (body.length < 3) return { ok: false, status: 400, message: "Add a message describing the trip." };
+
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `INSERT INTO users (name, email, phone, password_hash, role_id, is_active, is_deleted)
+       VALUES ('Guest Enquiry', $1, '0000000000', $2, 1, true, false)
+       ON CONFLICT (email) DO NOTHING`,
+      [GUEST_ENQUIRY_EMAIL, `disabled:${randomBytes(32).toString("hex")}`],
+    );
+    const guestUser = await client.query(
+      "SELECT user_id FROM users WHERE email = $1 AND NOT is_deleted",
+      [GUEST_ENQUIRY_EMAIL],
+    );
+    const userId = guestUser.rows[0]?.user_id as string | undefined;
+    if (!userId) throw new Error("guest enquiry owner unavailable");
+
+    let ticketId: string | null = null;
+    let ref = "";
+    for (let attempt = 0; attempt < 5 && !ticketId; attempt++) {
+      ref = reference();
+      const res = await client.query(
+        `INSERT INTO support_tickets (reference, user_id, booking_id, subject, category, created_by, updated_by)
+         VALUES ($1, $2, NULL, $3, 'booking', $2, $2)
+         ON CONFLICT (reference) DO NOTHING
+         RETURNING support_ticket_id`,
+        [ref, userId, subject],
+      );
+      ticketId = res.rows[0]?.support_ticket_id ?? null;
+    }
+    if (!ticketId) throw new Error("could not allocate a ticket reference");
+    await client.query(
+      "INSERT INTO support_ticket_messages (support_ticket_id, author_user_id, author_role, body) VALUES ($1, $2, 'customer', $3)",
+      [ticketId, userId, body],
+    );
+    await client.query("COMMIT");
+    return { ok: true, ticket: { id: ticketId, reference: ref } };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export type AddMessageResult =
   | { ok: true; ticket: TicketDetail }
   | { ok: false; status: number; message: string };
