@@ -152,7 +152,7 @@ function RouteRequest({ route, vehicleId }: { route: RouteTemplate; vehicleId?: 
           phone,
           date,
           travellers: Number(travellers),
-          notes: combinedNotes,
+          notes: combinedNotes.slice(0, 1000),
           ...(vehicleId ? { vehicleId } : {}),
         }),
       });
