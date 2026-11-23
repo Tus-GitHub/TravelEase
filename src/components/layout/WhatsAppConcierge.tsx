@@ -27,7 +27,7 @@ export default function WhatsAppConcierge() {
       {open && (
         <div
           role="dialog"
-          aria-label="Travel concierge options"
+          aria-label="Travel help options"
           className="w-72 overflow-hidden rounded-3xl border border-amber-400/30 bg-[#070b14]/95 p-4 text-white shadow-[0_24px_70px_-15px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
         >
           <div className="luxury-hairline pointer-events-none mb-3" aria-hidden />
@@ -43,7 +43,7 @@ export default function WhatsAppConcierge() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              aria-label="Close concierge menu"
+              aria-label="Close help menu"
               className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
             >
               <Icon name="close" className="h-4 w-4" />
@@ -89,7 +89,7 @@ export default function WhatsAppConcierge() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label="Open travel concierge"
+        aria-label="Open travel help and chat"
         className="group inline-flex min-h-12 items-center gap-2.5 rounded-full border border-amber-400/40 bg-[#070b14]/90 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_16px_45px_-12px_rgba(0,0,0,0.85),0_0_24px_-6px_rgba(245,158,11,0.35)] backdrop-blur-xl transition-all hover:scale-[1.03] hover:border-amber-400"
       >
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-400/20 text-amber-300">

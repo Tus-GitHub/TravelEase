@@ -112,7 +112,7 @@ export default function AdminSidebar({ user }: { user: AuthUser }) {
         <div className="mb-4 shrink-0 px-2">
           <Logo inverted />
           <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-300/70">
-            Admin Concierge
+            Admin Panel
           </p>
         </div>
 

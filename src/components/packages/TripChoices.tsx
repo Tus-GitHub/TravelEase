@@ -37,7 +37,7 @@ export default function TripChoices() {
             </p>
           </div>
           <span className="shrink-0 rounded-full border border-amber-400/35 bg-slate-950/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-200 backdrop-blur-md">
-            Curated
+            Start Here
           </span>
         </div>
       </div>
