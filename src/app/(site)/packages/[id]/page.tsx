@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -23,6 +24,7 @@ import ReviewList from "@/components/reviews/ReviewList";
 import SavePackageButton from "@/components/packages/SavePackageButton";
 import PackagePlanView from "@/components/packages/PackagePlanView";
 import GuidedPackagePlanner from "@/components/packages/GuidedPackagePlanner";
+import BookingFlow from "@/components/booking/BookingFlow";
 
 export const dynamic = "force-dynamic";
 
@@ -128,7 +130,7 @@ export default async function PackageDetailPage({
           <div className="mt-7 flex flex-wrap items-start gap-3">
             <Magnetic>
               <Button
-                href={pkg.isGuided?"#build-trip":`/booking/new?package=${pkg.slug}${vehicle ? `&vehicle=${vehicle.id}` : ""}`}
+                href={pkg.isGuided ? "#build-trip" : "#book-package"}
                 disabled={!pkg.isBookable}
                 variant="accent"
                 size="lg"
@@ -184,6 +186,34 @@ export default async function PackageDetailPage({
         <p className="text-sm text-muted">Explore hotel options for your stay. Hotel enquiries are separate from this booking.</p>
         <Button href={`/hotels?region=${pkg.regionId}`} variant="outline" size="sm" iconLeft="map-pin">Explore hotels</Button>
       </div>}
+
+      {!pkg.isGuided && pkg.isBookable && (
+        <section
+          id="book-package"
+          aria-label="Book this package"
+          className="mt-10 scroll-mt-24 rounded-3xl border border-line bg-surface p-6 shadow-card sm:p-8"
+        >
+          <div className="mb-6 border-b border-line-subtle pb-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-600 dark:text-amber-300">
+              Reserve your vehicle
+            </p>
+            <h2 className="mt-1 font-display text-2xl font-bold text-fg">
+              Book this package
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Choose your travel dates, pickup details and contact number to confirm your trip.
+            </p>
+          </div>
+          <Suspense fallback={<p className="text-sm text-muted">Loading booking form…</p>}>
+            <BookingFlow
+              embedded
+              initialPackageSlug={pkg.slug}
+              initialVehicleId={vehicle ? String(vehicle.id) : undefined}
+            />
+          </Suspense>
+        </section>
+      )}
+
       <ReviewList reviews={reviews} />
 
       {similar.length > 0 && (

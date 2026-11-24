@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import type { TravelPackage, PackageTag } from "@/types";
 
@@ -50,9 +49,12 @@ interface PackageCardProps {
 
 export default function PackageCard({ pkg, vehicleId }: PackageCardProps) {
   const vehicleQuery = vehicleId ? `?vehicle=${vehicleId}` : "";
-  const bookingVehicle = vehicleId ? `&vehicle=${vehicleId}` : "";
+  const detailHref = `/packages/${pkg.id}${vehicleQuery}`;
   return (
-    <div className="group flex flex-col overflow-hidden rounded-3xl border border-line/80 bg-surface shadow-[0_14px_40px_-18px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300 hover:-translate-y-1.5 hover:border-amber-400/40 hover:shadow-[0_24px_60px_-16px_rgba(245,158,11,0.16)]">
+    <Link
+      href={detailHref}
+      className="group flex flex-col overflow-hidden rounded-3xl border border-line/80 bg-surface shadow-[0_14px_40px_-18px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300 hover:-translate-y-1.5 hover:border-amber-400/40 hover:shadow-[0_24px_60px_-16px_rgba(245,158,11,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+    >
       {/* Image */}
       <div className="relative h-52 w-full shrink-0 overflow-hidden">
         <Image
@@ -87,8 +89,8 @@ export default function PackageCard({ pkg, vehicleId }: PackageCardProps) {
       {/* Content */}
       <div className="flex flex-1 flex-col p-5">
         {/* Name */}
-        <h3 className="font-display text-lg font-bold text-fg leading-snug">
-          <Link href={`/packages/${pkg.id}${vehicleQuery}`} className="hover:underline">{pkg.name}</Link>
+        <h3 className="font-display text-lg font-bold text-fg leading-snug transition-colors group-hover:text-accent-600 dark:group-hover:text-amber-300">
+          {pkg.name}
         </h3>
 
         {/* Destination route */}
@@ -154,18 +156,29 @@ export default function PackageCard({ pkg, vehicleId }: PackageCardProps) {
 
         {/* CTA */}
         <div className="mt-4">
-          <Button
-            variant="primary"
-            size="md"
-            fullWidth
-            iconRight="arrow-right"
-            href={pkg.isGuided?`/packages/${pkg.id}${vehicleQuery}#build-trip`:`/booking/new?package=${pkg.id}${bookingVehicle}`}
-            disabled={pkg.isBookable===false}
+          <span
+            className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+              pkg.isBookable === false
+                ? "bg-surface-muted text-muted"
+                : "bg-primary-600 text-white shadow-sm group-hover:bg-primary-700"
+            }`}
           >
-            {pkg.isBookable===false?"Temporarily unavailable":pkg.isGuided?"Build this trip":"Book This Package"}
-          </Button>
+            <span>
+              {pkg.isBookable === false
+                ? "Temporarily unavailable"
+                : pkg.isGuided
+                  ? "Build this trip"
+                  : "Book This Package"}
+            </span>
+            {pkg.isBookable !== false && (
+              <Icon
+                name="arrow-right"
+                className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1"
+              />
+            )}
+          </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

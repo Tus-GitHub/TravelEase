@@ -91,7 +91,7 @@ function FlagshipPackageSpotlight({ pkg }: { pkg: TravelPackage }) {
           </div>
           <div className="flex flex-wrap gap-2.5">
             <Button
-              href={pkg.isGuided ? `/packages/${pkg.id}#build-trip` : `/booking/new?package=${pkg.id}`}
+              href={pkg.isGuided ? `/packages/${pkg.id}#build-trip` : `/packages/${pkg.id}#book-package`}
               variant="accent"
               size="md"
               iconRight="arrow-right"

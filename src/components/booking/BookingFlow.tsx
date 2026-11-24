@@ -45,7 +45,17 @@ const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 const fieldCls =
   "w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-fg outline-none transition-[border-color,box-shadow] focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/60";
 
-export default function BookingFlow({ enabled = true }: { enabled?: boolean } = {}) {
+export default function BookingFlow({
+  enabled = true,
+  initialPackageSlug,
+  initialVehicleId,
+  embedded = false,
+}: {
+  enabled?: boolean;
+  initialPackageSlug?: string;
+  initialVehicleId?: string;
+  embedded?: boolean;
+} = {}) {
   const params = useSearchParams();
   const router = useRouter();
   const { user, isLoading } = useAuth();
@@ -56,12 +66,12 @@ export default function BookingFlow({ enabled = true }: { enabled?: boolean } = 
     }
   }, [user?.phone]);
 
-  const packageSlug = params.get("package");
+  const packageSlug = initialPackageSlug ?? params.get("package");
   const guidedPathParam = params.get("path");
   const guidedPath = useMemo(() => guidedPathParam ? guidedPathParam.split(',').map(Number) : [], [guidedPathParam]);
   const [packageRefresh, setPackageRefresh] = useState(0);
   const [packagePreview, setPackagePreview] = useState<{ content: PackageContent; selectedRoute?: SelectedRoute } | null>(null);
-  const vehicleId = params.get("vehicle");
+  const vehicleId = initialVehicleId ?? params.get("vehicle");
   const spotsParam = params.get("spots");
   const typeParam = params.get("type") as BookingTypeCode | null;
   const vehicleTypeSlugParam = params.get("vehicleType");
@@ -284,9 +294,12 @@ export default function BookingFlow({ enabled = true }: { enabled?: boolean } = 
     if (nights) p.set("nights", String(nights));
     if (notes) p.set("notes", notes);
     if (mode === "generic" || mode === "vehicle") p.set("type", bookingType);
+    if (embedded && typeof window !== "undefined") {
+      return `${window.location.pathname}?${p.toString()}#book-package`;
+    }
     return `/booking/new?${p.toString()}`;
   }, [
-    params, startDate, passengers, pickupAddress, dropAddress, distanceKm, hours,
+    embedded, params, startDate, passengers, pickupAddress, dropAddress, distanceKm, hours,
     days, nights, notes, mode, bookingType, pickupPoint, dropPoint, endDate,
   ]);
 
@@ -384,7 +397,7 @@ export default function BookingFlow({ enabled = true }: { enabled?: boolean } = 
   const showDrop = bookingType === "point_to_point" || bookingType === "airport_transfer" || bookingType === "outstation";
 
   return (
-    <div className="mx-auto grid max-w-4xl gap-8 lg:grid-cols-[1.4fr_1fr]">
+    <div className={`${embedded ? "w-full" : "mx-auto max-w-4xl"} grid gap-8 lg:grid-cols-[1.4fr_1fr]`}>
       <form onSubmit={submit} className="space-y-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-faint">
