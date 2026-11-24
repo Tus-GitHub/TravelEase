@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import type { TravelPackage, PackageTag } from "@/types";
 
@@ -50,11 +51,14 @@ interface PackageCardProps {
 export default function PackageCard({ pkg, vehicleId }: PackageCardProps) {
   const vehicleQuery = vehicleId ? `?vehicle=${vehicleId}` : "";
   const detailHref = `/packages/${pkg.id}${vehicleQuery}`;
+  const bookHref = `${detailHref}${pkg.isGuided ? "#build-trip" : "#book-package"}`;
   return (
-    <Link
-      href={detailHref}
-      className="group flex flex-col overflow-hidden rounded-3xl border border-line/80 bg-surface shadow-[0_14px_40px_-18px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300 hover:-translate-y-1.5 hover:border-amber-400/40 hover:shadow-[0_24px_60px_-16px_rgba(245,158,11,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
-    >
+    <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-line/80 bg-surface shadow-[0_14px_40px_-18px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300 hover:-translate-y-1.5 hover:border-amber-400/40 hover:shadow-[0_24px_60px_-16px_rgba(245,158,11,0.16)] focus-within:ring-2 focus-within:ring-accent-500">
+      <Link
+        href={detailHref}
+        aria-label={`View ${pkg.name} details`}
+        className="absolute inset-0 z-10 rounded-3xl focus-visible:outline-none"
+      />
       {/* Image */}
       <div className="relative h-52 w-full shrink-0 overflow-hidden">
         <Image
@@ -155,30 +159,23 @@ export default function PackageCard({ pkg, vehicleId }: PackageCardProps) {
         </div>
 
         {/* CTA */}
-        <div className="mt-4">
-          <span
-            className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
-              pkg.isBookable === false
-                ? "bg-surface-muted text-muted"
-                : "bg-primary-600 text-white shadow-sm group-hover:bg-primary-700"
-            }`}
+        <div className="relative z-20 mt-4">
+          <Button
+            variant="primary"
+            size="md"
+            fullWidth
+            iconRight="arrow-right"
+            href={bookHref}
+            disabled={pkg.isBookable === false}
           >
-            <span>
-              {pkg.isBookable === false
-                ? "Temporarily unavailable"
-                : pkg.isGuided
-                  ? "Build this trip"
-                  : "Book This Package"}
-            </span>
-            {pkg.isBookable !== false && (
-              <Icon
-                name="arrow-right"
-                className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1"
-              />
-            )}
-          </span>
+            {pkg.isBookable === false
+              ? "Temporarily unavailable"
+              : pkg.isGuided
+                ? "Build this trip"
+                : "Book This Package"}
+          </Button>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
